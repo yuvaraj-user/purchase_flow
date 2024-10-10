@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+  $("button").click(function(){
+    $("#p1").text(ConvertNumberToWords("100","rupees", "paisa"));
+     $("#p2").text(ConvertNumberToWords("999.99","rupees", "paisa"));
+  });
+});
+function ConvertNumberToWords(doubleNumber, mainAmountType, decimalAmountType) {
+    var beforeFloatingPoint = parseInt(doubleNumber.toString().split('.')[0]);
+    var beforeFloatingPointWord = NumberToWords(beforeFloatingPoint) + " " + (beforeFloatingPoint > 1 ? mainAmountType : mainAmountType.slice(0,-1));
+    var afterFloatingPoint = parseInt(doubleNumber.toString().includes('.') ? doubleNumber.toString().split('.')[1] : "0");
+    var afterFloatingPointWord = SmallNumberToWord(afterFloatingPoint, "") + " " + decimalAmountType + " only.";
+    if (afterFloatingPoint > 0) {
+        return beforeFloatingPointWord + " and " + afterFloatingPointWord;
+    }
+    else {
+        return beforeFloatingPointWord + " only";
+    }
+}
+function NumberToWords(number) {
+    if (number == 0)
+        return "zero";
+    if (number < 0)
+        return "minus " + NumberToWords(Math.abs(number));
+    var words = "";
+    if (number> 1000000000 && number / 1000000000 > 0) {
+        words += NumberToWords(Math.floor(number / 1000000000)) + " billion ";
+        number %= 1000000000;
+    }
+    if (number> 1000000 && number / 1000000 > 0) {
+        words += NumberToWords(Math.floor(number / 1000000)) + " million ";
+        number %= 1000000;
+    }
+    if (number> 1000 && number / 1000 > 0) {
+        words += NumberToWords(Math.floor(number / 1000)) + " thousand ";
+        number %= 1000;
+    }
+    if (number> 100 && number / 100 > 0) {
+        words += NumberToWords(Math.floor(number / 100)) + " hundred ";
+        number %= 100;
+    }
+    words = SmallNumberToWord(number, words);
+    return words;
+}
+
+function SmallNumberToWord(number, words) {
+    if (number <= 0) return words;
+    if (words != "")
+        words += "";
+    var unitsMap = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+    var tensMap = ["zero", "ten", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+    if (number < 20)
+        words += unitsMap[number];
+    else {
+        words += tensMap[Math.floor(number / 10)];
+        if ((number % 10) > 0)
+            words += " " + unitsMap[number % 10];
+    }
+    return words;
+}
+</script>
+</head>
+<body>
+
+<h2>Convert number to words</h2>
+<p id="p1">paragraph1: 1.99</p>
+<p id="p2">paragraph2: 999.99</p>
+<button>Click me to convert number to words </button>
+</body>
+</html>
