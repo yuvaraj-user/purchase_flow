@@ -24,6 +24,21 @@ $Purchaser_Code = $selector_arr1['Purchaser'];
 $Recommender_Code = $selector_arr1['Recommender'];
 $Plant = $selector_arr1['Plant'];
 
+$saved_quotation_sql = "SELECT * FROM Tb_Vendor_Selection WHERE Request_ID = '".$request_id."'";
+$saved_quotation_exec = sqlsrv_query($conn, $saved_quotation_sql, array(), array("Scrollable" => 'static'));
+$saved_count = sqlsrv_num_rows($saved_quotation_exec);
+$saved_data = array();
+while($saved_quotation_res = sqlsrv_fetch_array($saved_quotation_exec,SQLSRV_FETCH_ASSOC)) {
+	$saved_data[] = $saved_quotation_res;
+}
+
+$first_preference_quotation_value = '';
+foreach ($saved_data as $key => $value) {
+	if($value['Requester_Selection'] == 1) {
+		$first_preference_quotation_value = $value['Value_Of'];
+	}
+}
+
 
 	// total,discount,packageamount display query
 	$discount_charges_qry = sqlsrv_query($conn, "SELECT * FROM Tb_Recommender WHERE Request_Id = '$request_id'");
@@ -79,6 +94,18 @@ $Plant = $selector_arr1['Plant'];
             position: absolute;
             left: 5px
         }
+
+        .display_section {
+            cursor: pointer;
+        }
+
+        .preview_icon {
+            display: none;
+            position: absolute;
+            top: 23%;
+            left: 42%;
+            font-size: 20px;
+        }
         </style>
 
     </head>
@@ -130,6 +157,13 @@ $Plant = $selector_arr1['Plant'];
 							 <div class="col-sm-6">
                                 <div class="float-end d-none d-sm-block">
 								     <h4 class="">Request ID : <?php echo $request_id ?></h4>
+									 <?php
+								     $po_creator_sql = sqlsrv_query($conn, "SELECT TOP 1 Tb_Request.EMP_ID,Tb_Request.Plant,Tb_Request_Items.MaterialGroup from Tb_Request 
+										left join Tb_Request_Items ON Tb_Request_Items.Request_ID = Tb_Request.Request_ID
+										where Tb_Request.Request_ID = '$request_id'");
+									  $po_creator = sqlsrv_fetch_array($po_creator_sql);
+
+								     ?>
                                 </div>
                              </div>
                          </div>
@@ -146,7 +180,20 @@ $Plant = $selector_arr1['Plant'];
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-body">
+                                        	<?php 
+                                                $plant_sql = "SELECT Plant_Name FROM Plant_Master_PO WHERE Plant_Code = '".$po_creator['Plant']."'";
+                                                $plant_sql_exec =  sqlsrv_query($conn,$plant_sql);
+                                                $plant_detail = sqlsrv_fetch_array($plant_sql_exec);
+
+                                            ?>
+                                            <h1 class="badge bg-success" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
+
                                             <form method="POST" enctype="multipart/form-data">
+                                            	 <input type="hidden" id="po_creator_id" value="<?php echo $po_creator['EMP_ID']; ?>">
+											
+			                                     <input type="hidden" id="po_plant" value="<?php echo $po_creator['Plant']; ?>">
+			                                     <input type="hidden" id="po_mat_group" value="<?php echo $po_creator['MaterialGroup']; ?>">
+											     <input type="hidden" id="first_pref_quote_value" value="<?php echo $first_preference_quotation_value; ?>">
                                                 <div class="table-wrapper">
                                                     <table id="busDataTable" class="data">
                                                         <tbody class="results" id="rone">
@@ -506,31 +553,62 @@ $Plant = $selector_arr1['Plant'];
 															</th>
 															<?php
 																	$view16 = sqlsrv_query($conn, "SELECT * FROM Tb_Recommender WHERE Request_Id = '$request_id' ");
+																	$rindex = 1;
 																	while ($view_query16 = sqlsrv_fetch_array($view16)) {
+																$file_extension = explode('.', $view_query16['Attachment'])[1];
+
 															?>
-															<td><input type="text" class="form-control" readonly value="<?php echo $view_query16['Attachment'] ?>"
+															<td>
+																<input type="text" class="form-control" readonly value="<?php echo $view_query16['Attachment'] ?>"
                                                                     data-bs-toggle="modal" data-bs-target=".bs-example-modal-center<?php echo $view_query16['id'] ?>">
-																<div class="modal fade bs-example-modal-center<?php echo $view_query16['id'] ?>" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
-                                                                    <div class="modal-dialog modal-dialog-centered">
-                                                                        <div class="modal-content">
-                                                                            <div class="modal-header">
-                                                                                <h5 class="modal-title mt-0">Attachment</h5>
-                                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                                                                                                    
-                                                                                </button>
-                                                                            </div>
-                                                                            <div class="modal-body">
-																			<iframe src="file/<?php echo $view_query16['Attachment'] ?>"
-																			style="width: 100%;height: auto;" frameborder="0"></iframe>
-                                                                            </div>
-                                                                            <div class="modal-footer">
-                                                                                <button type="button" class="btn btn-danger waves-effect waves-light btn-sm" data-bs-dismiss="modal" aria-label="Close">Close</button>
-                                                                            </div>
-                                                                        </div><!-- /.modal-content -->
-                                                                    </div><!-- /.modal-dialog -->
-                                                                </div><!-- /.modal -->
+
+																<!-- file preview modal -->
+																<div class="modal fade" id="file_preview_modal_<?php echo $rindex; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+																  <div class="modal-dialog modal-lg">
+																    <div class="modal-content">
+																      <div class="modal-header">
+																        <h1 class="modal-title fs-5" id="exampleModalLabel">File Preview</h1>
+																        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+																      </div>
+																      <div class="modal-body">
+																				<img class="preview_file_img_<?php echo $rindex; ?> preview_image" src="" alt="your image" width="100%" style="display: block;">
+
+																			 <iframe class="preview_file_pdf_<?php echo $rindex; ?> preview_pdf" src=""
+                                                                                    style="width: 100%;height: 900px;display: block;"
+                                                                                    frameborder="0">
+                                                                              </iframe>
+
+																      </div>
+																      <div class="modal-footer">
+																        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+																      </div>
+																    </div>
+																  </div>
+																</div>
+																<!-- file preview modal end -->
+
+																<div class="row mt-2 display_section p-3" id="file_display_section_<?php echo $rindex; ?>" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
+													                	<?php 
+													                	$multi_files = explode(',',$view_query16['Attachment']);
+
+													                	foreach ($multi_files as $key => $value) {
+																			$file_extension = explode('.', $value)[1];
+
+														                	if($file_extension == 'pdf') { ?>
+																				<div class="col-md-3 h-50 mt-2">
+																					<img src="https://play-lh.googleusercontent.com/IkcyuPcrQlDsv62dwGqteL_0K_Rt2BUTXfV3_vR4VmAGo-WSCfT2FgHdCBUsMw3TPGU"  class="multi_preview" style="width:100px;height: 100px;" data-filetype="pdf" data-id="<?php echo $rindex; ?>">
+																					<input type="hidden" id="pdf_input<?php echo $rindex; ?>" value="file/<?php echo $value; ?>">
+																				</div>	
+														                	<?php } else { ?>
+														                		<div class="col-md-3 h-50 mt-2">
+														                			<i class="fa fa-eye text-primary preview_icon"></i>
+																					<img src="file/<?php echo $value; ?>" class="multi_preview" data-filetype="img" style="width:100px;height: 100px;" data-id="<?php echo $rindex; ?>">
+																				</div>
+																			<?php }} ?>
+                                                				</div>
+
 															</td>
-															<?php } ?>
+															<?php $rindex++; } ?>
 																<?php
 															}
 															?>
@@ -540,6 +618,26 @@ $Plant = $selector_arr1['Plant'];
                                             
                                                     </table>
                                                 </div>
+                                                
+                                                <div class="row" id="involved_persons_div" style="display:none;">
+                                                    <div class="col-md-5">
+                                                        <h4>Involved Persons</h4>
+                                                        <table class="table table-striped table-bordered table-hover" >
+                                                          <thead>
+                                                            <tr>
+                                                              <th>Purchaser</th>
+                                                              <th>Recommender</th>
+                                                              <th>Approver</th>
+                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
+                                                            </tr>
+                                                          </thead>
+                                                          <tbody id="involved_persons_tbody">
+
+                                                          </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+
                                             </form>
                                         </div>
                                     </div>
@@ -576,6 +674,90 @@ $Plant = $selector_arr1['Plant'];
         <script src="assets/js/pages/form-advanced.init.js"></script>
 
         <script src="assets/js/app.js"></script>
+
+           	<script type="text/javascript">
+   				$(document).ready(function() {
+					var first_pref_quote_value = $('#first_pref_quote_value').val();
+					var request_id = '<?php echo $request_id ?>';
+					var emp_id = '<?php echo $Employee_Id ?>';
+
+					if(first_pref_quote_value != '') {
+						get_involved_persons(first_pref_quote_value);
+						get_mapping_details(request_id,first_pref_quote_value,emp_id);
+					}
+
+				});
+
+		        function get_involved_persons(value)
+		        {
+		        	var po_creator_id = $('#po_creator_id').val();
+		        	var Plant = $('#po_plant').val();
+		        	var MaterialGroup = $('#po_mat_group').val();
+		        	var value = value;
+
+		            $.ajax({
+		                url: "common_ajax.php",
+		                type: "POST",
+		                data: {
+		                    Plant : Plant,
+		                    MaterialGroup : MaterialGroup,
+		                    Action : 'get_involved_persons',
+		                    po_creator_id : po_creator_id,
+		                    value : value
+		                },
+		                cache: false,
+		                dataType: 'json',                        
+		                beforeSend:function(){
+		                    // $('#ajax-preloader').show();
+		                },
+		                success: function (result) {
+  							$('.inv_fin_appr').hide();
+
+                            var table_data = '';
+                            if(result.length > 0) {
+                                table_data = `<tr>
+                                <td>${ (result[0].purchaser_name != null) ? result[0].purchaser_name : '-' }</td>
+                                <td>${ (result[0].recommendor_name != null) ? result[0].recommendor_name : '-' }</td>
+                                <td>${ (result[0].approver_name != null) ? result[0].approver_name : '-' }</td>`;
+
+                                if(result[0].approver2_name != null) {
+                                    table_data += `<td>${ (result[0].approver2_name != null) ? result[0].approver2_name : '-' }</td>`;
+                                    $('.inv_fin_appr').show();
+                                }
+
+                                table_data += `</tr>`; 
+
+                            }
+                            $('#involved_persons_tbody').html(table_data);  
+                            $('#involved_persons_div').show();                                 
+		                },
+		                complete:function(){
+		                    // $('#ajax-preloader').hide();
+		                }
+		            });
+		        }
+
+   		$(document).on('click','.multi_preview',function(){
+            var file_type = $(this).data('filetype');
+            var src = $(this).attr('src');
+            var row_id = $(this).data('id');
+
+
+             if(file_type == 'pdf') {
+                // var src = $('#pdf_input'+row_id).val();
+                var src = $(this).closest('div').find('#pdf_input'+row_id).val();
+                $('.preview_file_pdf_'+row_id).attr('src', src+'#toolbar=0');
+                $('.preview_file_img_'+row_id).hide();
+                $('.preview_file_pdf_'+row_id).show();
+             } else {
+                $('.preview_file_img_'+row_id).attr('src', src);
+                $('.preview_file_pdf_'+row_id).hide();
+                $('.preview_file_img_'+row_id).show();
+             } 
+            $('#file_preview_modal_'+row_id).modal('show');
+
+        });
+   		</script>
         <!-- CUSTOM SCRIPT -->
         
         <!-- CUSTOM SCRIPT END -->

@@ -419,6 +419,18 @@ input[type=number]::-webkit-outer-spin-button {
         .preview_image,.preview_pdf {
             display: none;
         }
+
+        .display_section {
+            cursor: pointer;
+        }
+
+        .preview_icon {
+            display: none;
+            position: absolute;
+            top: 23%;
+            left: 42%;
+            font-size: 20px;
+        }
         </style>
 
     </head>
@@ -497,6 +509,14 @@ input[type=number]::-webkit-outer-spin-button {
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-body">
+                                            <?php 
+                                                $plant_sql = "SELECT Plant_Name FROM Plant_Master_PO WHERE Plant_Code = '".$po_creator['Plant']."'";
+                                                $plant_sql_exec =  sqlsrv_query($conn,$plant_sql);
+                                                $plant_detail = sqlsrv_fetch_array($plant_sql_exec);
+
+                                            ?>
+                                            <h1 class="badge bg-success" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
+                                            
                                             <form method="POST" enctype="multipart/form-data" id="quotation_form">
                                                  <input type="hidden" id="mapping_id" name="mapping_id">
                                                  <input type="hidden" id="po_creator_id" value="<?php echo $po_creator['EMP_ID']; ?>">
@@ -735,14 +755,14 @@ input[type=number]::-webkit-outer-spin-button {
                                                                                     <input type="number" min="0"
                                                                                         class="form-control vendor_price_<?php echo $i;?> price<?php echo $array_ind; ?> required_for_valid material_price vendor<?php echo $tbl_index;?>_price_material<?php echo $inner_index;?>" style="width: 75px;"
                                                                                         name="Price[]" value="<?php echo $quantity_sql_res['Price'] ?>"
-                                                                                        placeholder="Enter Price" step=".01"  required error-msg='Price is mandatory.' data-rowid="<?php echo $tbl_index;?>">
+                                                                                        placeholder="Enter Price" step=".01"  required error-msg='Price is mandatory.' data-rowid="<?php echo $tbl_index;?>" readonly> 
                                                                                     <span class="error_msg text-danger"></span>
                                                                                 </td>
                                                                                 <td>
                                                                                     <input type="number" min="0"
                                                                                         class="form-control vendor_gst_percent_<?php echo $tbl_index;?> gst_percent" style="width: 75px;"
                                                                                         name="gst_percent[]" 
-                                                                                        placeholder="Enter GST" step=".01"  required error-msg='Price is mandatory.' data-rowid="<?php echo $tbl_index;?>" id="vendor<?php echo $tbl_index;?>_gst_percentage_material<?php echo $inner_index;?>" value="<?php echo $quantity_sql_res['gst_percentage']; ?>">
+                                                                                        placeholder="Enter GST" step=".01"  required error-msg='Price is mandatory.' data-rowid="<?php echo $tbl_index;?>" id="vendor<?php echo $tbl_index;?>_gst_percentage_material<?php echo $inner_index;?>" value="<?php echo $quantity_sql_res['gst_percentage']; ?>" readonly>
                                                                                     <span class="error_msg text-danger"></span>
                                                                                 </td>
 
@@ -750,7 +770,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                                                     <input type="number" min="0"
                                                                                         class="form-control vendor_discount_percent_<?php echo $tbl_index;?> discount_percent" style="width: 75px;"
                                                                                         name="discount_percent[]"
-                                                                                        placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="<?php echo $tbl_index;?>" id="vendor<?php echo $tbl_index;?>_discount_percentage_material<?php echo $inner_index;?>" value="<?php echo $quantity_sql_res['discount_percentage']; ?>">
+                                                                                        placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="<?php echo $tbl_index;?>" id="vendor<?php echo $tbl_index;?>_discount_percentage_material<?php echo $inner_index;?>" value="<?php echo $quantity_sql_res['discount_percentage']; ?>" readonly>
                                                                                     <span class="error_msg text-danger"></span>
                                                                                 </td>
                                                                                 <td>
@@ -788,7 +808,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                             $freight_index = 1;
                                                             for ($i=0; $i < $saved_count; $i++) { ?>
                                                             <td>
-                                                                <input type="number" min="0" class="form-control  txtCal<?php echo ($i > 0) ? $i : '' ?>" name="Fright_Charges[]" placeholder="Enter Freight Charges" value="<?php echo $saved_data[$i]['Fright_Charges']; ?>" id="freight_charge_<?php echo $freight_index;?>" data-id="<?php echo $freight_index;?>">
+                                                                <input type="number" min="0" class="form-control  txtCal<?php echo ($i > 0) ? $i : '' ?>" name="Fright_Charges[]" placeholder="Enter Freight Charges" value="<?php echo $saved_data[$i]['Fright_Charges']; ?>" id="freight_charge_<?php echo $freight_index;?>" data-id="<?php echo $freight_index;?>" readonly>
                                                             </td>
                                                             <?php $freight_index++; } ?>
                                                         </tr>
@@ -798,7 +818,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                             $insurance_index = 1;
                                                             for ($i=0; $i < $saved_count; $i++) { ?>
                                                             <td>
-                                                                <input type="number" min="0" class="form-control  txtCal<?php echo ($i > 0) ? $i : '' ?>" name="Insurance_Details[]" placeholder="Enter Insurance Details"  value="<?php echo $saved_data[$i]['Insurance_Details']; ?>" id="insurance_amount_<?php echo $insurance_index;?>" data-id="<?php echo $insurance_index;?>">
+                                                                <input type="number" min="0" class="form-control  txtCal<?php echo ($i > 0) ? $i : '' ?>" name="Insurance_Details[]" placeholder="Enter Insurance Details"  value="<?php echo $saved_data[$i]['Insurance_Details']; ?>" id="insurance_amount_<?php echo $insurance_index;?>" data-id="<?php echo $insurance_index;?>" readonly>
                                                             </td>
                                                             <?php $insurance_index++; } ?>
                                                     
@@ -811,7 +831,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                             <td>
                                                                 <input type="number" min="0" class="form-control package_calc" 
                                                                     name="package_percentage[]"
-                                                                    placeholder="Enter Packaging percentage" id="package_percentage_<?php echo $pack_index; ?>" data-id="<?php echo $pack_index; ?>" data-type="percent" value="<?php echo $saved_data[$i]['package_percentage']; ?>">
+                                                                    placeholder="Enter Packaging percentage" id="package_percentage_<?php echo $pack_index; ?>" data-id="<?php echo $pack_index; ?>" data-type="percent" value="<?php echo $saved_data[$i]['package_percentage']; ?>" readonly>
                                                             </td>
                                                             <?php $pack_index++; } ?>
                                                         </tr>
@@ -822,7 +842,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                             for ($i=0; $i < $saved_count; $i++) { ?>
                                                             <td><input type="number" min="0" class="form-control package_calc" 
                                                                     name="package_amount[]"
-                                                                    placeholder="Enter Packaging Charges" id="package_amount_<?php echo $pack_amt_index; ?>" data-id="<?php echo $pack_amt_index; ?>" data-type="amount" value="<?php echo $saved_data[$i]['package_amount']; ?>">
+                                                                    placeholder="Enter Packaging Charges" id="package_amount_<?php echo $pack_amt_index; ?>" data-id="<?php echo $pack_amt_index; ?>" data-type="amount" value="<?php echo $saved_data[$i]['package_amount']; ?>" readonly>
                                                             </td>
                                                             <?php $pack_amt_index++; } ?>
                                                         </tr>
@@ -897,7 +917,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                             <?php 
                                                             for ($i=0; $i < $saved_count; $i++) { ?>
                                                             <td>
-                                                                <input type="text" class="form-control" name="Warrenty[]" placeholder="Enter Warrenty" value="<?php echo $saved_data[$i]['Warrenty']; ?>">
+                                                                <input type="text" class="form-control" name="Warrenty[]" placeholder="Enter Warrenty" value="<?php echo $saved_data[$i]['Warrenty']; ?>" readonly>
                                                             </td>
                                                             <?php } ?>
                                                         </tr>
@@ -970,13 +990,14 @@ input[type=number]::-webkit-outer-spin-button {
                                                             <td>
                                                                 <div class="d-flex align-items-center">
                                                                     <input class="form-control file-upload-input" type="file" name="Attachment[]" placeholder="" id="formFile" onchange="readURL(this)" data-id="<?php echo $rindex; ?>" accept="image/*,application/pdf" value="<?php echo $saved_data[$i]['Attachment']; ?>">
-                                                                    <span class="ms-2 file_view" data-id="<?php echo $rindex; ?>" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-eye text-primary"></i></span>
+                                                                    <!-- <span class="ms-2 file_view" data-id="<?php echo $rindex; ?>" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-eye text-primary"></i></span> -->
                                                                     <span class="ms-2 file_remove" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-window-close text-danger"></i></span>
                                                                 </div>
 
                                                                 <?php
                                                                 $file_extension = explode('.', $saved_data[$i]['Attachment'])[1];
                                                                 ?>
+
 
                                                                 <!-- file preview modal -->
                                                                 <div class="modal fade" id="file_preview_modal_<?php echo $rindex; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -987,16 +1008,12 @@ input[type=number]::-webkit-outer-spin-button {
                                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                                       </div>
                                                                       <div class="modal-body">
-                                                                            <?php if($file_extension != 'pdf') { ?>
-                                                                                <img class="preview_file_img_<?php echo $rindex; ?> preview_image" src="file/<?php echo $saved_data[$i]['Attachment']; ?>" alt="your image" width="100%" style="display: block;">
-                                                                            <?php } ?>
+                                                                                <img class="preview_file_img_<?php echo $rindex; ?> preview_image" src="" alt="your image" width="100%" style="display: block;">
 
-                                                                            <?php if($file_extension == 'pdf') { ?>
-                                                                             <iframe class="preview_file_pdf_<?php echo $rindex; ?> preview_pdf" src="file/<?php echo $saved_data[$i]['Attachment']; ?>#toolbar=0"
-                                                                                    style="width: 100%;height: 500px;display: block;"
+                                                                             <iframe class="preview_file_pdf_<?php echo $rindex; ?> preview_pdf" src=""
+                                                                                    style="width: 100%;height: 900px;display: block;"
                                                                                     frameborder="0">
                                                                               </iframe>
-                                                                            <?php } ?>
 
                                                                       </div>
                                                                       <div class="modal-footer">
@@ -1006,6 +1023,27 @@ input[type=number]::-webkit-outer-spin-button {
                                                                   </div>
                                                                 </div>
                                                                 <!-- file preview modal end -->
+
+                                                                <div class="row mt-2 display_section p-3" id="file_display_section_<?php echo $rindex; ?>" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
+                                                                        <?php 
+                                                                        $multi_files = explode(',',$saved_data[$i]['Attachment']);
+
+                                                                        foreach ($multi_files as $key => $value) {
+                                                                            $file_extension = explode('.', $value)[1];
+
+                                                                            if($file_extension == 'pdf') { ?>
+                                                                                <div class="col-md-3 h-50 mt-2">
+                                                                                    <img src="https://play-lh.googleusercontent.com/IkcyuPcrQlDsv62dwGqteL_0K_Rt2BUTXfV3_vR4VmAGo-WSCfT2FgHdCBUsMw3TPGU"  class="multi_preview" style="width:100px;height: 100px;" data-filetype="pdf" data-id="<?php echo $rindex; ?>">
+                                                                                    <input type="hidden" id="pdf_input<?php echo $rindex; ?>" value="file/<?php echo $value; ?>">
+                                                                                </div>  
+                                                                            <?php } else { ?>
+                                                                                <div class="col-md-3 h-50 mt-2">
+                                                                                    <i class="fa fa-eye text-primary preview_icon"></i>
+                                                                                    <img src="file/<?php echo $value; ?>" class="multi_preview" data-filetype="img" style="width:100px;height: 100px;" data-id="<?php echo $rindex; ?>">
+                                                                                </div>
+                                                                            <?php }} ?>
+                                                                            
+                                                                </div>
 
                                                             </td>
                                                             <?php $rindex++; } ?>
@@ -1037,12 +1075,18 @@ input[type=number]::-webkit-outer-spin-button {
 
                                                 <div class="d-flex gap-2 col-2 mx-auto" style="padding: 35px 0px 0px 0px;">
                                                     <input type="hidden" name="save">
-                                                    <button class="btn btn-success mb-4 btn-sm" id="quotation_save" type="button" tabindex="-1" name="save_btn" >
-                                                        <span class="btn-label">
-                                                            <i class="fa fa-bookmark"></i>
-                                                        </span>
-                                                        Submit
-                                                    </button>
+                                                    <?php if($request_details['is_sendbacked'] != 1) { ?>
+                                                        <button class="btn btn-success mb-4 btn-sm" id="quotation_save" type="button" tabindex="-1" name="save_btn" >
+                                                            <span class="btn-label">
+                                                                <i class="fa fa-bookmark"></i>
+                                                            </span>
+                                                            Submit
+                                                        </button>
+                                                    <?php } else { ?>
+                                                        <button class="btn btn-warning mb-2 me-4 btn-sm" type="button" id="send_back_btn">
+                                                            Send Back
+                                                        </button>
+                                                    <?php } ?>
                                                 </div>
                                             </form>
                                         </div>
@@ -1058,6 +1102,28 @@ input[type=number]::-webkit-outer-spin-button {
                 <!-- End Page-content -->
 
               
+                <!-- Modal -->
+                <div class="modal fade" id="sendback_new_modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">SendBack</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="col-md-12 form-group">
+                            <label for="Recommender_sendback_remark">Remark<span class="text-danger"> *</span></label>
+                            <textarea class="form-control" name="Recommender_sendback_remark" id="Recommender_sendback_remark" rows="5" cols="5"></textarea>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="send_back_remark_submit">Send</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
                 
                 <?php include('footer.php') ?>
             </div>
@@ -2311,7 +2377,80 @@ input[type=number]::-webkit-outer-spin-button {
                     $('.valueof'+rowid).val(net_amount);
 
                 }
+
+                $(document).on('click','.multi_preview',function(){
+                    var file_type = $(this).data('filetype');
+                    var src = $(this).attr('src');
+                    var row_id = $(this).data('id');
+
+
+                     if(file_type == 'pdf') {
+                        // var src = $('#pdf_input'+row_id).val();
+                        var src = $(this).closest('div').find('#pdf_input'+row_id).val();
+                        $('.preview_file_pdf_'+row_id).attr('src', src+'#toolbar=0');
+                        $('.preview_file_img_'+row_id).hide();
+                        $('.preview_file_pdf_'+row_id).show();
+                     } else {
+                        $('.preview_file_img_'+row_id).attr('src', src);
+                        $('.preview_file_pdf_'+row_id).hide();
+                        $('.preview_file_img_'+row_id).show();
+                     } 
+                    $('#file_preview_modal_'+row_id).modal('show');
+
+                });
                 
+
+                $(document).on('click','#send_back_btn',function(){
+                    $('#sendback_new_modal').modal('show');
+                });
+
+                function Alert_Msg(Msg,Type){
+                    swal({
+                      title: Msg,
+                      icon: Type,
+                    });
+                }
+
+                $(document).on('click','#send_back_remark_submit',function(){
+                    let remark        = $('#Recommender_sendback_remark').val();
+                    let sendback_from = 'Recommender';
+                    let request_id    = $('#r_id').val(); 
+                    $('#sendback_new_modal').modal('hide');
+
+
+                    $.ajax({
+                        url: "common_ajax.php",
+                        type: "POST",
+                        data: {
+                            Action : 'purchase_request_sendback',
+                            sendback_from : sendback_from,
+                            remark : remark,
+                            request_id : request_id,
+                        },
+                        cache: false,
+                        dataType: 'json',                        
+                        beforeSend:function(){
+                            $('#ajax-preloader').show();
+                        },
+                        success: function (result) {
+                            if(result.status == 200) {
+                                // Alert_Msg(result.message,'success');
+                                swal({
+                                  title: result.message,
+                                  icon: 'success',
+                                }).then(() => {
+                                     window.location.href = 'show_recommender.php';
+                                });
+
+                            } else {
+                                Alert_Msg(result.message,'error');
+                            }                               
+                        },  
+                        complete:function(){
+                            $('#ajax-preloader').hide();
+                        }
+                    });
+                });
                 
         </script>
         <!-- CUSTOM SCRIPT END -->

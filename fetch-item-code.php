@@ -20,13 +20,19 @@ if($request_type_code == 'ZSER') {
 	$result = sqlsrv_query($conn, "SELECT MaterialMaster.Plant,MaterialMaster.ItemCode,MaterialMaster.ItemDescription,
 	MaterialMaster.MaterialGroup,Tb_Master_Emp.Material_Group FROM MaterialMaster 
 	INNER JOIN (SELECT DISTINCT Material_Group,PO_creator_Release_Codes FROM Tb_Master_Emp) as Tb_Master_Emp ON MaterialMaster.MaterialGroup = Tb_Master_Emp.Material_Group 
-	WHERE MaterialMaster.StorageLocation = '$Storage_Location' AND MaterialMaster.Plant = '$Plant' AND MaterialMaster.MaterialGroup = '$MaterialGroup' 
+	WHERE  MaterialMaster.Plant = '$Plant' AND MaterialMaster.MaterialGroup = '$MaterialGroup' 
 	-- AND Tb_Master_Emp.PO_creator_Release_Codes = '$employeee' 
 	GROUP BY MaterialMaster.Plant,MaterialMaster.ItemCode,MaterialMaster.ItemDescription,MaterialMaster.MaterialGroup,
 	Tb_Master_Emp.Material_Group");
 }
 
-
+/*SELECT MaterialMaster.Plant,MaterialMaster.ItemCode,MaterialMaster.ItemDescription,
+	MaterialMaster.MaterialGroup,Tb_Master_Emp.Material_Group FROM MaterialMaster 
+	INNER JOIN (SELECT DISTINCT Material_Group,PO_creator_Release_Codes FROM Tb_Master_Emp) as Tb_Master_Emp ON MaterialMaster.MaterialGroup = Tb_Master_Emp.Material_Group 
+	WHERE MaterialMaster.StorageLocation = '$Storage_Location' AND MaterialMaster.Plant = '$Plant' AND MaterialMaster.MaterialGroup = '$MaterialGroup' 
+	-- AND Tb_Master_Emp.PO_creator_Release_Codes = '$employeee' 
+	GROUP BY MaterialMaster.Plant,MaterialMaster.ItemCode,MaterialMaster.ItemDescription,MaterialMaster.MaterialGroup,
+	Tb_Master_Emp.Material_Group*/
 
 ?>
 <option value="">Select Item_Code</option>

@@ -51,6 +51,16 @@ if (isset($_POST["save"])) {
     $vendor_exist_query_exec = sqlsrv_query($conn, $vendor_exist_query,array(),array("Scrollable" => 'static'));
 	$vendor_exist_count = sqlsrv_num_rows($vendor_exist_query_exec);
 	if($vendor_exist_count > 0) {
+		$findex = 1;
+        while($row = sqlsrv_fetch_array($vendor_exist_query_exec,SQLSRV_FETCH_ASSOC)) {
+            if($row['Attachment'] != '' && $_FILES["Attachment_".$findex]["name"][0] != '') {
+                foreach (explode(',',$row['Attachment']) as $akey => $avalue) {
+                    unlink('file/'.$avalue);
+                }
+            }
+
+            $findex++;  
+        }
 		// delete already saved quotation vendor detail 
 		sqlsrv_query($conn, "DELETE FROM Tb_Vendor_Selection where Request_Id = '".$request_id."'");		
 	}
@@ -111,25 +121,33 @@ if (isset($_POST["save"])) {
 		$package_percentage = $_POST['package_percentage'][$i];
 		
 		$fil = '';
-		if($_FILES["Attachment"]["name"][$i] != '') {
-			$filename = $request_id.'_Vendor'.$file_index.'_';
-			$extension = pathinfo($_FILES["Attachment"]["name"][$i], PATHINFO_EXTENSION);
-			$fil = $filename.strtotime(date('h:i:s')).'.'.$extension;
+        if($_FILES["Attachment_".$file_index]["name"][0] != '') {
+            $file_count = COUNT($_FILES["Attachment_".$file_index]["name"]);
+            if($file_count > 0) {
+                $separate_findex = 1;
+                    for($j=0;$j < $file_count;$j++) {
+                        $extension = pathinfo($_FILES["Attachment_".$file_index]["name"][$j], PATHINFO_EXTENSION);
+                        $allowed = array("jpg","jpeg", "png", "gif", "pdf", "wmv", "pdf", "zip");
+                        if (in_array($extension, $allowed)) {
+                            $filename = $request_id.'_Vendor'.$file_index.'_file'.$separate_findex.'_';
 
-			$tmp_name = $_FILES["Attachment"]["tmp_name"][$i];
-			$path = "file/" . $fil;
-			$file1 = explode(".", $fil);
-			if( !isset($file1[1]) ){
-	            $file1[1]=0;
-	        }
-			$ext = $file1[1];
-			$allowed = array("jpg", "png", "gif", "pdf", "wmv", "pdf", "zip");
-			if (in_array($ext, $allowed)) {
-				move_uploaded_file($tmp_name, $path);
-			}
-		} elseif(COUNT($saved_data) > 0) {
-			$fil = $saved_data[$i]['Attachment']; 
-		}
+                            $separator = ($file_count <= $j+1) ? '' : ','; 
+                            $fil .= $filename.strtotime(date('h:i:s')).'.'.$extension.$separator;
+
+                            $fil_save = $filename.strtotime(date('h:i:s')).'.'.$extension;
+
+
+                            $tmp_name = $_FILES["Attachment_".$file_index]["tmp_name"][$j];
+                            $path = "file/" . $fil_save;
+
+                            move_uploaded_file($tmp_name, $path);
+                        }
+                        $separate_findex++;
+                    }
+            }
+        } elseif(COUNT($saved_data) > 0) {
+            $fil = $saved_data[$i]['Attachment']; 
+        }
 
 
 
@@ -497,6 +515,14 @@ input[type=number]::-webkit-outer-spin-button {
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-body">
+                                        	<?php 
+                                                $plant_sql = "SELECT Plant_Name FROM Plant_Master_PO WHERE Plant_Code = '".$po_creator['Plant']."'";
+                                                $plant_sql_exec =  sqlsrv_query($conn,$plant_sql);
+                                                $plant_detail = sqlsrv_fetch_array($plant_sql_exec);
+
+                                            ?>
+                                            <h1 class="badge bg-success" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
+
                                             <form method="POST" enctype="multipart/form-data" id="quotation_form">
 			                                     <input type="hidden" id="mapping_id" name="mapping_id">
 			                                     <input type="hidden" id="po_creator_id" value="<?php echo $po_creator['EMP_ID']; ?>">
@@ -970,42 +996,59 @@ input[type=number]::-webkit-outer-spin-button {
 															<td>
 																<div class="d-flex align-items-center">
 																	<input class="form-control file-upload-input" type="file" name="Attachment[]" placeholder="" id="formFile" onchange="readURL(this)" data-id="<?php echo $rindex; ?>" accept="image/*,application/pdf" value="<?php echo $saved_data[$i]['Attachment']; ?>">
-																	<span class="ms-2 file_view" data-id="<?php echo $rindex; ?>" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-eye text-primary"></i></span>
+																	<!-- <span class="ms-2 file_view" data-id="<?php echo $rindex; ?>" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-eye text-primary"></i></span> -->
 																	<span class="ms-2 file_remove" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-window-close text-danger"></i></span>
 																</div>
 
 																<?php
 																$file_extension = explode('.', $saved_data[$i]['Attachment'])[1];
 																?>
+                                                                <!-- file preview modal -->
+                                                                <div class="modal fade" id="file_preview_modal_<?php echo $rindex; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                  <div class="modal-dialog modal-lg">
+                                                                    <div class="modal-content">
+                                                                      <div class="modal-header">
+                                                                        <h1 class="modal-title fs-5" id="exampleModalLabel">File Preview</h1>
+                                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                      </div>
+                                                                      <div class="modal-body">
+                                                                                <img class="preview_file_img_<?php echo $rindex; ?> preview_image" src="" alt="your image" width="100%" style="display: block;">
 
-																<!-- file preview modal -->
-																<div class="modal fade" id="file_preview_modal_<?php echo $rindex; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-																  <div class="modal-dialog modal-lg">
-																    <div class="modal-content">
-																      <div class="modal-header">
-																        <h1 class="modal-title fs-5" id="exampleModalLabel">File Preview</h1>
-																        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-																      </div>
-																      <div class="modal-body">
-																      		<?php if($file_extension != 'pdf') { ?>
-																				<img class="preview_file_img_<?php echo $rindex; ?> preview_image" src="file/<?php echo $saved_data[$i]['Attachment']; ?>" alt="your image" width="100%" style="display: block;">
-																      		<?php } ?>
-
-																      		<?php if($file_extension == 'pdf') { ?>
-																			 <iframe class="preview_file_pdf_<?php echo $rindex; ?> preview_pdf" src="file/<?php echo $saved_data[$i]['Attachment']; ?>#toolbar=0"
-                                                                                    style="width: 100%;height: 500px;display: block;"
+                                                                             <iframe class="preview_file_pdf_<?php echo $rindex; ?> preview_pdf" src=""
+                                                                                    style="width: 100%;height: 900px;display: block;"
                                                                                     frameborder="0">
                                                                               </iframe>
-																      		<?php } ?>
 
-																      </div>
-																      <div class="modal-footer">
-																        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-																      </div>
-																    </div>
-																  </div>
-																</div>
-																<!-- file preview modal end -->
+                                                                      </div>
+                                                                      <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                                      </div>
+                                                                    </div>
+                                                                  </div>
+                                                                </div>
+                                                                <!-- file preview modal end -->
+
+
+                                                                <div class="row mt-2 display_section p-3" id="file_display_section_<?php echo $rindex; ?>" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
+                                                                        <?php 
+                                                                        $multi_files = explode(',',$saved_data[$i]['Attachment']);
+
+                                                                        foreach ($multi_files as $key => $value) {
+                                                                            $file_extension = explode('.', $value)[1];
+
+                                                                            if($file_extension == 'pdf') { ?>
+                                                                                <div class="col-md-3 h-50 mt-2">
+                                                                                    <img src="https://play-lh.googleusercontent.com/IkcyuPcrQlDsv62dwGqteL_0K_Rt2BUTXfV3_vR4VmAGo-WSCfT2FgHdCBUsMw3TPGU"  class="multi_preview" style="width:100px;height: 100px;" data-filetype="pdf" data-id="<?php echo $rindex; ?>">
+                                                                                    <input type="hidden" id="pdf_input<?php echo $rindex; ?>" value="file/<?php echo $value; ?>">
+                                                                                </div>  
+                                                                            <?php } else { ?>
+                                                                                <div class="col-md-3 h-50 mt-2">
+                                                                                    <i class="fa fa-eye text-primary preview_icon"></i>
+                                                                                    <img src="file/<?php echo $value; ?>" class="multi_preview" data-filetype="img" style="width:100px;height: 100px;" data-id="<?php echo $rindex; ?>">
+                                                                                </div>
+                                                                            <?php }} ?>
+                                                                            
+                                                                </div>
 
 															</td>
 															<?php $rindex++; } ?>
@@ -1026,6 +1069,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                               <th>Purchaser</th>
                                                               <th>Recommender</th>
                                                               <th>Approver</th>
+                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
                                                             </tr>
                                                           </thead>
                                                           <tbody id="involved_persons_tbody">
@@ -1037,12 +1081,18 @@ input[type=number]::-webkit-outer-spin-button {
 
                                                 <div class="d-flex gap-2 col-2 mx-auto" style="padding: 35px 0px 0px 0px;">
                                                 	<input type="hidden" name="save">
+                                                    <?php if($request_details['is_sendbacked'] != 1) { ?>
                                                     <button class="btn btn-success mb-4 btn-sm" id="quotation_save" type="button" tabindex="-1" name="save_btn" >
                                                         <span class="btn-label">
                                                             <i class="fa fa-bookmark"></i>
                                                         </span>
                                                         Submit
                                                     </button>
+                                                    <?php } else { ?>
+                                                        <button class="btn btn-warning mb-2 me-4 btn-sm" type="button" id="send_back_btn">
+                                                            Send Back
+                                                        </button>
+                                                    <?php } ?>
                                                 </div>
                                             </form>
                                         </div>
@@ -1057,7 +1107,28 @@ input[type=number]::-webkit-outer-spin-button {
                 </div>
                 <!-- End Page-content -->
 
-              
+                            
+                <!-- Modal -->
+                <div class="modal fade" id="sendback_new_modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">SendBack</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="col-md-12 form-group">
+                            <label for="Recommender_sendback_remark">Remark<span class="text-danger"> *</span></label>
+                            <textarea class="form-control" name="Recommender_sendback_remark" id="Recommender_sendback_remark" rows="5" cols="5"></textarea>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="send_back_remark_submit">Send</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 
                 <?php include('footer.php') ?>
             </div>
@@ -1723,7 +1794,6 @@ input[type=number]::-webkit-outer-spin-button {
             
                     $('div').find('#pdf').append(`<td><div class="d-flex align-items-center">
 																	<input class="form-control file-upload-input" type="file" name="Attachment[]" placeholder="" id="formFile" data-id="${i}" onchange="readURL(this)"  accept="image/*,application/pdf">
-																	<span class="ms-2 file_view" data-id="${i}"><i class="fa fa-eye text-primary"></i></span>
 																	<span class="ms-2 file_remove"><i class="fa fa-window-close text-danger"></i><span>
 																</div>
 																<!-- file preview modal -->
@@ -1749,6 +1819,8 @@ input[type=number]::-webkit-outer-spin-button {
 																  </div>
 																</div>
 																<!-- file preview modal end -->
+																<div class="row mt-2 display_section p-3" id="file_display_section_${i}" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
+                                                                </div>
 																</td>`);
 
 
@@ -1909,17 +1981,25 @@ input[type=number]::-webkit-outer-spin-button {
 		                    // $('#ajax-preloader').show();
 		                },
 		                success: function (result) {
-		                    var table_data = '';
-		                    if(result.length > 0) {
-		                        table_data = `<tr>
-	                            <td>${ (result[0].purchaser_name != null) ? result[0].purchaser_name : '-' }</td>
-	                            <td>${ (result[0].recommendor_name != null) ? result[0].recommendor_name : '-' }</td>
-	                            <td>${ (result[0].approver_name != null) ? result[0].approver_name : '-' }</td>
-		                        </tr>`; 
+  							$('.inv_fin_appr').hide();
 
-		                    }
-		                    $('#involved_persons_tbody').html(table_data);  
-		                    $('#involved_persons_div').show();                                  
+                            var table_data = '';
+                            if(result.length > 0) {
+                                table_data = `<tr>
+                                <td>${ (result[0].purchaser_name != null) ? result[0].purchaser_name : '-' }</td>
+                                <td>${ (result[0].recommendor_name != null) ? result[0].recommendor_name : '-' }</td>
+                                <td>${ (result[0].approver_name != null) ? result[0].approver_name : '-' }</td>`;
+
+                                if(result[0].approver2_name != null) {
+                                    table_data += `<td>${ (result[0].approver2_name != null) ? result[0].approver2_name : '-' }</td>`;
+                                    $('.inv_fin_appr').show();
+                                }
+
+                                table_data += `</tr>`; 
+
+                            }
+                            $('#involved_persons_tbody').html(table_data);  
+                            $('#involved_persons_div').show();                                        
 		                },
 		                complete:function(){
 		                    // $('#ajax-preloader').hide();
@@ -2311,6 +2391,79 @@ input[type=number]::-webkit-outer-spin-button {
 		        	$('.valueof'+rowid).val(net_amount);
 
 		        }
+
+		        $(document).on('click','.multi_preview',function(){
+                    var file_type = $(this).data('filetype');
+                    var src = $(this).attr('src');
+                    var row_id = $(this).data('id');
+
+
+                     if(file_type == 'pdf') {
+                        var src = $(this).closest('div').find('#pdf_input'+row_id).val();
+                        $('.preview_file_pdf_'+row_id).attr('src', src+'#toolbar=0');
+                        $('.preview_file_img_'+row_id).hide();
+                        $('.preview_file_pdf_'+row_id).show();
+                     } else {
+                        $('.preview_file_img_'+row_id).attr('src', src);
+                        $('.preview_file_pdf_'+row_id).hide();
+                        $('.preview_file_img_'+row_id).show();
+                     } 
+                    $('#file_preview_modal_'+row_id).modal('show');
+
+                });
+
+                
+                $(document).on('click','#send_back_btn',function(){
+                    $('#sendback_new_modal').modal('show');
+                });
+
+                function Alert_Msg(Msg,Type){
+                    swal({
+                      title: Msg,
+                      icon: Type,
+                    });
+                }
+
+                $(document).on('click','#send_back_remark_submit',function(){
+                    let remark        = $('#Recommender_sendback_remark').val();
+                    let sendback_from = 'Recommender';
+                    let request_id    = $('#r_id').val(); 
+                    $('#sendback_new_modal').modal('hide');
+
+
+                    $.ajax({
+                        url: "common_ajax.php",
+                        type: "POST",
+                        data: {
+                            Action : 'purchase_request_sendback',
+                            sendback_from : sendback_from,
+                            remark : remark,
+                            request_id : request_id,
+                        },
+                        cache: false,
+                        dataType: 'json',                        
+                        beforeSend:function(){
+                            $('#ajax-preloader').show();
+                        },
+                        success: function (result) {
+                            if(result.status == 200) {
+                                // Alert_Msg(result.message,'success');
+                                swal({
+                                  title: result.message,
+                                  icon: 'success',
+                                }).then(() => {
+                                     window.location.href = 'show_recommender.php';
+                                });
+
+                            } else {
+                                Alert_Msg(result.message,'error');
+                            }                               
+                        },  
+                        complete:function(){
+                            $('#ajax-preloader').hide();
+                        }
+                    });
+                });
 		        
 				
         </script>

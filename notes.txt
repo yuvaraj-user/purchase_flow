@@ -1,0 +1,13 @@
+1) quotation page any updated modify below pages
+
+	add_quotation.php
+	view_quotation_request.php
+	purchase_approver_request.php
+	recommender_screen.php
+	view_purchase_apr_request.php
+	saved_quotation.php
+	update_quotation_request.php
+	exceed_request_approve.php
+	Update_purchase_apr_request.php
+	view_recommender_request.php
+	Update_recommender_request.php

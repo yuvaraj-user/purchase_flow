@@ -61,12 +61,12 @@ if (isset($_POST["save"])) {
     //approval mapping id insertion
     $query1 = sqlsrv_query($conn, "UPDATE Tb_Request set approval_mapping_id = '".$_POST['mapping_id']."' WHERE Request_id = '$request_id' ");
 
-	$update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Recommender WHERE Request_id = '$request_id'");
+    $update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Recommender WHERE Request_id = '$request_id'");
     $updated_query = sqlsrv_fetch_array($update_qry);
     if($updated_query['Request_id'] == ''){
     // echo '<pre>';
     // print_r($_POST);die();
-	    for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
+        for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
             $Vendor_SAP = $_POST['Vendor_SAP'][$i];
             $Vendor_Name = $_POST['Vendor_Name'][$i];
             $Vendor_City = $_POST['Vendor_City'][$i];
@@ -145,35 +145,35 @@ if (isset($_POST["save"])) {
 
         }
 
-			
+            
 }else{
-	    for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
-	        $Vendor_SAP = $_POST['Vendor_SAP'][$i];
-	        $Vendor_Name = $_POST['Vendor_Name'][$i];
-	        $Vendor_City = $_POST['Vendor_City'][$i];
-	        $vendor_Active_SAP = $_POST['vendor_Active_SAP'][$i];
-	        $Last_Purchase = $_POST['Last_Purchase'][$i];
-	        $Delivery_Time = $_POST['Delivery_Time'][$i];
-	        $Value_Of = $_POST['Value_Of'][$i];
-	        $Fright_Charges = $_POST['Fright_Charges'][$i];
-	        $Insurance_Details = $_POST['Insurance_Details'][$i];
-	        $GST_Component = $_POST['GST_Component'][$i];
-	        $Warrenty = $_POST['Warrenty'][$i];
-	        $Payment_Terms = $_POST['Payment_Terms'][$i];
-	        $Requester_Selection = $_POST['Requester_Selection'][$i];
-	        $Recommender_Selection = $_POST['Recommender_Selection'][$i];
-	        $Requester_Remarks = $_POST['Requester_Remarks'][$i];
-	        $Recommender_Remarks = $_POST['Recommender_Remarks'][$i];
+        for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
+            $Vendor_SAP = $_POST['Vendor_SAP'][$i];
+            $Vendor_Name = $_POST['Vendor_Name'][$i];
+            $Vendor_City = $_POST['Vendor_City'][$i];
+            $vendor_Active_SAP = $_POST['vendor_Active_SAP'][$i];
+            $Last_Purchase = $_POST['Last_Purchase'][$i];
+            $Delivery_Time = $_POST['Delivery_Time'][$i];
+            $Value_Of = $_POST['Value_Of'][$i];
+            $Fright_Charges = $_POST['Fright_Charges'][$i];
+            $Insurance_Details = $_POST['Insurance_Details'][$i];
+            $GST_Component = $_POST['GST_Component'][$i];
+            $Warrenty = $_POST['Warrenty'][$i];
+            $Payment_Terms = $_POST['Payment_Terms'][$i];
+            $Requester_Selection = $_POST['Requester_Selection'][$i];
+            $Recommender_Selection = $_POST['Recommender_Selection'][$i];
+            $Requester_Remarks = $_POST['Requester_Remarks'][$i];
+            $Recommender_Remarks = $_POST['Recommender_Remarks'][$i];
             if(!isset($_POST['Attachment'])){
                 $fil="";
                 }else{
                   $fil=$_POST['Attachment'][$i];
                 }
-	        // $fil = $_POST["Attachment"][$i];
-	        $V_id = $_POST['V1_id'][$i];
-	        $emp_id = $Employee_Id;
-	        $Requested_to = $Approver_Code;     
-	        $status = 'Recommended';
+            // $fil = $_POST["Attachment"][$i];
+            $V_id = $_POST['V1_id'][$i];
+            $emp_id = $Employee_Id;
+            $Requested_to = $Approver_Code;     
+            $status = 'Recommended';
             foreach ($_POST['finance_verification'] as $key => $value) {
             if($value == 'Yes') {
                 $status = 'Review';
@@ -183,7 +183,7 @@ if (isset($_POST["save"])) {
             }
             }
 
-			 $query1 = sqlsrv_query($conn, "UPDATE Tb_Recommender set status = '$status',Recommender_Remarks = '$Recommender_Remarks',Finance_Verification  = '$value'
+             $query1 = sqlsrv_query($conn, "UPDATE Tb_Recommender set status = '$status',Recommender_Remarks = '$Recommender_Remarks',Finance_Verification  = '$value'
             ,Recommender_Selection = '$Recommender_Selection'  WHERE V_id = '$V_id' and Request_id = '$request_id' ");
 
             $query2 = sqlsrv_query($conn, "UPDATE Tb_Request set status = '$status',Approver = '$Requested_to' WHERE Request_Id = '$request_id' ");
@@ -194,34 +194,34 @@ if (isset($_POST["save"])) {
     }
 
 if($updated_query['Request_id'] == ''){
-	for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
+    for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
 
-		$Quantity_Details = $_POST['Quantity_Details'][$i];
-		$Meterial_Name = $_POST['Meterial_Name'][$i];
-		$Price = $_POST['Price'][$i];
-		$Total = $_POST['Total'][$i];
-		$V_id = $_POST['V_id'][$i];
+        $Quantity_Details = $_POST['Quantity_Details'][$i];
+        $Meterial_Name = $_POST['Meterial_Name'][$i];
+        $Price = $_POST['Price'][$i];
+        $Total = $_POST['Total'][$i];
+        $V_id = $_POST['V_id'][$i];
         $gst_percentage      = $_POST['gst_percent'][$i];
         $discount_percentage = $_POST['discount_percent'][$i];
 
-		$meterial = "INSERT INTO Tb_Recommender_Meterial(Request_id, Meterial_Name, Quantity, Status, Price, Total,  V_id,EMP_ID,Requested_to,gst_percentage,discount_percentage) VALUES 
- 		('$request_id','$Meterial_Name','$Quantity_Details','$status','$Price','$Total','$V_id','$emp_id','$Requested_to','$gst_percentage','$discount_percentage')";
+        $meterial = "INSERT INTO Tb_Recommender_Meterial(Request_id, Meterial_Name, Quantity, Status, Price, Total,  V_id,EMP_ID,Requested_to,gst_percentage,discount_percentage) VALUES 
+        ('$request_id','$Meterial_Name','$Quantity_Details','$status','$Price','$Total','$V_id','$emp_id','$Requested_to','$gst_percentage','$discount_percentage')";
 
-		$rs_material = sqlsrv_query($conn, $meterial);
-		
+        $rs_material = sqlsrv_query($conn, $meterial);
+        
 }
 }else{
 
     for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
-		$Quantity_Details = $_POST['Quantity_Details'][$i];
-		$Meterial_Name = $_POST['Meterial_Name'][$i];
-		$Price = $_POST['Price'][$i];
-		$Total = $_POST['Total'][$i];
-		$V_id = $_POST['V_id'][$i];
+        $Quantity_Details = $_POST['Quantity_Details'][$i];
+        $Meterial_Name = $_POST['Meterial_Name'][$i];
+        $Price = $_POST['Price'][$i];
+        $Total = $_POST['Total'][$i];
+        $V_id = $_POST['V_id'][$i];
 
         $query1 = sqlsrv_query($conn, "UPDATE Tb_Recommender_Meterial set status = '$status' WHERE V_id = '$V_id' and Request_id = '$request_id'");
-			
-	}
+            
+    }
 }
 // exit;
 if($updated_query['Status'] == 'Review'){
@@ -511,11 +511,11 @@ if($updated_query['Status'] == 'Review'){
 // send 
 if (isset($_POST["send"])) {
 
-	$update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Recommender WHERE Request_id = '$request_id'");
+    $update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Recommender WHERE Request_id = '$request_id'");
     $updated_query = sqlsrv_fetch_array($update_qry);
     if($updated_query['Request_id'] == ''){
 
-	    for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
+        for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
             $Vendor_SAP = $_POST['Vendor_SAP'][$i];
             $Vendor_Name = $_POST['Vendor_Name'][$i];
             $Vendor_City = $_POST['Vendor_City'][$i];
@@ -559,42 +559,42 @@ if (isset($_POST["send"])) {
                 $rs = sqlsrv_query($conn, $query);
         }
     }
-			?>
-			<script type="text/javascript">
-				alert("Send Back successsfully");
-				window.location = "show_recommender.php";
-			</script>
-			<?php
+            ?>
+            <script type="text/javascript">
+                alert("Send Back successsfully");
+                window.location = "show_recommender.php";
+            </script>
+            <?php
 }else{
-	    for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
-	        $Vendor_SAP = $_POST['Vendor_SAP'][$i];
-	        $Vendor_Name = $_POST['Vendor_Name'][$i];
-	        $Vendor_City = $_POST['Vendor_City'][$i];
-	        $vendor_Active_SAP = $_POST['vendor_Active_SAP'][$i];
-	        $Last_Purchase = $_POST['Last_Purchase'][$i];
-	        $Delivery_Time = $_POST['Delivery_Time'][$i];
-	        $Value_Of = $_POST['Value_Of'][$i];
-	        $Fright_Charges = $_POST['Fright_Charges'][$i];
-	        $Insurance_Details = $_POST['Insurance_Details'][$i];
-	        $GST_Component = $_POST['GST_Component'][$i];
-	        $Warrenty = $_POST['Warrenty'][$i];
-	        $Payment_Terms = $_POST['Payment_Terms'][$i];
-	        $Requester_Selection = $_POST['Requester_Selection'][$i];
-	        $Recommender_Selection = $_POST['Recommender_Selection'][$i];
-	        $Requester_Remarks = $_POST['Requester_Remarks'][$i];
-	        $Recommender_Remarks = $_POST['Recommender_Remarks'][$i];
-	        if(!isset($_POST['Attachment'])){
+        for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
+            $Vendor_SAP = $_POST['Vendor_SAP'][$i];
+            $Vendor_Name = $_POST['Vendor_Name'][$i];
+            $Vendor_City = $_POST['Vendor_City'][$i];
+            $vendor_Active_SAP = $_POST['vendor_Active_SAP'][$i];
+            $Last_Purchase = $_POST['Last_Purchase'][$i];
+            $Delivery_Time = $_POST['Delivery_Time'][$i];
+            $Value_Of = $_POST['Value_Of'][$i];
+            $Fright_Charges = $_POST['Fright_Charges'][$i];
+            $Insurance_Details = $_POST['Insurance_Details'][$i];
+            $GST_Component = $_POST['GST_Component'][$i];
+            $Warrenty = $_POST['Warrenty'][$i];
+            $Payment_Terms = $_POST['Payment_Terms'][$i];
+            $Requester_Selection = $_POST['Requester_Selection'][$i];
+            $Recommender_Selection = $_POST['Recommender_Selection'][$i];
+            $Requester_Remarks = $_POST['Requester_Remarks'][$i];
+            $Recommender_Remarks = $_POST['Recommender_Remarks'][$i];
+            if(!isset($_POST['Attachment'])){
                 $fil="";
                 }else{
                   $fil=$_POST['Attachment'][$i];
                 }
-	        $V_id = $_POST['V1_id'][$i];
-	        $emp_id = $Employee_Id;
-	        $Requested_to = $Approver_Code;     
+            $V_id = $_POST['V1_id'][$i];
+            $emp_id = $Employee_Id;
+            $Requested_to = $Approver_Code;     
             for ($j = 0; $j < count($_POST['Recommender_back_remark']); $j++) {
                 $Recommender_back_remark = $_POST['Recommender_back_remark'][$j];
 
-			 $query1 = sqlsrv_query($conn, "UPDATE Tb_Recommender set Status = 'Recommender Send Back',Recommender_Remarks = '$Recommender_Remarks',
+             $query1 = sqlsrv_query($conn, "UPDATE Tb_Recommender set Status = 'Recommender Send Back',Recommender_Remarks = '$Recommender_Remarks',
              Recommender_Selection = '$Recommender_Selection', Recommender_back_remark = '$Recommender_back_remark'  WHERE V_id = '$V_id' and Request_id = '$request_id' ");
 
             $query2 = sqlsrv_query($conn, "UPDATE Tb_Request set status = 'Recommender Send Back', Recommender_back_remark = '$Recommender_back_remark' WHERE Request_Id = '$request_id' ");
@@ -603,70 +603,70 @@ if (isset($_POST["send"])) {
         }
     }
         ?>
-			<script type="text/javascript">
-				alert("Send Back successsfully");
-				window.location = "show_recommender.php";
-			</script>
-			<?php
+            <script type="text/javascript">
+                alert("Send Back successsfully");
+                window.location = "show_recommender.php";
+            </script>
+            <?php
     }
 
 if($updated_query['Request_id'] == ''){
-	for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
+    for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
 
-		$Quantity_Details = $_POST['Quantity_Details'][$i];
-		$Meterial_Name = $_POST['Meterial_Name'][$i];
-		$Price = $_POST['Price'][$i];
-		$Total = $_POST['Total'][$i];
-		$V_id = $_POST['V_id'][$i];
+        $Quantity_Details = $_POST['Quantity_Details'][$i];
+        $Meterial_Name = $_POST['Meterial_Name'][$i];
+        $Price = $_POST['Price'][$i];
+        $Total = $_POST['Total'][$i];
+        $V_id = $_POST['V_id'][$i];
 
         for ($j = 0; $j < count($_POST['Recommender_back_remark']); $j++) {
             $Recommender_back_remark = $_POST['Recommender_back_remark'][$j];
 
-		$meterial = "INSERT INTO Tb_Recommender_Meterial(Request_id, Meterial_Name, Quantity, Status, Price, Total,  V_id,EMP_ID,Recommender_back_remark) VALUES 
- 		('$request_id','$Meterial_Name','$Quantity_Details','Recommender Send Back','$Price','$Total','$V_id','$emp_id','$Recommender_back_remark')";
+        $meterial = "INSERT INTO Tb_Recommender_Meterial(Request_id, Meterial_Name, Quantity, Status, Price, Total,  V_id,EMP_ID,Recommender_back_remark) VALUES 
+        ('$request_id','$Meterial_Name','$Quantity_Details','Recommender Send Back','$Price','$Total','$V_id','$emp_id','$Recommender_back_remark')";
 
-		$rs_material = sqlsrv_query($conn, $meterial);
-		if ($rs_material) {
-			?>
-			<script type="text/javascript">
-				alert("Send Back successsfully");
-				window.location = "show_recommender.php";
-			</script>
-			<?php
-		}
-	}
+        $rs_material = sqlsrv_query($conn, $meterial);
+        if ($rs_material) {
+            ?>
+            <script type="text/javascript">
+                alert("Send Back successsfully");
+                window.location = "show_recommender.php";
+            </script>
+            <?php
+        }
+    }
 }
 }else{
 
     for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
-		$Quantity_Details = $_POST['Quantity_Details'][$i];
-		$Meterial_Name = $_POST['Meterial_Name'][$i];
-		$Price = $_POST['Price'][$i];
-		$Total = $_POST['Total'][$i];
-		$V_id = $_POST['V_id'][$i];
+        $Quantity_Details = $_POST['Quantity_Details'][$i];
+        $Meterial_Name = $_POST['Meterial_Name'][$i];
+        $Price = $_POST['Price'][$i];
+        $Total = $_POST['Total'][$i];
+        $V_id = $_POST['V_id'][$i];
         for ($j = 0; $j < count($_POST['Recommender_back_remark']); $j++) {
             $Recommender_back_remark = $_POST['Recommender_back_remark'][$j];
 
         $query1 = sqlsrv_query($conn, "UPDATE Tb_Recommender_Meterial set Status = 'Recommender Send Back',Recommender_back_remark = '$Recommender_back_remark' WHERE V_id = '$V_id' and Request_id = '$request_id' ");
 
-			?>
-			<script type="text/javascript">
-				alert("Send Back successsfully");
-				window.location = "show_recommender.php";
-			</script>
-			<?php
-	}
+            ?>
+            <script type="text/javascript">
+                alert("Send Back successsfully");
+                window.location = "show_recommender.php";
+            </script>
+            <?php
+    }
 }
 }
 }
 //reject
 if (isset($_POST["reject"])) {
 
-	$update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Recommender WHERE Request_id = '$request_id'");
+    $update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Recommender WHERE Request_id = '$request_id'");
     $updated_query = sqlsrv_fetch_array($update_qry);
     if($updated_query['Request_id'] == ''){
 
-	    for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
+        for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
             $Vendor_SAP = $_POST['Vendor_SAP'][$i];
             $Vendor_Name = $_POST['Vendor_Name'][$i];
             $Vendor_City = $_POST['Vendor_City'][$i];
@@ -710,42 +710,42 @@ if (isset($_POST["reject"])) {
                 $rs = sqlsrv_query($conn, $query);
         }
     }
-			?>
-			<script type="text/javascript">
-				alert("Recommended successsfully");
-				window.location = "show_recommender.php";
-			</script>
-			<?php
+            ?>
+            <script type="text/javascript">
+                alert("Recommended successsfully");
+                window.location = "show_recommender.php";
+            </script>
+            <?php
 }else{
-	    for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
-	        $Vendor_SAP = $_POST['Vendor_SAP'][$i];
-	        $Vendor_Name = $_POST['Vendor_Name'][$i];
-	        $Vendor_City = $_POST['Vendor_City'][$i];
-	        $vendor_Active_SAP = $_POST['vendor_Active_SAP'][$i];
-	        $Last_Purchase = $_POST['Last_Purchase'][$i];
-	        $Delivery_Time = $_POST['Delivery_Time'][$i];
-	        $Value_Of = $_POST['Value_Of'][$i];
-	        $Fright_Charges = $_POST['Fright_Charges'][$i];
-	        $Insurance_Details = $_POST['Insurance_Details'][$i];
-	        $GST_Component = $_POST['GST_Component'][$i];
-	        $Warrenty = $_POST['Warrenty'][$i];
-	        $Payment_Terms = $_POST['Payment_Terms'][$i];
-	        $Requester_Selection = $_POST['Requester_Selection'][$i];
-	        $Recommender_Selection = $_POST['Recommender_Selection'][$i];
-	        $Requester_Remarks = $_POST['Requester_Remarks'][$i];
-	        $Recommender_Remarks = $_POST['Recommender_Remarks'][$i];
-	        if(!isset($_POST['Attachment'])){
+        for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
+            $Vendor_SAP = $_POST['Vendor_SAP'][$i];
+            $Vendor_Name = $_POST['Vendor_Name'][$i];
+            $Vendor_City = $_POST['Vendor_City'][$i];
+            $vendor_Active_SAP = $_POST['vendor_Active_SAP'][$i];
+            $Last_Purchase = $_POST['Last_Purchase'][$i];
+            $Delivery_Time = $_POST['Delivery_Time'][$i];
+            $Value_Of = $_POST['Value_Of'][$i];
+            $Fright_Charges = $_POST['Fright_Charges'][$i];
+            $Insurance_Details = $_POST['Insurance_Details'][$i];
+            $GST_Component = $_POST['GST_Component'][$i];
+            $Warrenty = $_POST['Warrenty'][$i];
+            $Payment_Terms = $_POST['Payment_Terms'][$i];
+            $Requester_Selection = $_POST['Requester_Selection'][$i];
+            $Recommender_Selection = $_POST['Recommender_Selection'][$i];
+            $Requester_Remarks = $_POST['Requester_Remarks'][$i];
+            $Recommender_Remarks = $_POST['Recommender_Remarks'][$i];
+            if(!isset($_POST['Attachment'])){
                 $fil="";
                 }else{
                   $fil=$_POST['Attachment'][$i];
                 }
-	        $V_id = $_POST['V1_id'][$i];
-	        $emp_id = $Employee_Id;
-	        $Requested_to = $Approver_Code;     
+            $V_id = $_POST['V1_id'][$i];
+            $emp_id = $Employee_Id;
+            $Requested_to = $Approver_Code;     
             for ($j = 0; $j < count($_POST['Recommender_Rejected']); $j++) {
                 $Recommender_Rejected = $_POST['Recommender_Rejected'][$j];
 
-			 $query1 = sqlsrv_query($conn, "UPDATE Tb_Recommender set Status = 'Recommender_Rejected',Recommender_Remarks = '$Recommender_Remarks',
+             $query1 = sqlsrv_query($conn, "UPDATE Tb_Recommender set Status = 'Recommender_Rejected',Recommender_Remarks = '$Recommender_Remarks',
              Recommender_Selection = '$Recommender_Selection', Recommender_Rejected = '$Recommender_Rejected'  WHERE V_id = '$V_id' and Request_id = '$request_id' ");
 
             $query2 = sqlsrv_query($conn, "UPDATE Tb_Request set status = 'Recommender_Rejected', recommender_reject = '$Recommender_Rejected' WHERE Request_Id = '$request_id' ");
@@ -754,59 +754,59 @@ if (isset($_POST["reject"])) {
         }
     }
         ?>
-			<script type="text/javascript">
-				alert("Recommended successsfully");
-				window.location = "show_recommender.php";
-			</script>
-			<?php
+            <script type="text/javascript">
+                alert("Recommended successsfully");
+                window.location = "show_recommender.php";
+            </script>
+            <?php
     }
 
 if($updated_query['Request_id'] == ''){
-	for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
+    for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
 
-		$Quantity_Details = $_POST['Quantity_Details'][$i];
-		$Meterial_Name = $_POST['Meterial_Name'][$i];
-		$Price = $_POST['Price'][$i];
-		$Total = $_POST['Total'][$i];
-		$V_id = $_POST['V_id'][$i];
+        $Quantity_Details = $_POST['Quantity_Details'][$i];
+        $Meterial_Name = $_POST['Meterial_Name'][$i];
+        $Price = $_POST['Price'][$i];
+        $Total = $_POST['Total'][$i];
+        $V_id = $_POST['V_id'][$i];
 
         for ($j = 0; $j < count($_POST['Recommender_Rejected']); $j++) {
             $Recommender_Rejected = $_POST['Recommender_Rejected'][$j];
 
-		$meterial = "INSERT INTO Tb_Recommender_Meterial(Request_id, Meterial_Name, Quantity, Status, Price, Total,  V_id,EMP_ID,Recommender_Rejected) VALUES 
- 		('$request_id','$Meterial_Name','$Quantity_Details','Recommender_Rejected','$Price','$Total','$V_id','$emp_id','$Recommender_Rejected')";
+        $meterial = "INSERT INTO Tb_Recommender_Meterial(Request_id, Meterial_Name, Quantity, Status, Price, Total,  V_id,EMP_ID,Recommender_Rejected) VALUES 
+        ('$request_id','$Meterial_Name','$Quantity_Details','Recommender_Rejected','$Price','$Total','$V_id','$emp_id','$Recommender_Rejected')";
 
-		$rs_material = sqlsrv_query($conn, $meterial);
-		if ($rs_material) {
-			?>
-			<script type="text/javascript">
-				alert("Recommended successsfully");
-				window.location = "show_recommender.php";
-			</script>
-			<?php
-		}
-	}
+        $rs_material = sqlsrv_query($conn, $meterial);
+        if ($rs_material) {
+            ?>
+            <script type="text/javascript">
+                alert("Recommended successsfully");
+                window.location = "show_recommender.php";
+            </script>
+            <?php
+        }
+    }
 }
 }else{
 
     for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
-		$Quantity_Details = $_POST['Quantity_Details'][$i];
-		$Meterial_Name = $_POST['Meterial_Name'][$i];
-		$Price = $_POST['Price'][$i];
-		$Total = $_POST['Total'][$i];
-		$V_id = $_POST['V_id'][$i];
+        $Quantity_Details = $_POST['Quantity_Details'][$i];
+        $Meterial_Name = $_POST['Meterial_Name'][$i];
+        $Price = $_POST['Price'][$i];
+        $Total = $_POST['Total'][$i];
+        $V_id = $_POST['V_id'][$i];
         for ($j = 0; $j < count($_POST['Recommender_Rejected']); $j++) {
             $Recommender_Rejected = $_POST['Recommender_Rejected'][$j];
 
         $query1 = sqlsrv_query($conn, "UPDATE Tb_Recommender_Meterial set Status = 'Recommender_Rejected',Recommender_Rejected = '$Recommender_Rejected' WHERE V_id = '$V_id' and Request_id = '$request_id' ");
 
-			?>
-			<script type="text/javascript">
-				alert("Recommended successsfully");
-				window.location = "show_recommender.php";
-			</script>
-			<?php
-	}
+            ?>
+            <script type="text/javascript">
+                alert("Recommended successsfully");
+                window.location = "show_recommender.php";
+            </script>
+            <?php
+    }
 }
 }
 }
@@ -814,11 +814,11 @@ if($updated_query['Request_id'] == ''){
 if (isset($_POST["Verification"])) {
     // echo '<pre>';
     // print_r($_POST);die();
-	$update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Recommender WHERE Request_id = '$request_id'");
+    $update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Recommender WHERE Request_id = '$request_id'");
     $updated_query = sqlsrv_fetch_array($update_qry);
     // if($updated_query['Request_id'] == ''){
 
-	    for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
+        for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
             $Vendor_SAP = $_POST['Vendor_SAP'][$i];
             $Vendor_Name = $_POST['Vendor_Name'][$i];
             $Vendor_City = $_POST['Vendor_City'][$i];
@@ -866,21 +866,21 @@ if (isset($_POST["Verification"])) {
         }
     }
 
-	for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
+    for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
 
-		$Quantity_Details = $_POST['Quantity_Details'][$i];
-		$Meterial_Name = $_POST['Meterial_Name'][$i];
-		$Price = $_POST['Price'][$i];
-		$Total = $_POST['Total'][$i];
-		$V_id = $_POST['V_id'][$i];
+        $Quantity_Details = $_POST['Quantity_Details'][$i];
+        $Meterial_Name = $_POST['Meterial_Name'][$i];
+        $Price = $_POST['Price'][$i];
+        $Total = $_POST['Total'][$i];
+        $V_id = $_POST['V_id'][$i];
       
         
-		$meterial = "INSERT INTO Tb_Recommender_Meterial(Request_id, Meterial_Name, Quantity, Status, Price, Total,  V_id,EMP_ID,Requested_to) VALUES 
- 		('$request_id','$Meterial_Name','$Quantity_Details','$status','$Price','$Total','$V_id','$emp_id','$Requested_to')";
+        $meterial = "INSERT INTO Tb_Recommender_Meterial(Request_id, Meterial_Name, Quantity, Status, Price, Total,  V_id,EMP_ID,Requested_to) VALUES 
+        ('$request_id','$Meterial_Name','$Quantity_Details','$status','$Price','$Total','$V_id','$emp_id','$Requested_to')";
 
-		$rs_material = sqlsrv_query($conn, $meterial);
-		
-	}
+        $rs_material = sqlsrv_query($conn, $meterial);
+        
+    }
 
 // exit;
 
@@ -1064,6 +1064,7 @@ if (isset($_POST["Verification"])) {
         <link href="assets/css/icons.min.css" rel="stylesheet" type="text/css" />
         <!-- App Css-->
         <link href="assets/css/app.min.css" id="app-style" rel="stylesheet" type="text/css" />
+        <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
 
         <style>
         /* body {
@@ -1090,28 +1091,38 @@ if (isset($_POST["Verification"])) {
         }
 
 .heading-table {
-	border-collapse: collapse;
-	border-spacing: 0;
-	width: 100%;
-	max-width: 100ch;
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100%;
+    max-width: 100ch;
 }
 
 .heading-table caption {
-	font-size: 1.1em;
-	text-align: left;
-	font-weight: bold;
-	margin-bottom: 0.5em;
+    font-size: 1.1em;
+    text-align: left;
+    font-weight: bold;
+    margin-bottom: 0.5em;
 }
 
 .heading-table .highlight {
-	background: rgba(2 130 12 / 27%);
+    background: rgba(2 130 12 / 27%);
 }
 
 /* table, tr, th, td {
-	border: 1px solid #c4c4c4;
+    border: 1px solid #c4c4c4;
 } */
 
+        .display_section {
+            cursor: pointer;
+        }
 
+        .preview_icon {
+            display: none;
+            position: absolute;
+            top: 23%;
+            left: 42%;
+            font-size: 20px;
+        }
 
 
         </style>
@@ -1189,6 +1200,14 @@ if (isset($_POST["Verification"])) {
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-body">
+                                            <?php 
+                                                $plant_sql = "SELECT Plant_Name FROM Plant_Master_PO WHERE Plant_Code = '".$po_creator['Plant']."'";
+                                                $plant_sql_exec =  sqlsrv_query($conn,$plant_sql);
+                                                $plant_detail = sqlsrv_fetch_array($plant_sql_exec);
+
+                                            ?>
+                                            <h1 class="badge bg-success" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
+
                                             <form method="POST" enctype="multipart/form-data">
                                                  <input type="hidden" id="mapping_id" name="mapping_id">
                                                  <input type="hidden" id="po_creator_id" value="<?php echo $po_creator['EMP_ID']; ?>">
@@ -1225,167 +1244,167 @@ if (isset($_POST["Verification"])) {
                                                             <col>
                                                         </colgroup>
                                                         <tbody class="results" id="rone">
-														<tr id="head">
-															<th>Particulars</th>
+                                                        <tr id="head">
+                                                            <th>Particulars</th>
                                                             <td>
-																<?php echo $selector_arr['V_id'] ?><input type="hidden"
-																	class="form-control" name="V1_id[]"
-																	value="<?php echo $selector_arr['V_id'] ?>">
-															</td>
-															<?php
-															$array_Details1 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id ORDER BY Tb_Vendor_Selection.V_id DESC ");
-															while ($array_dy_Details1 = sqlsrv_fetch_array($array_Details1)) {
-
-																?>
-																<td>
-																	<?php echo $array_dy_Details1['V_id'] ?><input
-																		type="hidden" class="form-control" name="V1_id[]"
-																		value="<?php echo $array_dy_Details1['V_id'] ?>">
+                                                                <?php echo $selector_arr['V_id'] ?><input type="hidden"
+                                                                    class="form-control" name="V1_id[]"
+                                                                    value="<?php echo $selector_arr['V_id'] ?>">
                                                             </td>
-															<?php } ?>
-														</tr>
-														<tr id="one">
-															<th>Vendor SAP Code, if available</th>
+                                                            <?php
+                                                            $array_Details1 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id ORDER BY Tb_Vendor_Selection.V_id DESC ");
+                                                            while ($array_dy_Details1 = sqlsrv_fetch_array($array_Details1)) {
+
+                                                                ?>
+                                                                <td>
+                                                                    <?php echo $array_dy_Details1['V_id'] ?><input
+                                                                        type="hidden" class="form-control" name="V1_id[]"
+                                                                        value="<?php echo $array_dy_Details1['V_id'] ?>">
+                                                            </td>
+                                                            <?php } ?>
+                                                        </tr>
+                                                        <tr id="one">
+                                                            <th>Vendor SAP Code, if available</th>
                                                             <td><input type="text" class="form-control" readonly name="Vendor_SAP[]" value="<?php echo $selector_arr['Vendor_SAP'] ?>"></td>
-															<?php
-															$array_Details1 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_SAP
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_SAP ORDER BY Tb_Vendor_Selection.V_id DESC ");
-															while ($array_dy_Details1 = sqlsrv_fetch_array($array_Details1)) {
+                                                            <?php
+                                                            $array_Details1 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_SAP
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_SAP ORDER BY Tb_Vendor_Selection.V_id DESC ");
+                                                            while ($array_dy_Details1 = sqlsrv_fetch_array($array_Details1)) {
 
-																?>
-																<td><input type="text" class="form-control" readonly name="Vendor_SAP[]"
-																		value="<?php echo $array_dy_Details1['Vendor_SAP'] ?>">
-																</td>
-															<?php } ?>
-														</tr>
-														<tr id="two">
-															<th>Name of vendor</th>
-                                                            <td><input type="text" class="form-control disabled" 
-																	readonly id="vendorname" name="Vendor_Name[]"
-																	value="<?php echo $selector_arr['Vendor_Name'] ?>">
-															</td>
-															<?php
-															$array_Details2 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_Name
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_Name ORDER BY Tb_Vendor_Selection.V_id DESC ");
-															while ($array_dy_Details2 = sqlsrv_fetch_array($array_Details2)) {
-
-																?>
-																<td><input type="text" class="form-control disabled"
-																		readonly id="vendorname" name="Vendor_Name[]"
-																		value="<?php echo $array_dy_Details2['Vendor_Name'] ?>">
-																</td>
-															<?php } ?>
-														</tr>
-														<tr id="three">
-															<th>City of vendor</th>
-															<td><input type="text" class="form-control disabled" readonly id="city" name="Vendor_City[]"
-																	value="<?php echo $selector_arr['Vendor_City'] ?>">
-															</td>
-															<?php
-															$array_Details3 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_City
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_City ORDER BY Tb_Vendor_Selection.V_id DESC");
-															while ($array_dy_Details3 = sqlsrv_fetch_array($array_Details3)) {
-
-																?>
-																<td><input type="text" class="form-control disabled" readonly id="city" name="Vendor_City[]" 
-																		value="<?php echo $array_dy_Details3['Vendor_City'] ?>">
-																</td>
-															<?php } ?>
-														</tr>
-														<tr id="four">
-															<th>Whether vendor is active in SAP?</th>
-															<td><input type="text" class="form-control dis" readonly name="vendor_Active_SAP[]" 
-																	value="<?php echo $selector_arr['vendor_Active_SAP'] ?>">
-															</td>
-															<?php
-															$array_Details4 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.vendor_Active_SAP
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.vendor_Active_SAP ORDER BY Tb_Vendor_Selection.V_id DESC");
-															while ($array_dy_Details4 = sqlsrv_fetch_array($array_Details4)) {
-
-																?>
-																<td><input type="text" class="form-control dis" readonly name="vendor_Active_SAP[]" 
-																		value="<?php echo $array_dy_Details4['vendor_Active_SAP'] ?>">
-																</td>
-															<?php } ?>
-														</tr>
-														<tr id="five">
-															<th>Last purchase made on</th>
-															<td><input type="text" class="form-control dis" readonly name="Last_Purchase[]"
-																	value="<?php echo $selector_arr['Last_Purchase'] ?>">
-															</td>
-															<?php
-															$array_Details5 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Last_Purchase
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Last_Purchase ORDER BY Tb_Vendor_Selection.V_id DESC");
-															while ($array_dy_Details5 = sqlsrv_fetch_array($array_Details5)) {
-
-																?>
-																<td><input type="text" class="form-control dis" readonly name="Last_Purchase[]"
-																		value="<?php echo $array_dy_Details5['Last_Purchase'] ?>">
-																</td>
-															<?php } ?>
-														</tr>
-														<tr id="six">
-															<th>
-																<table class="table table-bordered"
-																	style="width: 300px !important;">
-																	<thead>
-																		<tr>
-																			<td>
-																				<b>Material Wise Quantity Details</b>
+                                                                ?>
+                                                                <td><input type="text" class="form-control" readonly name="Vendor_SAP[]"
+                                                                        value="<?php echo $array_dy_Details1['Vendor_SAP'] ?>">
                                                                 </td>
-																		</tr>
-																	</thead>
-																	<tbody>
-																		<?php
-																		$result = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '$request_id'",[],array( "Scrollable" => SQLSRV_CURSOR_KEYSET ));
-																		$item_count = sqlsrv_num_rows($result);
-																		while ($row = sqlsrv_fetch_array($result)) {
-																			$ID = $row['ID'];
-																			$ItemCode = $row['Item_Code'];
-																			// print_r($ID);
-																			?>
-																			<tr>
-																				<td><input type="text" class="form-control-plaintext" readonly value="<?php echo trim($row['Description']) ?>-<?php echo $row['UOM'] ?>"
+                                                            <?php } ?>
+                                                        </tr>
+                                                        <tr id="two">
+                                                            <th>Name of vendor</th>
+                                                            <td><input type="text" class="form-control disabled" 
+                                                                    readonly id="vendorname" name="Vendor_Name[]"
+                                                                    value="<?php echo $selector_arr['Vendor_Name'] ?>">
+                                                            </td>
+                                                            <?php
+                                                            $array_Details2 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_Name
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_Name ORDER BY Tb_Vendor_Selection.V_id DESC ");
+                                                            while ($array_dy_Details2 = sqlsrv_fetch_array($array_Details2)) {
+
+                                                                ?>
+                                                                <td><input type="text" class="form-control disabled"
+                                                                        readonly id="vendorname" name="Vendor_Name[]"
+                                                                        value="<?php echo $array_dy_Details2['Vendor_Name'] ?>">
+                                                                </td>
+                                                            <?php } ?>
+                                                        </tr>
+                                                        <tr id="three">
+                                                            <th>City of vendor</th>
+                                                            <td><input type="text" class="form-control disabled" readonly id="city" name="Vendor_City[]"
+                                                                    value="<?php echo $selector_arr['Vendor_City'] ?>">
+                                                            </td>
+                                                            <?php
+                                                            $array_Details3 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_City
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_City ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                            while ($array_dy_Details3 = sqlsrv_fetch_array($array_Details3)) {
+
+                                                                ?>
+                                                                <td><input type="text" class="form-control disabled" readonly id="city" name="Vendor_City[]" 
+                                                                        value="<?php echo $array_dy_Details3['Vendor_City'] ?>">
+                                                                </td>
+                                                            <?php } ?>
+                                                        </tr>
+                                                        <tr id="four">
+                                                            <th>Whether vendor is active in SAP?</th>
+                                                            <td><input type="text" class="form-control dis" readonly name="vendor_Active_SAP[]" 
+                                                                    value="<?php echo $selector_arr['vendor_Active_SAP'] ?>">
+                                                            </td>
+                                                            <?php
+                                                            $array_Details4 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.vendor_Active_SAP
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.vendor_Active_SAP ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                            while ($array_dy_Details4 = sqlsrv_fetch_array($array_Details4)) {
+
+                                                                ?>
+                                                                <td><input type="text" class="form-control dis" readonly name="vendor_Active_SAP[]" 
+                                                                        value="<?php echo $array_dy_Details4['vendor_Active_SAP'] ?>">
+                                                                </td>
+                                                            <?php } ?>
+                                                        </tr>
+                                                        <tr id="five">
+                                                            <th>Last purchase made on</th>
+                                                            <td><input type="text" class="form-control dis" readonly name="Last_Purchase[]"
+                                                                    value="<?php echo $selector_arr['Last_Purchase'] ?>">
+                                                            </td>
+                                                            <?php
+                                                            $array_Details5 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Last_Purchase
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Last_Purchase ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                            while ($array_dy_Details5 = sqlsrv_fetch_array($array_Details5)) {
+
+                                                                ?>
+                                                                <td><input type="text" class="form-control dis" readonly name="Last_Purchase[]"
+                                                                        value="<?php echo $array_dy_Details5['Last_Purchase'] ?>">
+                                                                </td>
+                                                            <?php } ?>
+                                                        </tr>
+                                                        <tr id="six">
+                                                            <th>
+                                                                <table class="table table-bordered"
+                                                                    style="width: 300px !important;">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <td>
+                                                                                <b>Material Wise Quantity Details</b>
+                                                                </td>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <?php
+                                                                        $result = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '$request_id'",[],array( "Scrollable" => SQLSRV_CURSOR_KEYSET ));
+                                                                        $item_count = sqlsrv_num_rows($result);
+                                                                        while ($row = sqlsrv_fetch_array($result)) {
+                                                                            $ID = $row['ID'];
+                                                                            $ItemCode = $row['Item_Code'];
+                                                                            // print_r($ID);
+                                                                            ?>
+                                                                            <tr>
+                                                                                <td><input type="text" class="form-control-plaintext" readonly value="<?php echo trim($row['Description']) ?>-<?php echo $row['UOM'] ?>"
                                                                                     data-bs-toggle="modal" data-bs-target=".bs-example-modal-center<?php echo $ID ?>">
-																						<!-- Modal -->
-																						<div class="modal fade bs-example-modal-center<?php echo $ID ?>" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+                                                                                        <!-- Modal -->
+                                                                                        <div class="modal fade bs-example-modal-center<?php echo $ID ?>" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
                                                                                             <div class="modal-dialog modal-dialog-centered">
                                                                                                 <div class="modal-content">
                                                                                                     <div class="modal-header">
@@ -1427,64 +1446,64 @@ if (isset($_POST["Verification"])) {
                                                                                                 </div><!-- /.modal-content -->
                                                                                             </div><!-- /.modal-dialog -->
                                                                                         </div><!-- /.modal -->
-																				</td>
-																			</tr>
-																		<?php
-																		}
-																		?>
-																	</tbody>
-																</table>
+                                                                                </td>
+                                                                            </tr>
+                                                                        <?php
+                                                                        }
+                                                                        ?>
+                                                                    </tbody>
+                                                                </table>
 
-															</th>
+                                                            </th>
                                                             <td>
-																<table id="myTable1" class="table table-bordered" style="width: 345px !important;">
-																	<tr>
-																		<thead>
-																			<td>Quantity</td>
-																			<th>Price</th>
+                                                                <table id="myTable1" class="table table-bordered" style="width: 345px !important;">
+                                                                    <tr>
+                                                                        <thead>
+                                                                            <td>Quantity</td>
+                                                                            <th>Price</th>
                                                                             <th>GST(%)</th>
                                                                             <th>Discount(%)</th>
-																			<th>Total</th>
-																		</thead>
-																	</tr>
-																	<tbody>
-																		<?php
-																		$i = 1;
+                                                                            <th>Total</th>
+                                                                        </thead>
+                                                                    </tr>
+                                                                    <tbody>
+                                                                        <?php
+                                                                        $i = 1;
                                                                         $mat_ind = 1;
-																		$result = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-																		Tb_Vendor_Quantity.Price,Tb_Vendor_Quantity.Total,Tb_Vendor_Quantity.Request_Id,
-																		Tb_Vendor_Quantity.Quantity,Tb_Vendor_Quantity.Meterial_Name,Tb_Vendor_Quantity.Total,Tb_Vendor_Quantity.gst_percentage,Tb_Vendor_Quantity.discount_percentage
-																		FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-																		ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-																		WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-																		AND Tb_Vendor_Selection.Requester_Selection = '1'
-																		GROUP BY Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-																		Tb_Vendor_Quantity.Price,Tb_Vendor_Quantity.Total,Tb_Vendor_Quantity.Request_Id,
-																		Tb_Vendor_Quantity.Quantity,Tb_Vendor_Quantity.Meterial_Name,Tb_Vendor_Quantity.Total,Tb_Vendor_Quantity.gst_percentage,Tb_Vendor_Quantity.discount_percentage");
-																		while ($row = sqlsrv_fetch_array($result)) {
-																			?>
-																			<tr>
-																				<td>
-																					<input type="text"
-																						class="form-control qty"
-																						readonly name="Quantity_Details[]"
-																						value="<?php echo $row['Quantity'] ?>"
-																						placeholder="Enter Quantity Details" style="width: 75px;">
-																					<input type="hidden"
-																						class="form-control"
-																						name="Meterial_Name[]"
-																						value="<?php echo $row['Meterial_Name'] ?>">
-																					<input type="hidden"
-																						class="form-control" name="V_id[]"
-																						value="<?php echo $row['V_id'] ?>">
-																				</td>
+                                                                        $result = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                                        Tb_Vendor_Quantity.Price,Tb_Vendor_Quantity.Total,Tb_Vendor_Quantity.Request_Id,
+                                                                        Tb_Vendor_Quantity.Quantity,Tb_Vendor_Quantity.Meterial_Name,Tb_Vendor_Quantity.Total,Tb_Vendor_Quantity.gst_percentage,Tb_Vendor_Quantity.discount_percentage
+                                                                        FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                                        ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                                        WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                                        AND Tb_Vendor_Selection.Requester_Selection = '1'
+                                                                        GROUP BY Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                                        Tb_Vendor_Quantity.Price,Tb_Vendor_Quantity.Total,Tb_Vendor_Quantity.Request_Id,
+                                                                        Tb_Vendor_Quantity.Quantity,Tb_Vendor_Quantity.Meterial_Name,Tb_Vendor_Quantity.Total,Tb_Vendor_Quantity.gst_percentage,Tb_Vendor_Quantity.discount_percentage");
+                                                                        while ($row = sqlsrv_fetch_array($result)) {
+                                                                            ?>
+                                                                            <tr>
+                                                                                <td>
+                                                                                    <input type="text"
+                                                                                        class="form-control qty"
+                                                                                        readonly name="Quantity_Details[]"
+                                                                                        value="<?php echo $row['Quantity'] ?>"
+                                                                                        placeholder="Enter Quantity Details" style="width: 75px;">
+                                                                                    <input type="hidden"
+                                                                                        class="form-control"
+                                                                                        name="Meterial_Name[]"
+                                                                                        value="<?php echo $row['Meterial_Name'] ?>">
+                                                                                    <input type="hidden"
+                                                                                        class="form-control" name="V_id[]"
+                                                                                        value="<?php echo $row['V_id'] ?>">
+                                                                                </td>
 
-																				<td>
-																					<input type="text" readonly 
-																						class="form-control price"
-																						name="Price[]"
-																						value="<?php echo $row['Price'] ?>" style="width: 75px;">
-																				</td>
+                                                                                <td>
+                                                                                    <input type="text" readonly 
+                                                                                        class="form-control price"
+                                                                                        name="Price[]"
+                                                                                        value="<?php echo $row['Price'] ?>" style="width: 75px;">
+                                                                                </td>
                                                                                 <td>
                                                                                     <input type="number" min="0"
                                                                                         class="form-control vendor_gst_percent_1 gst_percent" style="width: 75px;"
@@ -1500,80 +1519,80 @@ if (isset($_POST["Verification"])) {
                                                                                         placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="1" readonly id="vendor1_discount_percentage_material<?php echo $mat_ind;?>" value="<?php echo $row['discount_percentage'] ?>">
                                                                                     <span class="error_msg text-danger"></span>
                                                                                 </td>
-																				<td>
-																					<input type="text"
-																						class="form-control amount"
-																						readonly name="Total[]" 
-																						value="<?php echo $row['Total'] ?>" style="width: 75px;">
-																				</td>
-																			</tr>
-																			<?php $mat_ind++; } ?>
-																	</tbody>
-																</table>
-															</td>
-															<?php
-															$array_Details111 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                                                <td>
+                                                                                    <input type="text"
+                                                                                        class="form-control amount"
+                                                                                        readonly name="Total[]" 
+                                                                                        value="<?php echo $row['Total'] ?>" style="width: 75px;">
+                                                                                </td>
+                                                                            </tr>
+                                                                            <?php $mat_ind++; } ?>
+                                                                    </tbody>
+                                                                </table>
+                                                            </td>
+                                                            <?php
+                                                            $array_Details111 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id ORDER BY Tb_Vendor_Selection.V_id DESC");
                                                             $vendor_ind = 2;
-															while ($array_dy_Details111 = sqlsrv_fetch_array($array_Details111)) {
-																$arr = $array_dy_Details111['V_id'];
-																?>
-															<td>
-																<table id="myTable1" class="table table-bordered"
-																	style="width: 345px !important;">
-																	<tr>
-																		<thead>
-																			<td>Quantity</td>
-																			<th>Price</th>
+                                                            while ($array_dy_Details111 = sqlsrv_fetch_array($array_Details111)) {
+                                                                $arr = $array_dy_Details111['V_id'];
+                                                                ?>
+                                                            <td>
+                                                                <table id="myTable1" class="table table-bordered"
+                                                                    style="width: 345px !important;">
+                                                                    <tr>
+                                                                        <thead>
+                                                                            <td>Quantity</td>
+                                                                            <th>Price</th>
                                                                             <th>GST(%)</th>
                                                                             <th>Discount(%)</th>
-																			<th>Total</th>
-																		</thead>
-																	</tr>
-																	<tbody>
+                                                                            <th>Total</th>
+                                                                        </thead>
+                                                                    </tr>
+                                                                    <tbody>
                                                                         <?php
                                                                             $mat_ind = 1;
-																			$array_Details1111 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-																			Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Quantity.Quantity,Tb_Vendor_Quantity.Meterial_Name,
-																			Tb_Vendor_Quantity.Price,Tb_Vendor_Quantity.Total,Tb_Vendor_Quantity.gst_percentage,Tb_Vendor_Quantity.discount_percentage 
-																			FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-																			ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-																			WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND  Tb_Vendor_Selection.V_id = '$arr'
-																			AND Tb_Vendor_Quantity.V_id = '$arr'
-																			AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-																			GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-																			Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Quantity.Quantity,Tb_Vendor_Quantity.Meterial_Name,
-																			Tb_Vendor_Quantity.Price,Tb_Vendor_Quantity.Total,Tb_Vendor_Quantity.gst_percentage,Tb_Vendor_Quantity.discount_percentage  ORDER BY Tb_Vendor_Selection.V_id DESC");
-																			while ($array_dy_Details1111 = sqlsrv_fetch_array($array_Details1111)) {
+                                                                            $array_Details1111 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Quantity.Quantity,Tb_Vendor_Quantity.Meterial_Name,
+                                                                            Tb_Vendor_Quantity.Price,Tb_Vendor_Quantity.Total,Tb_Vendor_Quantity.gst_percentage,Tb_Vendor_Quantity.discount_percentage 
+                                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND  Tb_Vendor_Selection.V_id = '$arr'
+                                                                            AND Tb_Vendor_Quantity.V_id = '$arr'
+                                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Quantity.Quantity,Tb_Vendor_Quantity.Meterial_Name,
+                                                                            Tb_Vendor_Quantity.Price,Tb_Vendor_Quantity.Total,Tb_Vendor_Quantity.gst_percentage,Tb_Vendor_Quantity.discount_percentage  ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                                            while ($array_dy_Details1111 = sqlsrv_fetch_array($array_Details1111)) {
 
-																				?>
-																			<tr>
-																				<td>
-																					<input type="text"
-																						class="form-control qty"
-																						readonly name="Quantity_Details[]" 
-																						value="<?php echo $array_dy_Details1111['Quantity'] ?>"
-																						placeholder="Enter Quantity Details" style="width: 75px;">
-																					<input type="hidden"
-																						class="form-control"
-																						name="Meterial_Name[]"
-																						value="<?php echo $array_dy_Details1111['Meterial_Name'] ?>">
-																					<input type="hidden"
-																						class="form-control" name="V_id[]"
-																						value="<?php echo $arr ?>">
-																				</td>
-																				<td>
-																					<input type="text" readonly
-																						class="form-control price"
-																						name="Price[]" style="width: 75px;"
-																						value="<?php echo $array_dy_Details1111['Price'] ?>">
-																				</td>
+                                                                                ?>
+                                                                            <tr>
+                                                                                <td>
+                                                                                    <input type="text"
+                                                                                        class="form-control qty"
+                                                                                        readonly name="Quantity_Details[]" 
+                                                                                        value="<?php echo $array_dy_Details1111['Quantity'] ?>"
+                                                                                        placeholder="Enter Quantity Details" style="width: 75px;">
+                                                                                    <input type="hidden"
+                                                                                        class="form-control"
+                                                                                        name="Meterial_Name[]"
+                                                                                        value="<?php echo $array_dy_Details1111['Meterial_Name'] ?>">
+                                                                                    <input type="hidden"
+                                                                                        class="form-control" name="V_id[]"
+                                                                                        value="<?php echo $arr ?>">
+                                                                                </td>
+                                                                                <td>
+                                                                                    <input type="text" readonly
+                                                                                        class="form-control price"
+                                                                                        name="Price[]" style="width: 75px;"
+                                                                                        value="<?php echo $array_dy_Details1111['Price'] ?>">
+                                                                                </td>
                                                                                 <td>
                                                                                     <input type="number" min="0"
                                                                                         class="form-control vendor_gst_percent_1 gst_percent" style="width: 75px;"
@@ -1589,19 +1608,19 @@ if (isset($_POST["Verification"])) {
                                                                                         placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="1" readonly id="vendor<?php echo $vendor_ind; ?>_discount_percentage_material<?php echo $mat_ind;?>" value="<?php echo $array_dy_Details1111['discount_percentage'] ?>">
                                                                                     <span class="error_msg text-danger"></span>
                                                                                 </td>
-																				<td>
-																					<input type="text" 
-																						class="form-control amount"
-																						readonly name="Total[]"
-																						value="<?php echo $array_dy_Details1111['Total'] ?>" style="width: 75px;">
-																				</td>
-																			</tr>
-																		<?php $mat_ind++; } ?>
-																	</tbody>
-																</table>
-															</td>
-															<?php $vendor_ind++;} ?>
-														</tr>
+                                                                                <td>
+                                                                                    <input type="text" 
+                                                                                        class="form-control amount"
+                                                                                        readonly name="Total[]"
+                                                                                        value="<?php echo $array_dy_Details1111['Total'] ?>" style="width: 75px;">
+                                                                                </td>
+                                                                            </tr>
+                                                                        <?php $mat_ind++; } ?>
+                                                                    </tbody>
+                                                                </table>
+                                                            </td>
+                                                            <?php $vendor_ind++;} ?>
+                                                        </tr>
                                                         <tr id="seven1">
                                                             <th>Total</th>
                                                             <td>
@@ -1741,108 +1760,108 @@ if (isset($_POST["Verification"])) {
 
                                                             <?php } ?>
                                                         </tr>
-														<tr id="seven">
-															<th>Net Amount</th>
-															<td><input type="text" readonly class="form-control valueof1 requested_value"
-																	name="Value_Of[]" id="totale2" title="Total + AdditionalCharges"
-																	value="<?php echo $selector_arr['Value_Of'] ?>">
-															</td>
-															<?php
-															$array_Details7 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Value_Of
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Value_Of ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                        <tr id="seven">
+                                                            <th>Net Amount</th>
+                                                            <td><input type="text" readonly class="form-control valueof1 requested_value"
+                                                                    name="Value_Of[]" id="totale2" title="Total + AdditionalCharges"
+                                                                    value="<?php echo $selector_arr['Value_Of'] ?>">
+                                                            </td>
+                                                            <?php
+                                                            $array_Details7 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Value_Of
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Value_Of ORDER BY Tb_Vendor_Selection.V_id DESC");
                                                             $index = 2;
-															while ($array_dy_Details7 = sqlsrv_fetch_array($array_Details7)) {
+                                                            while ($array_dy_Details7 = sqlsrv_fetch_array($array_Details7)) {
 
-																?>
-																<td><input type="text" readonly class="form-control valueof<?php echo $index; ?>"
-																		name="Value_Of[]" id="totale2" title="Total + AdditionalCharges"
-																		value="<?php echo $array_dy_Details7['Value_Of'] ?>">
-																</td>
-															<?php $index++; } ?>
-														</tr>
-														<tr id="eight">
-															<th>Delivery Time</th>
-															<td><input type="text" readonly class="form-control "
-																	name="Delivery_Time[]" 
-																	value="<?php echo $selector_arr['Delivery_Time'] ?>">
-															</td>
-															<?php
-															$array_Details8 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Delivery_Time
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Delivery_Time ORDER BY Tb_Vendor_Selection.V_id DESC");
-															while ($array_dy_Details8 = sqlsrv_fetch_array($array_Details8)) {
+                                                                ?>
+                                                                <td><input type="text" readonly class="form-control valueof<?php echo $index; ?>"
+                                                                        name="Value_Of[]" id="totale2" title="Total + AdditionalCharges"
+                                                                        value="<?php echo $array_dy_Details7['Value_Of'] ?>">
+                                                                </td>
+                                                            <?php $index++; } ?>
+                                                        </tr>
+                                                        <tr id="eight">
+                                                            <th>Delivery Time</th>
+                                                            <td><input type="text" readonly class="form-control "
+                                                                    name="Delivery_Time[]" 
+                                                                    value="<?php echo $selector_arr['Delivery_Time'] ?>">
+                                                            </td>
+                                                            <?php
+                                                            $array_Details8 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Delivery_Time
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Delivery_Time ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                            while ($array_dy_Details8 = sqlsrv_fetch_array($array_Details8)) {
 
-																?>
-																<td><input type="text" readonly class="form-control "
-																		name="Delivery_Time[]" 
-																		value="<?php echo $array_dy_Details8['Delivery_Time'] ?>">
-																</td>
-															<?php } ?>
-														</tr>
-														<tr id="twelve">
-															<th>Warrenty</th>
-															<td><input type="text" readonly class="form-control"
-																	name="Warrenty[]" 
-																	value="<?php echo $selector_arr['Warrenty'] ?>">
-															</td>
-															<?php
-															$array_Details12 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Warrenty
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Warrenty ORDER BY Tb_Vendor_Selection.V_id DESC");
-															while ($array_dy_Details12 = sqlsrv_fetch_array($array_Details12)) {
+                                                                ?>
+                                                                <td><input type="text" readonly class="form-control "
+                                                                        name="Delivery_Time[]" 
+                                                                        value="<?php echo $array_dy_Details8['Delivery_Time'] ?>">
+                                                                </td>
+                                                            <?php } ?>
+                                                        </tr>
+                                                        <tr id="twelve">
+                                                            <th>Warrenty</th>
+                                                            <td><input type="text" readonly class="form-control"
+                                                                    name="Warrenty[]" 
+                                                                    value="<?php echo $selector_arr['Warrenty'] ?>">
+                                                            </td>
+                                                            <?php
+                                                            $array_Details12 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Warrenty
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Warrenty ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                            while ($array_dy_Details12 = sqlsrv_fetch_array($array_Details12)) {
 
-																?>
-																<td><input type="text" readonly class="form-control "
-																		name="Warrenty[]" 
-																		value="<?php echo $array_dy_Details12['Warrenty'] ?>">
-																</td>
-															<?php } ?>
-														</tr>
-														<tr id="thirteen">
-															<th>Payment Terms</th>
-															<td><input type="text" readonly class="form-control "
-																	name="Payment_Terms[]"
-																	value="<?php echo $selector_arr['Payment_Terms'] ?>">
-															</td>
-															<?php
-															$array_Details13 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Payment_Terms
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Payment_Terms ORDER BY Tb_Vendor_Selection.V_id DESC");
-															while ($array_dy_Details13 = sqlsrv_fetch_array($array_Details13)) {
+                                                                ?>
+                                                                <td><input type="text" readonly class="form-control "
+                                                                        name="Warrenty[]" 
+                                                                        value="<?php echo $array_dy_Details12['Warrenty'] ?>">
+                                                                </td>
+                                                            <?php } ?>
+                                                        </tr>
+                                                        <tr id="thirteen">
+                                                            <th>Payment Terms</th>
+                                                            <td><input type="text" readonly class="form-control "
+                                                                    name="Payment_Terms[]"
+                                                                    value="<?php echo $selector_arr['Payment_Terms'] ?>">
+                                                            </td>
+                                                            <?php
+                                                            $array_Details13 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Payment_Terms
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Payment_Terms ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                            while ($array_dy_Details13 = sqlsrv_fetch_array($array_Details13)) {
 
-																?>
-																<td><input type="text" readonly class="form-control "
-																		name="Payment_Terms[]" 
-																		value="<?php echo $array_dy_Details13['Payment_Terms'] ?>">
-																</td>
-															<?php } ?>
-														</tr>
-													</tbody>
-													<div class="separator-solid"></div>
+                                                                ?>
+                                                                <td><input type="text" readonly class="form-control "
+                                                                        name="Payment_Terms[]" 
+                                                                        value="<?php echo $array_dy_Details13['Payment_Terms'] ?>">
+                                                                </td>
+                                                            <?php } ?>
+                                                        </tr>
+                                                    </tbody>
+                                                    <div class="separator-solid"></div>
 
-													<tbody id="eone">
-                                                        															
+                                                    <tbody id="eone">
+                                                                                                                    
                                                             <tr id="tara" class="src-table">
                                                             <?php 
                                                         $array_finance = sqlsrv_query($conn, "SELECT  * 
@@ -1858,63 +1877,63 @@ if (isset($_POST["Verification"])) {
 
                                                         }else{
                                                             ?>
-															<th>Requester's Selection
+                                                            <th>Requester's Selection
                                                         <?php }
                                                         ?>
-															<td class="woo"><input type="text" class="form-control requester_selection1"
-																	readonly name="Requester_Selection[]" style="color: black;"
-																	value="<?php echo $selector_arr['Requester_Selection'] ?>">
-																
-															</td>
-															<?php
-															$array_Details14 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Selection
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Selection ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                            <td class="woo"><input type="text" class="form-control requester_selection1"
+                                                                    readonly name="Requester_Selection[]" style="color: black;"
+                                                                    value="<?php echo $selector_arr['Requester_Selection'] ?>">
+                                                                
+                                                            </td>
+                                                            <?php
+                                                            $array_Details14 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Selection
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Selection ORDER BY Tb_Vendor_Selection.V_id DESC");
                                                             $rsindex = 2;
-															while ($array_dy_Details14 = sqlsrv_fetch_array($array_Details14)) {
-																?>
-																<td class="woo"><input type="text" readonly style="color: black;"
-																		class="form-control requester_selection<?php echo $rsindex;?>" name="Requester_Selection[]"
-																		value="<?php echo $array_dy_Details14['Requester_Selection'] ?>">
-																</td>
-															<?php } ?>
+                                                            while ($array_dy_Details14 = sqlsrv_fetch_array($array_Details14)) {
+                                                                ?>
+                                                                <td class="woo"><input type="text" readonly style="color: black;"
+                                                                        class="form-control requester_selection<?php echo $rsindex;?>" name="Requester_Selection[]"
+                                                                        value="<?php echo $array_dy_Details14['Requester_Selection'] ?>">
+                                                                </td>
+                                                            <?php } ?>
 
-														</tr>
-														<tr id="text">
+                                                        </tr>
+                                                        <tr id="text">
                                                         <?php 
-															$requester_name = sqlsrv_query($conn, "SELECT  * FROM HR_Master_Table 
-															WHERE Employee_Code = '$Purchaser_Code' ");
-															$requester_names = sqlsrv_fetch_array($requester_name);
-															$name = $requester_names['Employee_Name'];
-															?>
+                                                            $requester_name = sqlsrv_query($conn, "SELECT  * FROM HR_Master_Table 
+                                                            WHERE Employee_Code = '$Purchaser_Code' ");
+                                                            $requester_names = sqlsrv_fetch_array($requester_name);
+                                                            $name = $requester_names['Employee_Name'];
+                                                            ?>
                                                             <th>Requester's Remarks<span class="required-label">&nbsp;&nbsp;(<?php echo $name ?>)</span></th>
-															<td><input type="text" class="form-control" readonly
-																	name="Requester_Remarks[]"
-																	value="<?php echo $selector_arr['Requester_Remarks'] ?>">
-															</td>
-															<?php
-															$array_Details15 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Remarks
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Remarks ORDER BY Tb_Vendor_Selection.V_id DESC");
-															while ($array_dy_Details15 = sqlsrv_fetch_array($array_Details15)) {
+                                                            <td><input type="text" class="form-control" readonly
+                                                                    name="Requester_Remarks[]"
+                                                                    value="<?php echo $selector_arr['Requester_Remarks'] ?>">
+                                                            </td>
+                                                            <?php
+                                                            $array_Details15 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Remarks
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Remarks ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                            while ($array_dy_Details15 = sqlsrv_fetch_array($array_Details15)) {
 
-																?>
-																<td><input type="text" class="form-control" readonly
-																		name="Requester_Remarks[]"
-																		value="<?php echo $array_dy_Details15['Requester_Remarks'] ?>">
-																</td>
-															<?php } ?>
-														</tr>
+                                                                ?>
+                                                                <td><input type="text" class="form-control" readonly
+                                                                        name="Requester_Remarks[]"
+                                                                        value="<?php echo $array_dy_Details15['Requester_Remarks'] ?>">
+                                                                </td>
+                                                            <?php } ?>
+                                                        </tr>
                                                         <!--  -->
                                                         <?php 
                                                         $array_finance = sqlsrv_query($conn, "SELECT  * 
@@ -1926,57 +1945,57 @@ if (isset($_POST["Verification"])) {
                                                         if($array_dy_finance['Remark'] == '' ){
                                                             ?>
                                                             <tr class="target-table">
-															<th>Recommender Selection<span class="required-label"style="color:red">*</span>
+                                                            <th>Recommender Selection<span class="required-label"style="color:red">*</span>
                                                             </th>
-															<?php
-															$array_Details141 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Selection
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Selection 
-															ORDER BY Tb_Vendor_Selection.V_id DESC",[],array( "Scrollable" => SQLSRV_CURSOR_KEYSET ));
-																// $res = sqlsrv_fetch_array($array_Details14);
-																// $vendor_count = COUNT($res);
-																$vendor_count = sqlsrv_num_rows($array_Details141);
+                                                            <?php
+                                                            $array_Details141 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Selection
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Selection 
+                                                            ORDER BY Tb_Vendor_Selection.V_id DESC",[],array( "Scrollable" => SQLSRV_CURSOR_KEYSET ));
+                                                                // $res = sqlsrv_fetch_array($array_Details14);
+                                                                // $vendor_count = COUNT($res);
+                                                                $vendor_count = sqlsrv_num_rows($array_Details141);
                                                                 $resindex = 1;
-																while ($array_dy_Details141 = sqlsrv_fetch_array($array_Details141)) { ?>
-																<td class="answer">
-																	<select class="form-control request_selection"
-																		name="Recommender_Selection[]" data-id="<?php echo $resindex; ?>">
-																		<option value="">Select Recommender Selection</option>
-																		<?php for($i = 1;$i<= $vendor_count;$i++) { ?>
-																		<option value="<?php echo $i; ?>"><?php echo $i; ?></option>
-																		<?php } ?>
-																	</select>
-																</td>
-															<?php $resindex++; } ?>
-															<td class="root">
-														 			<input type="text" class="form-control " 
-																	readonly name="Recommender_Selection[]"
-																	value="<?php echo $selector_arr['Requester_Selection'] ?>">
-																</td>
-																<?php
-															$array_Details141 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Selection
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Selection ORDER BY Tb_Vendor_Selection.V_id DESC");
-															while ($array_dy_Details141 = sqlsrv_fetch_array($array_Details141)) {
+                                                                while ($array_dy_Details141 = sqlsrv_fetch_array($array_Details141)) { ?>
+                                                                <td class="answer">
+                                                                    <select class="form-control request_selection"
+                                                                        name="Recommender_Selection[]" data-id="<?php echo $resindex; ?>">
+                                                                        <option value="">Select Recommender Selection</option>
+                                                                        <?php for($i = 1;$i<= $vendor_count;$i++) { ?>
+                                                                        <option value="<?php echo $i; ?>"><?php echo $i; ?></option>
+                                                                        <?php } ?>
+                                                                    </select>
+                                                                </td>
+                                                            <?php $resindex++; } ?>
+                                                            <td class="root">
+                                                                    <input type="text" class="form-control " 
+                                                                    readonly name="Recommender_Selection[]"
+                                                                    value="<?php echo $selector_arr['Requester_Selection'] ?>">
+                                                                </td>
+                                                                <?php
+                                                            $array_Details141 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Selection
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Requester_Selection ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                            while ($array_dy_Details141 = sqlsrv_fetch_array($array_Details141)) {
 
-																?>
-																<td class="root">
-																<input type="text" class="form-control " 
-																	readonly name="Recommender_Selection[]"
-																	value="<?php echo $array_dy_Details141['Requester_Selection'] ?>">
-																</td>
-															<?php } ?>
-														</tr>
+                                                                ?>
+                                                                <td class="root">
+                                                                <input type="text" class="form-control " 
+                                                                    readonly name="Recommender_Selection[]"
+                                                                    value="<?php echo $array_dy_Details141['Requester_Selection'] ?>">
+                                                                </td>
+                                                            <?php } ?>
+                                                        </tr>
                                                         <?php 
 
                                                         }else{
@@ -1997,30 +2016,30 @@ if (isset($_POST["Verification"])) {
                                                         $selector_arr = sqlsrv_fetch_array($selector);
                                                         ?>
                                                         <tr id="tara" class="src-table">
-															<th>Recommender's Selection</th>
-															<td class="woo">
-																	<input type="text" class="form-control " 
-																	readonly name="Recommender_Selection[]"
-																	value="<?php echo $selector_arr['Recommender_Selection'] ?>">
-															</td>
-															<?php
-															$array_Details14 = sqlsrv_query($conn, "SELECT  Tb_Recommender.Request_id,Tb_Recommender.V_id,
-															Tb_Recommender_Meterial.Request_id,Tb_Recommender_Meterial.V_id,Tb_Recommender.Recommender_Selection
-															FROM Tb_Recommender INNER JOIN Tb_Recommender_Meterial ON Tb_Recommender.Request_id = Tb_Recommender_Meterial.Request_id 
-															WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.V_id = Tb_Recommender_Meterial.V_id AND Tb_Recommender.Recommender_Selection ! = '1' 
-															GROUP BY Tb_Recommender.Request_id,Tb_Recommender.V_id,
-															Tb_Recommender_Meterial.Request_id,Tb_Recommender_Meterial.V_id,Tb_Recommender.Recommender_Selection ORDER BY Tb_Recommender.V_id DESC");
-															while ($array_dy_Details14 = sqlsrv_fetch_array($array_Details14)) {
+                                                            <th>Recommender's Selection</th>
+                                                            <td class="woo">
+                                                                    <input type="text" class="form-control " 
+                                                                    readonly name="Recommender_Selection[]"
+                                                                    value="<?php echo $selector_arr['Recommender_Selection'] ?>">
+                                                            </td>
+                                                            <?php
+                                                            $array_Details14 = sqlsrv_query($conn, "SELECT  Tb_Recommender.Request_id,Tb_Recommender.V_id,
+                                                            Tb_Recommender_Meterial.Request_id,Tb_Recommender_Meterial.V_id,Tb_Recommender.Recommender_Selection
+                                                            FROM Tb_Recommender INNER JOIN Tb_Recommender_Meterial ON Tb_Recommender.Request_id = Tb_Recommender_Meterial.Request_id 
+                                                            WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.V_id = Tb_Recommender_Meterial.V_id AND Tb_Recommender.Recommender_Selection ! = '1' 
+                                                            GROUP BY Tb_Recommender.Request_id,Tb_Recommender.V_id,
+                                                            Tb_Recommender_Meterial.Request_id,Tb_Recommender_Meterial.V_id,Tb_Recommender.Recommender_Selection ORDER BY Tb_Recommender.V_id DESC");
+                                                            while ($array_dy_Details14 = sqlsrv_fetch_array($array_Details14)) {
 
-																?>
-																<td class="woo">
-																		<input type="text" class="form-control "
-																	readonly name="Recommender_Selection[]" 
-																	value="<?php echo $array_dy_Details14['Recommender_Selection'] ?>">
-																</td>
-															<?php } ?>
+                                                                ?>
+                                                                <td class="woo">
+                                                                        <input type="text" class="form-control "
+                                                                    readonly name="Recommender_Selection[]" 
+                                                                    value="<?php echo $array_dy_Details14['Recommender_Selection'] ?>">
+                                                                </td>
+                                                            <?php } ?>
 
-														</tr>
+                                                        </tr>
                                                         <?php } ?>
 
 
@@ -2033,58 +2052,58 @@ if (isset($_POST["Verification"])) {
                                                         <?php 
                                                         if($array_dy_finance['Remark'] == '' ){
                                                             ?>
-														<tr class="remark">
+                                                        <tr class="remark">
                                                         <?php 
-															$requester_name = sqlsrv_query($conn, "SELECT  * FROM HR_Master_Table 
-															WHERE Employee_Code = '$Recommender_Code' ");
-															$requester_names = sqlsrv_fetch_array($requester_name);
-															$name = $requester_names['Employee_Name'];
-															?>
+                                                            $requester_name = sqlsrv_query($conn, "SELECT  * FROM HR_Master_Table 
+                                                            WHERE Employee_Code = '$Recommender_Code' ");
+                                                            $requester_names = sqlsrv_fetch_array($requester_name);
+                                                            $name = $requester_names['Employee_Name'];
+                                                            ?>
                                                             <th>Recommender's Remarks<span class="required-label">&nbsp;&nbsp;(<?php echo $name ?>)</span></th>
 
-															<?php
-															$array_Details11 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_City
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_City ORDER BY Tb_Vendor_Selection.V_id DESC");
-															while ($array_dy_Details11 = sqlsrv_fetch_array($array_Details11)) {
+                                                            <?php
+                                                            $array_Details11 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_City
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Vendor_City ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                            while ($array_dy_Details11 = sqlsrv_fetch_array($array_Details11)) {
 
-																?>
-																<td><input type="text" class="form-control"
-																		name="Recommender_Remarks[]"
-																		placeholder="Enter Recommender Remarks"></td>
-															<?php } ?>
-														</tr>
+                                                                ?>
+                                                                <td><input type="text" class="form-control"
+                                                                        name="Recommender_Remarks[]"
+                                                                        placeholder="Enter Recommender Remarks"></td>
+                                                            <?php } ?>
+                                                        </tr>
                                                         <?php
                                                         }else{
                                                             ?>
                                                             <tr>
-															<th>Recommender's Remarks<span class="required-label"></span>
-															</th>
-															<td><input type="text" class="form-control " readonly 
-																	name="Recommender_Remarks[]"
-																	value="<?php echo $selector_arr['Recommender_Remarks'] ?>">
-															</td>
-															<?php
-															$array_Details121 = sqlsrv_query($conn, "SELECT  Tb_Recommender.Request_id,Tb_Recommender.V_id,
-															Tb_Recommender_Meterial.Request_id,Tb_Recommender_Meterial.V_id,Tb_Recommender.Recommender_Remarks
-															FROM Tb_Recommender INNER JOIN Tb_Recommender_Meterial ON Tb_Recommender.Request_id = Tb_Recommender_Meterial.Request_id 
-															WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.V_id = Tb_Recommender_Meterial.V_id AND Tb_Recommender.Recommender_Selection ! = '1' 
-															GROUP BY Tb_Recommender.Request_id,Tb_Recommender.V_id,
-															Tb_Recommender_Meterial.Request_id,Tb_Recommender_Meterial.V_id,Tb_Recommender.Recommender_Remarks ORDER BY Tb_Recommender.V_id DESC");
-															while ($array_dy_Details121 = sqlsrv_fetch_array($array_Details121)) {
+                                                            <th>Recommender's Remarks<span class="required-label"></span>
+                                                            </th>
+                                                            <td><input type="text" class="form-control " readonly 
+                                                                    name="Recommender_Remarks[]"
+                                                                    value="<?php echo $selector_arr['Recommender_Remarks'] ?>">
+                                                            </td>
+                                                            <?php
+                                                            $array_Details121 = sqlsrv_query($conn, "SELECT  Tb_Recommender.Request_id,Tb_Recommender.V_id,
+                                                            Tb_Recommender_Meterial.Request_id,Tb_Recommender_Meterial.V_id,Tb_Recommender.Recommender_Remarks
+                                                            FROM Tb_Recommender INNER JOIN Tb_Recommender_Meterial ON Tb_Recommender.Request_id = Tb_Recommender_Meterial.Request_id 
+                                                            WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.V_id = Tb_Recommender_Meterial.V_id AND Tb_Recommender.Recommender_Selection ! = '1' 
+                                                            GROUP BY Tb_Recommender.Request_id,Tb_Recommender.V_id,
+                                                            Tb_Recommender_Meterial.Request_id,Tb_Recommender_Meterial.V_id,Tb_Recommender.Recommender_Remarks ORDER BY Tb_Recommender.V_id DESC");
+                                                            while ($array_dy_Details121 = sqlsrv_fetch_array($array_Details121)) {
 
-																?>
-																<td><input type="text" readonly class="form-control " 
-																		name="Recommender_Remarks[]"
-																		value="<?php echo $array_dy_Details121['Recommender_Remarks'] ?>">
-																</td>
-															<?php } ?>
+                                                                ?>
+                                                                <td><input type="text" readonly class="form-control " 
+                                                                        name="Recommender_Remarks[]"
+                                                                        value="<?php echo $array_dy_Details121['Recommender_Remarks'] ?>">
+                                                                </td>
+                                                            <?php } ?>
 
-														</tr>
+                                                        </tr>
                                                             <?php
                                                         }
                                                         ?>
@@ -2100,184 +2119,251 @@ if (isset($_POST["Verification"])) {
                                                         }else{
                                                             ?>
                                                             <tr>
-															<th>Total Budget (in INR)<span class="required-label"></span>
-															</th>
-															<?php
-															$array_Deta = sqlsrv_query($conn, "SELECT  * 
-															FROM Tb_Recommender INNER JOIN Tb_Finance_verifier ON Tb_Recommender.Request_id = Tb_Finance_verifier.Request_Id 
-															WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.Vendor_Name = Tb_Finance_verifier.Vendor_Name AND Tb_Recommender.Recommender_Selection = '1'");
-															$array_dy_Deta = sqlsrv_fetch_array($array_Deta)
-															?>
-															<td><input type="text" class="form-control " readonly 
-																	name="Total_Budget[]"
-																	value="<?php echo $array_dy_Deta['Total_Budget'] ?>">
-															</td>
-															<?php 
-															$array_Details1212 = sqlsrv_query($conn, "SELECT  *
-															FROM Tb_Recommender INNER JOIN Tb_Finance_verifier ON Tb_Recommender.Request_id = Tb_Finance_verifier.Request_Id 
-															WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.Vendor_Name = Tb_Finance_verifier.Vendor_Name AND Tb_Recommender.Recommender_Selection ! = '1' 
-															");
-															while ($array_dy_Details1212 = sqlsrv_fetch_array($array_Details1212)) {
+                                                            <th>Total Budget (in INR)<span class="required-label"></span>
+                                                            </th>
+                                                            <?php
+                                                            $array_Deta = sqlsrv_query($conn, "SELECT  * 
+                                                            FROM Tb_Recommender INNER JOIN Tb_Finance_verifier ON Tb_Recommender.Request_id = Tb_Finance_verifier.Request_Id 
+                                                            WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.Vendor_Name = Tb_Finance_verifier.Vendor_Name AND Tb_Recommender.Recommender_Selection = '1'");
+                                                            $array_dy_Deta = sqlsrv_fetch_array($array_Deta)
+                                                            ?>
+                                                            <td><input type="text" class="form-control " readonly 
+                                                                    name="Total_Budget[]"
+                                                                    value="<?php echo $array_dy_Deta['Total_Budget'] ?>">
+                                                            </td>
+                                                            <?php 
+                                                            $array_Details1212 = sqlsrv_query($conn, "SELECT  *
+                                                            FROM Tb_Recommender INNER JOIN Tb_Finance_verifier ON Tb_Recommender.Request_id = Tb_Finance_verifier.Request_Id 
+                                                            WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.Vendor_Name = Tb_Finance_verifier.Vendor_Name AND Tb_Recommender.Recommender_Selection ! = '1' 
+                                                            ");
+                                                            while ($array_dy_Details1212 = sqlsrv_fetch_array($array_Details1212)) {
 
-																?>
-																<td><input type="text" readonly class="form-control " 
-																		name="Total_Budget[]"
-																		value="<?php echo $array_dy_Details1212['Total_Budget'] ?>">
-																</td>
-															<?php } ?>
+                                                                ?>
+                                                                <td><input type="text" readonly class="form-control " 
+                                                                        name="Total_Budget[]"
+                                                                        value="<?php echo $array_dy_Details1212['Total_Budget'] ?>">
+                                                                </td>
+                                                            <?php } ?>
 
-														</tr>
-														<tr>
-															<th>Available Budget (in INR)<span class="required-label"></span>
-															</th>
-															<?php
-															$array_Deta = sqlsrv_query($conn, "SELECT  * 
-															FROM Tb_Recommender INNER JOIN Tb_Finance_verifier ON Tb_Recommender.Request_id = Tb_Finance_verifier.Request_Id 
-															WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.Vendor_Name = Tb_Finance_verifier.Vendor_Name AND Tb_Recommender.Recommender_Selection = '1'");
-															$array_dy_Deta = sqlsrv_fetch_array($array_Deta)
-															?>
-															<td><input type="text" class="form-control " readonly 
-																	name="Available_Budget[]"
-																	value="<?php echo $array_dy_Deta['Available_Budget'] ?>">
-															</td>
-															<?php 
-															$array_Details1212 = sqlsrv_query($conn, "SELECT  *
-															FROM Tb_Recommender INNER JOIN Tb_Finance_verifier ON Tb_Recommender.Request_id = Tb_Finance_verifier.Request_Id 
-															WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.Vendor_Name = Tb_Finance_verifier.Vendor_Name AND Tb_Recommender.Recommender_Selection ! = '1' 
-															");
-															while ($array_dy_Details1212 = sqlsrv_fetch_array($array_Details1212)) {
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Available Budget (in INR)<span class="required-label"></span>
+                                                            </th>
+                                                            <?php
+                                                            $array_Deta = sqlsrv_query($conn, "SELECT  * 
+                                                            FROM Tb_Recommender INNER JOIN Tb_Finance_verifier ON Tb_Recommender.Request_id = Tb_Finance_verifier.Request_Id 
+                                                            WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.Vendor_Name = Tb_Finance_verifier.Vendor_Name AND Tb_Recommender.Recommender_Selection = '1'");
+                                                            $array_dy_Deta = sqlsrv_fetch_array($array_Deta)
+                                                            ?>
+                                                            <td><input type="text" class="form-control " readonly 
+                                                                    name="Available_Budget[]"
+                                                                    value="<?php echo $array_dy_Deta['Available_Budget'] ?>">
+                                                            </td>
+                                                            <?php 
+                                                            $array_Details1212 = sqlsrv_query($conn, "SELECT  *
+                                                            FROM Tb_Recommender INNER JOIN Tb_Finance_verifier ON Tb_Recommender.Request_id = Tb_Finance_verifier.Request_Id 
+                                                            WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.Vendor_Name = Tb_Finance_verifier.Vendor_Name AND Tb_Recommender.Recommender_Selection ! = '1' 
+                                                            ");
+                                                            while ($array_dy_Details1212 = sqlsrv_fetch_array($array_Details1212)) {
 
-																?>
-																<td><input type="text" readonly class="form-control " 
-																		name="Available_Budget[]"
-																		value="<?php echo $array_dy_Details1212['Available_Budget'] ?>">
-																</td>
-															<?php } ?>
+                                                                ?>
+                                                                <td><input type="text" readonly class="form-control " 
+                                                                        name="Available_Budget[]"
+                                                                        value="<?php echo $array_dy_Details1212['Available_Budget'] ?>">
+                                                                </td>
+                                                            <?php } ?>
 
-														</tr>
-														<tr>
-															<th>Financer's Remarks<span class="required-label"></span>
-															</th>
-															<?php
-															$array_Deta = sqlsrv_query($conn, "SELECT  * 
-															FROM Tb_Recommender INNER JOIN Tb_Finance_verifier ON Tb_Recommender.Request_id = Tb_Finance_verifier.Request_Id 
-															WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.Vendor_Name = Tb_Finance_verifier.Vendor_Name AND Tb_Recommender.Recommender_Selection = '1'");
-															$array_dy_Deta = sqlsrv_fetch_array($array_Deta)
-															?>
-															<td><input type="text" class="form-control " readonly 
-																	name="Finance_Remarks[]"
-																	value="<?php echo $array_dy_Deta['Remark'] ?>">
-															</td>
-															<?php 
-															$array_Details1212 = sqlsrv_query($conn, "SELECT  *
-															FROM Tb_Recommender INNER JOIN Tb_Finance_verifier ON Tb_Recommender.Request_id = Tb_Finance_verifier.Request_Id 
-															WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.Vendor_Name = Tb_Finance_verifier.Vendor_Name AND Tb_Recommender.Recommender_Selection ! = '1' 
-															");
-															while ($array_dy_Details1212 = sqlsrv_fetch_array($array_Details1212)) {
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Financer's Remarks<span class="required-label"></span>
+                                                            </th>
+                                                            <?php
+                                                            $array_Deta = sqlsrv_query($conn, "SELECT  * 
+                                                            FROM Tb_Recommender INNER JOIN Tb_Finance_verifier ON Tb_Recommender.Request_id = Tb_Finance_verifier.Request_Id 
+                                                            WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.Vendor_Name = Tb_Finance_verifier.Vendor_Name AND Tb_Recommender.Recommender_Selection = '1'");
+                                                            $array_dy_Deta = sqlsrv_fetch_array($array_Deta)
+                                                            ?>
+                                                            <td><input type="text" class="form-control " readonly 
+                                                                    name="Finance_Remarks[]"
+                                                                    value="<?php echo $array_dy_Deta['Remark'] ?>">
+                                                            </td>
+                                                            <?php 
+                                                            $array_Details1212 = sqlsrv_query($conn, "SELECT  *
+                                                            FROM Tb_Recommender INNER JOIN Tb_Finance_verifier ON Tb_Recommender.Request_id = Tb_Finance_verifier.Request_Id 
+                                                            WHERE Tb_Recommender.Request_id ='$request_id' AND Tb_Recommender.Vendor_Name = Tb_Finance_verifier.Vendor_Name AND Tb_Recommender.Recommender_Selection ! = '1' 
+                                                            ");
+                                                            while ($array_dy_Details1212 = sqlsrv_fetch_array($array_Details1212)) {
 
-																?>
-																<td><input type="text" readonly class="form-control " 
-																		name="Finance_Remarks[]"
-																		value="<?php echo $array_dy_Details1212['Remark'] ?>">
-																</td>
-															<?php } ?>
+                                                                ?>
+                                                                <td><input type="text" readonly class="form-control " 
+                                                                        name="Finance_Remarks[]"
+                                                                        value="<?php echo $array_dy_Details1212['Remark'] ?>">
+                                                                </td>
+                                                            <?php } ?>
 
-														</tr>
+                                                        </tr>
                                                             <?php
                                                         }
                                                         ?>
                                                         
                                                         
-														<tr id="pdf">
+                                                        <tr id="pdf">
                                                         <?php
-																	$view16 = sqlsrv_query($conn, "SELECT * FROM Tb_Vendor_Selection WHERE Request_Id = '$request_id' ");
-																	$view_query16 = sqlsrv_fetch_array($view16);
-															?>
-															<?php 
-															if($view_query16['Attachment'] == ''){
+                                                                    $view16 = sqlsrv_query($conn, "SELECT * FROM Tb_Vendor_Selection WHERE Request_Id = '$request_id' ");
+                                                                    $view_query16 = sqlsrv_fetch_array($view16);
+                                                                    $file_extension = explode('.', $view_query16['Attachment'])[1];
 
-															}else{
-																?>
+                                                            ?>
+                                                            <?php 
+                                                            if($view_query16['Attachment'] == ''){
+
+                                                            }else{
+                                                                ?>
                                                             <th>PDF / JPG attachment
-															</th>
+                                                            </th>
                                                             <?php 
                                                             }?>
-															<?php 
-															if($selector_arr['Attachment'] == ''){
+                                                            <?php 
+                                                            if($selector_arr['Attachment'] == ''){
 
-															}else{
-																?>
-                                                                <td><input type="text" class="form-control" name="Attachment[]" readonly value="<?php echo $selector_arr['Attachment'] ?>"
-                                                                    data-bs-toggle="modal" data-bs-target=".bs-example-modal-center">
-																<div class="modal fade bs-example-modal-center" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
-                                                                    <div class="modal-dialog modal-dialog-centered modal-lg">
-                                                                        <div class="modal-content">
-                                                                            <div class="modal-header">
-                                                                                <h5 class="modal-title mt-0">Attachment</h5>
-                                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                                                                                                    
-                                                                                </button>
+                                                            }else{
+                                                                ?>
+                                                                <td>
+                                                                    <input type="text" class="form-control" name="Attachment[]" readonly value="<?php echo $selector_arr['Attachment'] ?>"
+                                                                    data-bs-toggle="modal" data-bs-target=".bs-example-modal-center<?php echo $view_query16['id'] ?>">
+                                                                
+
+                                                                    <!-- file preview modal -->
+                                                                        <div class="modal fade" id="file_preview_modal_1" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                          <div class="modal-dialog modal-lg">
+                                                                            <div class="modal-content">
+                                                                              <div class="modal-header">
+                                                                                <h1 class="modal-title fs-5" id="exampleModalLabel">File Preview</h1>
+                                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                              </div>
+                                                                              <div class="modal-body">
+                                                                                        <img class="preview_file_img_1 preview_image" src="" alt="your image" width="100%" style="display: block;">
+
+                                                                                     <iframe class="preview_file_pdf_1 preview_pdf" src=""
+                                                                                            style="width: 100%;height: 900px;display: block;"
+                                                                                            frameborder="0">
+                                                                                      </iframe>
+
+                                                                              </div>
+                                                                              <div class="modal-footer">
+                                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                                              </div>
                                                                             </div>
-                                                                            <div class="modal-body">
-																			<iframe src="file/<?php echo $selector_arr['Attachment'] ?>"
-																			style="width: 100%;height: 500px;" frameborder="0"></iframe>
-                                                                            </div>
-                                                                            <div class="modal-footer">
-                                                                                <button type="button" class="btn btn-danger waves-effect waves-light btn-sm" data-bs-dismiss="modal" aria-label="Close">Close</button>
-                                                                            </div>
-                                                                        </div><!-- /.modal-content -->
-                                                                    </div><!-- /.modal-dialog -->
-                                                                </div><!-- /.modal -->
-															</td>
+                                                                          </div>
+                                                                        </div>
+                                                                        <!-- file preview modal end -->
+
+                                                                        <div class="row mt-2 display_section p-3" id="file_display_section_1" style="border: 2px dashed blue;height: 400px;overflow-y: auto;">
+                                                                                <?php 
+                                                                                $multi_files = explode(',',$view_query16['Attachment']);
+
+                                                                                foreach ($multi_files as $key => $value) {
+                                                                                    $file_extension = explode('.', $value)[1];
+
+                                                                                    if($file_extension == 'pdf') { ?>
+                                                                                        <div class="col-md-3 h-50 mt-2">
+                                                                                            <img src="https://play-lh.googleusercontent.com/IkcyuPcrQlDsv62dwGqteL_0K_Rt2BUTXfV3_vR4VmAGo-WSCfT2FgHdCBUsMw3TPGU"  class="multi_preview" style="width:100px;height: 100px;" data-filetype="pdf" data-id="1">
+                                                                                            <input type="hidden" id="pdf_input1" value="file/<?php echo $value; ?>">
+                                                                                        </div>  
+                                                                                    <?php } else { ?>
+                                                                                        <div class="col-md-3 h-50 mt-2">
+                                                                                            <i class="fa fa-eye text-primary preview_icon"></i>
+                                                                                            <img src="file/<?php echo $value; ?>" class="multi_preview" data-filetype="img" style="width:100px;height: 100px;" data-id="1">
+                                                                                        </div>
+                                                                                    <?php }} ?>
+                                                                                    
+                                                                        </div>
+
+                                                            </td>
                                                             <?php
                                                             }?>
-															
-															
-                                                            <?php
-															$array_Details16 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Attachment,Tb_Vendor_Selection.Id
-															FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
-															ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
-															WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
-															AND Tb_Vendor_Selection.Requester_Selection ! = '1'
-															GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
-															Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Attachment,Tb_Vendor_Selection.Id ORDER BY Tb_Vendor_Selection.V_id DESC");
-															while ($array_dy_Details16 = sqlsrv_fetch_array($array_Details16)) {
-															?>
                                                             
-															<?php 
-															if($array_dy_Details16['Attachment'] == ''){
-
-															}else{
-																?>
-                                                            <td><input type="text" class="form-control" name="Attachment[]" readonly value="<?php echo $array_dy_Details16['Attachment'] ?>"
-                                                                    data-bs-toggle="modal" data-bs-target=".bs-example-modal-center1<?php echo $array_dy_Details16['Id'] ?>">
-																<div class="modal fade bs-example-modal-center1<?php echo $array_dy_Details16['Id'] ?>" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
-                                                                    <div class="modal-dialog modal-dialog-centered">
-                                                                        <div class="modal-content">
-                                                                            <div class="modal-header">
-                                                                                <h5 class="modal-title mt-0">Attachment</h5>
-                                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                                                                                                    
-                                                                                </button>
-                                                                            </div>
-                                                                            <div class="modal-body">
-																			<iframe src="file/<?php echo $array_dy_Details16['Attachment'] ?>"
-																			style="width: 100%;height: auto;" frameborder="0"></iframe>
-                                                                            </div>
-                                                                            <div class="modal-footer">
-                                                                                <button type="button" class="btn btn-danger waves-effect waves-light btn-sm" data-bs-dismiss="modal" aria-label="Close">Close</button>
-                                                                            </div>
-                                                                        </div><!-- /.modal-content -->
-                                                                    </div><!-- /.modal-dialog -->
-                                                                </div><!-- /.modal -->
-															</td>
+                                                            
+                                                            <?php
+                                                            $array_Details16 = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Attachment,Tb_Vendor_Selection.Id
+                                                            FROM Tb_Vendor_Selection INNER JOIN Tb_Vendor_Quantity 
+                                                            ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
+                                                            WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND Tb_Vendor_Selection.V_id = Tb_Vendor_Quantity.V_id 
+                                                            AND Tb_Vendor_Selection.Requester_Selection ! = '1'
+                                                            GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
+                                                            Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Selection.Attachment,Tb_Vendor_Selection.Id ORDER BY Tb_Vendor_Selection.V_id DESC");
+                                                            $rindex = 1;
+                                                            while ($array_dy_Details16 = sqlsrv_fetch_array($array_Details16)) {
+                                                            ?>
+                                                            
                                                             <?php 
+                                                            if($array_dy_Details16['Attachment'] == ''){
+
+                                                            }else{
+
+                                                                    $file_extension = explode('.', $array_dy_Details16['Attachment'])[1];
+
+                                                                ?>
+                                                            <td>
+                                                                <input type="text" class="form-control" name="Attachment[]" readonly value="<?php echo $array_dy_Details16['Attachment'] ?>"
+                                                                    data-bs-toggle="modal" data-bs-target=".bs-example-modal-center1<?php echo $array_dy_Details16['Id'] ?>">
+
+
+                                                                <!-- file preview modal -->
+                                                                <div class="modal fade" id="file_preview_modal_<?php echo $rindex; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                  <div class="modal-dialog modal-lg">
+                                                                    <div class="modal-content">
+                                                                      <div class="modal-header">
+                                                                        <h1 class="modal-title fs-5" id="exampleModalLabel">File Preview</h1>
+                                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                      </div>
+                                                                      <div class="modal-body">
+                                                                                <img class="preview_file_img_<?php echo $rindex; ?> preview_image" src="" alt="your image" width="100%" style="display: block;">
+
+                                                                             <iframe class="preview_file_pdf_<?php echo $rindex; ?> preview_pdf" src=""
+                                                                                    style="width: 100%;height: 900px;display: block;"
+                                                                                    frameborder="0">
+                                                                              </iframe>
+
+                                                                      </div>
+                                                                      <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                                      </div>
+                                                                    </div>
+                                                                  </div>
+                                                                </div>
+                                                                <!-- file preview modal end -->
+
+                                                                <div class="row mt-2 display_section p-3" id="file_display_section_<?php echo $rindex; ?>" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
+                                                                        <?php 
+                                                                        $multi_files = explode(',',$array_dy_Details16['Attachment']);
+
+                                                                        foreach ($multi_files as $key => $value) {
+                                                                            $file_extension = explode('.', $value)[1];
+
+                                                                            if($file_extension == 'pdf') { ?>
+                                                                                <div class="col-md-3 h-50 mt-2">
+                                                                                    <img src="https://play-lh.googleusercontent.com/IkcyuPcrQlDsv62dwGqteL_0K_Rt2BUTXfV3_vR4VmAGo-WSCfT2FgHdCBUsMw3TPGU"  class="multi_preview" style="width:100px;height: 100px;" data-filetype="pdf" data-id="<?php echo $rindex; ?>">
+                                                                                    <input type="hidden" id="pdf_input<?php echo $rindex; ?>" value="file/<?php echo $value; ?>">
+                                                                                </div>  
+                                                                            <?php } else { ?>
+                                                                                <div class="col-md-3 h-50 mt-2">
+                                                                                    <i class="fa fa-eye text-primary preview_icon"></i>
+                                                                                    <img src="file/<?php echo $value; ?>" class="multi_preview" data-filetype="img" style="width:100px;height: 100px;" data-id="<?php echo $rindex; ?>">
+                                                                                </div>
+                                                                            <?php }} ?>
+                                                                            
+                                                                </div>
+
+                                                            </td>
+                                                            <?php 
+                                                            $rindex++;
                                                             } ?>
                                                             <?php } ?>
-														</tr>
+                                                        </tr>
                                                         
-													</tbody>
+                                                    </tbody>
                                             
                                                     </table>
                                                     
@@ -2317,6 +2403,7 @@ if (isset($_POST["Verification"])) {
                                                               <th>Purchaser</th>
                                                               <th>Recommender</th>
                                                               <th>Approver</th>
+                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
                                                             </tr>
                                                           </thead>
                                                           <tbody id="involved_persons_tbody">
@@ -2332,7 +2419,7 @@ if (isset($_POST["Verification"])) {
                                                             <button class="btn btn-success mb-2 me-4 btn-sm" type="submit" name="save" >
                                                                 Recommend
                                                             </button>
-                                                            <button class="btn btn-warning mb-2 me-4 btn-sm" disabled type="button"data-bs-toggle="modal" data-bs-target=".bs-example-modal-centered">
+                                                            <button class="btn btn-warning mb-2 me-4 btn-sm" type="button" id="send_back_btn">
                                                                 Send Back
                                                             </button>
                                                             <button class="btn btn-danger mb-2 me-4 btn-sm" type="button"data-bs-toggle="modal" data-bs-target=".bs-example-modal-centere" >
@@ -2363,7 +2450,7 @@ if (isset($_POST["Verification"])) {
                                                                 </button>
                                                             </div>
                                                             <div class="modal-body">
-															    <textarea class="form-control" name="Recommender_back_remark[]" aria-label="With textarea"></textarea>
+                                                                <textarea class="form-control" name="Recommender_back_remark[]" aria-label="With textarea"></textarea>
                                                             </div>
                                                             <div class="modal-footer">
                                                                 <button type="button" class="btn btn-danger waves-effect waves-light btn-sm" data-bs-dismiss="modal" aria-label="Close">Close</button>
@@ -2382,7 +2469,7 @@ if (isset($_POST["Verification"])) {
                                                                 </button>
                                                             </div>
                                                             <div class="modal-body">
-															    <textarea class="form-control" name="Recommender_Rejected[]" aria-label="With textarea"></textarea>
+                                                                <textarea class="form-control" name="Recommender_Rejected[]" aria-label="With textarea"></textarea>
                                                             </div>
                                                             <div class="modal-footer">
                                                                 <button type="button" class="btn btn-danger waves-effect waves-light btn-sm" data-bs-dismiss="modal" aria-label="Close">Close</button>
@@ -2404,6 +2491,28 @@ if (isset($_POST["Verification"])) {
                 </div>
                 <!-- End Page-content -->
 
+
+                <!-- Modal -->
+                <div class="modal fade" id="sendback_new_modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">SendBack</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="col-md-12 form-group">
+                            <label for="Recommender_sendback_remark">Remark<span class="text-danger"> *</span></label>
+                            <textarea class="form-control" name="Recommender_sendback_remark" id="Recommender_sendback_remark" rows="5" cols="5"></textarea>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="send_back_remark_submit">Send</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               
                 
                 <?php include('footer.php') ?>
@@ -2813,7 +2922,7 @@ if (isset($_POST["Verification"])) {
                     `<td><input type='text' class='form-control dis${i}'  name='vendor_Active_SAP[]' placeholder='Enter vendor is active in SAP'></td>`
                 );
                 $('tbody').find('#five').append(
-                    `<td><input type='text' class='form-control dis${i}'  name='Last_Purchase[]' 	 placeholder='Enter Last Purchase'></td>`
+                    `<td><input type='text' class='form-control dis${i}'  name='Last_Purchase[]'     placeholder='Enter Last Purchase'></td>`
                 );
                 $('tbody').find('#six').append(`<td><table id='myTable4'  class="table table-bordered" style="width: 235px !important;">
                                                                 <tr>
@@ -2849,7 +2958,7 @@ if (isset($_POST["Verification"])) {
                     `<td><input type='text' readonly class='form-control total3' name='Value_Of[]' id='total3${i}' data-id="${i}" placeholder='Enter Value of' ></td>`
                 );
                 $('tbody').find('#eight').append(
-                    "<td><input type='date' class='form-control'  name='Delivery_Time[]'  	 placeholder='Enter Quantity Details'></td>"
+                    "<td><input type='date' class='form-control'  name='Delivery_Time[]'     placeholder='Enter Quantity Details'></td>"
                 );
                 $('tbody').find('#nine').append(
                     "<td><input type='text' class='form-control'  name='Fright_Charges[]'    placeholder='Enter Value of'></td>"
@@ -2858,13 +2967,13 @@ if (isset($_POST["Verification"])) {
                     "<td><input type='text' class='form-control'  name='Insurance_Details[]' placeholder='Enter Fright Charges'></td>"
                 );
                 $('tbody').find('#eleven').append(
-                    "<td><input type='text' class='form-control'  name='GST_Component[]' 	 placeholder='Enter Insurance Details'></td>"
+                    "<td><input type='text' class='form-control'  name='GST_Component[]'     placeholder='Enter Insurance Details'></td>"
                 );
                 $('tbody').find('#twelve').append(
-                    "<td><input type='text' class='form-control'  name='Warrenty[]'     	 placeholder='Enter GST Component'></td>"
+                    "<td><input type='text' class='form-control'  name='Warrenty[]'          placeholder='Enter GST Component'></td>"
                 );
                 $('tbody').find('#thirteen').append(
-                    "<td><input type='text' class='form-control'  name='Payment_Terms[]'  	 placeholder='Enter Warrenty'></td>"
+                    "<td><input type='text' class='form-control'  name='Payment_Terms[]'     placeholder='Enter Warrenty'></td>"
                 );
                 $('tbody').find('#checkbox').append(
                     "<td><center><input type='checkbox' /><input type='hidden' name='Requester_Selection[]' value='0' /></center></td>"
@@ -3010,23 +3119,107 @@ if (isset($_POST["Verification"])) {
                         // $('#ajax-preloader').show();
                     },
                     success: function (result) {
-                        var table_data = '';
-                        if(result.length > 0) {
-                            table_data = `<tr>
-                            <td>${ (result[0].purchaser_name != '') ? result[0].purchaser_name : '-' }</td>
-                            <td>${ (result[0].recommendor_name != '') ? result[0].recommendor_name : '-' }</td>
-                            <td>${ (result[0].approver_name != '') ? result[0].approver_name : '-' }</td>
-                            </tr>`; 
+                            $('.inv_fin_appr').hide();
 
-                        }
-                        $('#involved_persons_tbody').html(table_data);  
-                        $('#involved_persons_div').show();                                  
+                            var table_data = '';
+                            if(result.length > 0) {
+                                table_data = `<tr>
+                                <td>${ (result[0].purchaser_name != null) ? result[0].purchaser_name : '-' }</td>
+                                <td>${ (result[0].recommendor_name != null) ? result[0].recommendor_name : '-' }</td>
+                                <td>${ (result[0].approver_name != null) ? result[0].approver_name : '-' }</td>`;
+
+                                if(result[0].approver2_name != null) {
+                                    table_data += `<td>${ (result[0].approver2_name != null) ? result[0].approver2_name : '-' }</td>`;
+                                    $('.inv_fin_appr').show();
+                                }
+
+                                table_data += `</tr>`; 
+
+                            }
+                            $('#involved_persons_tbody').html(table_data);  
+                            $('#involved_persons_div').show();                                    
                     },
                     complete:function(){
                         // $('#ajax-preloader').hide();
                     }
                 });
             }
+
+        $(document).on('click','.multi_preview',function(){
+            var file_type = $(this).data('filetype');
+            var src = $(this).attr('src');
+            var row_id = $(this).data('id');
+
+
+             if(file_type == 'pdf') {
+                // var src = $('#pdf_input'+row_id).val();
+                var src = $(this).closest('div').find('#pdf_input'+row_id).val();
+                $('.preview_file_pdf_'+row_id).attr('src', src+'#toolbar=0');
+                $('.preview_file_img_'+row_id).hide();
+                $('.preview_file_pdf_'+row_id).show();
+             } else {
+                $('.preview_file_img_'+row_id).attr('src', src);
+                $('.preview_file_pdf_'+row_id).hide();
+                $('.preview_file_img_'+row_id).show();
+             } 
+            $('#file_preview_modal_'+row_id).modal('show');
+
+        });
+
+        $(document).on('click','#send_back_btn',function(){
+            $('#sendback_new_modal').modal('show');
+        });
+
+        function Alert_Msg(Msg,Type){
+            swal({
+              title: Msg,
+              icon: Type,
+            });
+        }
+
+        $(document).on('click','#send_back_remark_submit',function(){
+            let remark        = $('#Recommender_sendback_remark').val();
+            let sendback_from = 'Recommender';
+            let request_id    = $('#r_id').val(); 
+            $('#sendback_new_modal').modal('hide');
+
+
+            $.ajax({
+                url: "common_ajax.php",
+                type: "POST",
+                data: {
+                    Action : 'purchase_request_sendback',
+                    sendback_from : sendback_from,
+                    remark : remark,
+                    request_id : request_id,
+                },
+                cache: false,
+                dataType: 'json',                        
+                beforeSend:function(){
+                    $('#ajax-preloader').show();
+                },
+                success: function (result) {
+                    if(result.status == 200) {
+                        // Alert_Msg(result.message,'success');
+                        swal({
+                          title: result.message,
+                          icon: 'success',
+                        }).then(() => {
+                             window.location.href = 'show_recommender.php';
+                        });
+
+                    } else {
+                        Alert_Msg(result.message,'error');
+                    }                               
+                },  
+                complete:function(){
+                    $('#ajax-preloader').hide();
+                }
+            });
+        });
+
+
+        
                 
         </script>
 

@@ -320,7 +320,7 @@ if(!isset($_SESSION['EmpID']))
                                                             <tbody>
                                                                 <?php
                                                                     $i = 1;
-                                                                    $sql = "SELECT * FROM Tb_Request WHERE EMP_ID = '".$_SESSION['EmpID']."' AND status = 'Rejected' ORDER BY Id DESC";
+                                                                    $sql = "SELECT * FROM Tb_Request WHERE EMP_ID = '".$_SESSION['EmpID']."' AND (status = 'Rejected' OR status='Recommender_Rejected' OR status='Approver_Reject') ORDER BY Id DESC";
                                                                     $params = array();
                                                                     $options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
                                                                     $stmt = sqlsrv_prepare($conn, $sql, $params, $options);
@@ -338,7 +338,7 @@ if(!isset($_SESSION['EmpID']))
                                                                             <?php echo $row['Request_Type'] ?>
                                                                         </td>
                                                                         <td>
-                                                                            <?php echo $row['Depatment'] ?>
+                                                                            <?php echo $row['Department'] ?>
                                                                         </td>
                                                                         <td>
                                                                             <?php echo $row['Time_Log']->format('d/m/Y') ?>
@@ -354,7 +354,7 @@ if(!isset($_SESSION['EmpID']))
                                                                         </td>
                                                                         <td>
                                                                             <?php
-                                                                                if($row['status'] == 'Rejected'){ 
+                                                                                if($row['status'] == 'Rejected' || $row['status'] == 'Recommender_Rejected' || $row['status'] == 'Approver_Reject'){ 
                                                                                     echo'  <span class="badge badge-soft-danger">Rejected</span>';    
                                                                                 }else{
                                                                                 

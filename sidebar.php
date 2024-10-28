@@ -457,6 +457,16 @@
                             </a>
                         </li>
                         <?php }?>
+
+
+                        <li>
+                            <a href="Purchase_report_Details.php" class="waves-effect">
+                                <i class="dripicons-wallet"></i>
+                                <span>Purchase Report</span>
+                            </a>
+                        </li>
+
+
                     </ul>
                 </div>
                 <!-- Sidebar -->

@@ -238,16 +238,7 @@ $Plant = $selector_arr1['Plant'];
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="row">
-                                                    <div class="text-end pb-3">
-                                                        <button type="button" class="btn btn-primary btn-sm" id="add">
-                                                        <span class="btn-label">
-                                                            <i class="fa fa-plus"></i>
-                                                        </span>
-                                                        Add More
-                                                        </button>
-                                                    </div>
-                                                </div>
+
                                                 <div class="row" style="padding: 0px 0px 20px 0px;">
                                                     <div class="table-responsive">
                                                         <table id="table_id" class="table dt-table-hover" style="width:100%">
@@ -276,6 +267,16 @@ $Plant = $selector_arr1['Plant'];
                                                     <div class="modal-section">
                                                     </div>
                                                     <!-- END MODEL -->
+                                                </div>
+                                                <div class="row">
+                                                    <div class="text-end pb-3">
+                                                        <button type="button" class="btn btn-primary btn-sm" id="add">
+                                                        <span class="btn-label">
+                                                            <i class="fa fa-plus"></i>
+                                                        </span>
+                                                        Add More
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 <div class="row mb-3 d-none">
                                                 <label for="example-datetime-local-input" class="col-sm-2 col-form-label">Finance Verification<span class="required-label"style="color:red">*</span></label>
@@ -868,6 +869,9 @@ $Plant = $selector_arr1['Plant'];
                     $('#replace'+id).val('').trigger("change");
                     $('#uom'+id).prop('readonly',true);
                     $('#uom'+id).addClass('disabled');
+                    $(this).closest('td').find('.item_code_info').text(ItemCode);
+                    $(this).closest('td').find('.item_code_info').show();
+
                 }
 
 
@@ -1152,6 +1156,7 @@ $Plant = $selector_arr1['Plant'];
                                     </select>
                                 </div>
                                 <span class="error_msg text-danger"></span>
+                                <span class="badge bg-info text-white text-center p-1 mt-2 item_code_info" style="display:none;    font-size: 13px;"></span>
                             </td>
                             <td id="divn">
                                 <div class="col-md-12">

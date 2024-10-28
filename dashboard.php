@@ -636,7 +636,7 @@ if(!isset($_SESSION['EmpID']))
                                                 // WHERE Tb_Master_Emp.Recommender='".$_SESSION['EmpID']."' and Tb_Request.status='Added'";
 
                                                 $sql12 = "SELECT * FROM Tb_Request
-                                                INNER JOIN(select DISTINCT Purchaser,Purchase_Type,Recommender from Tb_Master_Emp WHERE Tb_Master_Emp.Recommender = '".$_SESSION['EmpID']."') as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
+                                                INNER JOIN(select DISTINCT id,Purchaser,Purchase_Type,Recommender from Tb_Master_Emp WHERE Tb_Master_Emp.Recommender = '".$_SESSION['EmpID']."') as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category and Tb_Master_Emp.id = Tb_Request.approval_mapping_id
                                                 WHERE Tb_Master_Emp.Recommender='".$_SESSION['EmpID']."' AND Tb_Request.Recommender = '".$_SESSION['EmpID']."' and Tb_Request.status='Added'";
 
                                                 $params12 = array();

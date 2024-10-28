@@ -145,6 +145,7 @@ $Employee_Id = $_SESSION['EmpID'];
                                                                 <th>Request Type</th>
                                                                 <th>Category</th>
                                                                 <th>Department</th>
+                                                                <th>Plant</th>
                                                                 <th>Status</th>
                                                                 <th>Action</th>
                                                             </tr>
@@ -155,11 +156,11 @@ $Employee_Id = $_SESSION['EmpID'];
                                                                     // $sql = "SELECT * FROM Tb_Request Inner Join Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
                                                                     // WHERE Tb_Master_Emp.Approver='$Employee_Id' and Tb_Request.status='Recommended' ORDER BY Tb_Request.Request_ID DESC";
 
-                                                                    $sql = "SELECT Tb_Request.Id,Tb_Request.Request_ID,Tb_Request.Request_Type,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Department,Tb_Request.status FROM Tb_Request
+                                                                    $sql = "SELECT Tb_Request.Id,Tb_Request.Request_ID,Tb_Request.Request_Type,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Department,Tb_Request.status,Tb_Request.Plant FROM Tb_Request
                                                                     Inner Join (select DISTINCT Purchaser,Purchase_Type,Approver from Tb_Master_Emp WHERE Tb_Master_Emp.Approver='".$Employee_Id."') as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
                                                                     INNER JOIN Tb_Recommender ON Tb_Recommender.Requested_to = Tb_Master_Emp.Approver
-                                                                    WHERE Tb_Request.Approver='".$Employee_Id."' and Tb_Request.status='Recommended' 
-                                                                     GROUP BY Tb_Request.Request_ID,Tb_Request.Request_Type,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Department,Tb_Request.status,Tb_Request.Id  
+                                                                    WHERE Tb_Request.Approver='".$Employee_Id."' and Tb_Request.status='Recommended' and (Tb_Request.is_sendbacked IS NULL OR Tb_Request.is_sendbacked = 0)  
+                                                                     GROUP BY Tb_Request.Request_ID,Tb_Request.Request_Type,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Department,Tb_Request.status,Tb_Request.Id,Tb_Request.Plant  
                                                                      ORDER BY Tb_Request.Id DESC";
 
                                                                      
@@ -188,6 +189,9 @@ $Employee_Id = $_SESSION['EmpID'];
                                                                     </td>
                                                                     <td>
                                                                         <?php echo $row['Department'] ?>
+                                                                    </td>
+                                                                    <td>
+                                                                        <?php echo $row['Plant'] ?>
                                                                     </td>
                                                                     <td>
                                                                         <?php
@@ -224,15 +228,16 @@ $Employee_Id = $_SESSION['EmpID'];
                                                                     <th>Request Type</th>
                                                                     <th>Category</th>
                                                                     <th>Department</th>
-                                                                    <th>Recommender Send Back Remark</th>
+                                                                    <th>Final Approver Send Back Remark</th>
                                                                     <th>Status</th>
+                                                                    <th>Action</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
                                                                 <?php
                                                                     $i = 1;
                                                                     $sql = "SELECT * FROM Tb_Request Inner Join (select DISTINCT Purchaser,Purchase_Type,Approver from Tb_Master_Emp WHERE Tb_Master_Emp.Approver='".$Employee_Id."') as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
-                                                                    WHERE Tb_Request.Approver='$Employee_Id' and Tb_Request.status='Approver Send Back' ORDER BY Tb_Request.Request_ID DESC";
+                                                                    WHERE Tb_Request.Approver='$Employee_Id' and Tb_Request.is_sendbacked='1' ORDER BY Tb_Request.Request_ID DESC";
                                                                     $params = array();
                                                                     $options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
                                                                     $stmt = sqlsrv_prepare($conn, $sql, $params, $options);
@@ -259,16 +264,31 @@ $Employee_Id = $_SESSION['EmpID'];
                                                                         <?php echo $row['Department'] ?>
                                                                     </td>
                                                                     <td>
-                                                                    <?php echo $row['Approver_back_remark'] ?>
+                                                                    <?php echo $row['Approver2_back_remark'] ?>
                                                                     </td>
                                                                     <td>
                                                                         <?php
-                                                                            if($row['status'] == 'Approver Send Back'){ 
+                                                                            if($row['is_sendbacked'] == '1'){ 
                                                                                     echo'  <span class="badge badge-soft-warning">Send Back</span>';    
                                                                                 }else{
                                                                                     
                                                                                 }
                                                                             ?>
+                                                                    </td>
+                                                                    <td>
+                                                                        <div class="action-btns">
+                                                                            <a href="view_purchase_apr_request.php?id=<?php echo $row['Request_ID'] ?>" class="action-btn btn-view bs-tooltip me-2" data-toggle="tooltip" data-placement="top" title="View">
+                                                                            <i class="mdi mdi-eye"></i>
+                                                                        </a>
+                                                                            <?php
+                                                                            if($row['is_sendbacked'] == '1'){ 
+                                                                                echo'<a href="Update_purchase_apr_request.php?id='.$row['Request_ID'] .'" class="action-btn btn-edit bs-tooltip me-2" data-toggle="tooltip" data-placement="top" title="Edit">
+                                                                                <i class="mdi mdi-pencil"></i>
+                                                                                </a>';    
+                                                                            }else{
+                                                                            }
+                                                                            ?>
+                                                                        </div>
                                                                     </td>
                                                                 </tr>
                                                                 <?php } ?>
@@ -289,6 +309,7 @@ $Employee_Id = $_SESSION['EmpID'];
                                                                     <th>Request Type</th>
                                                                     <th>Category</th>
                                                                     <th>Department</th>
+                                                                    <th>Plant</th>
                                                                     <th>Status</th>
                                                                 </tr>
                                                             </thead>
@@ -323,6 +344,9 @@ $Employee_Id = $_SESSION['EmpID'];
                                                                             <?php echo $row['Department'] ?>
                                                                         </td>
                                                                         <td>
+                                                                            <?php echo $row['Plant'] ?>
+                                                                        </td>
+                                                                        <td>
                                                                             <?php
                                                                                 if($row['status'] == 'Approver_Reject'){ 
                                                                                     echo'<span class="badge badge-soft-danger">Rejected</span>';    
@@ -351,6 +375,7 @@ $Employee_Id = $_SESSION['EmpID'];
                                                                     <th>Request Type</th>
                                                                     <th>Category</th>
                                                                     <th>Department</th>
+                                                                    <th>Plant</th>
                                                                     <th>Status</th>
                                                                     <th>Action</th>
                                                                 </tr>
@@ -358,11 +383,20 @@ $Employee_Id = $_SESSION['EmpID'];
                                                             <tbody>
                                                                 <?php
                                                                     $i = 1;
-                                                                    $sql = "SELECT Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status
+                                                                    $sql = "SELECT Request_ID, Time_Log, Request_Category, Request_Type, Department, status, Plant,is_sendbacked FROM (SELECT Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status,Tb_Request.Plant,Tb_Request.is_sendbacked
                                                                     FROM Tb_Approver Inner Join (select DISTINCT Purchaser,Purchase_Type,Approver from Tb_Master_Emp WHERE Tb_Master_Emp.Approver='".$Employee_Id."') as Tb_Master_Emp On Tb_Master_Emp.Approver=Tb_Approver.EMP_ID 
                                                                     INNER JOIN Tb_Request ON Tb_Request.Request_ID = Tb_Approver.Request_id
-                                                                    WHERE Tb_Request.Approver='$Employee_Id' GROUP BY Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status
-                                                                    ORDER BY Tb_Request.Request_ID DESC";
+                                                                    WHERE Tb_Request.Approver='$Employee_Id' and (Tb_Request.status !='Recommender_Rejected' and Tb_Request.status !='Approver_Reject') GROUP BY Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status,Tb_Request.Plant,Tb_Request.is_sendbacked
+
+                                                                     UNION
+    
+                                                                    SELECT Tb_Request.Request_ID, Tb_Request.Time_Log, Tb_Request.Request_Category, Tb_Request.Request_Type, Tb_Request.Department, Tb_Request.status, Tb_Request.Plant,Tb_Request.is_sendbacked 
+                                                                    FROM Tb_Request 
+                                                                    WHERE Approver = '$Employee_Id' 
+                                                                    AND is_sendbacked = '1' 
+                                                                    AND Approver_back_remark IS NOT NULL
+                                                                    ) AS result ORDER BY Request_ID DESC";
+
                                                                     $params = array();
                                                                     $options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
                                                                     $stmt = sqlsrv_prepare($conn, $sql, $params, $options);
@@ -389,39 +423,52 @@ $Employee_Id = $_SESSION['EmpID'];
                                                                         <?php echo $row['Department'] ?>
                                                                     </td>
                                                                     <td>
+                                                                        <?php echo $row['Plant'] ?>
+                                                                    </td>
+                                                                    <td>
                                                                         <?php
                                                                             if($row['status'] == 'Review'){ 
                                                                                 echo'  <span class="badge badge-soft-secondary">Waiting Review</span>';    
                                                                             }else{
-                                                                                if ($row['status'] == 'Requested') {
+                                                                                if ($row['status'] == 'Requested' && $row['is_sendbacked'] != 1) {
                                                                                     echo'  <span class="badge badge-soft-primary">Requested</span>';
-                                                                                } elseif($row['status']=='Added')
+                                                                                } elseif($row['status']=='Added' && $row['is_sendbacked'] != 1)
                                                                                 {
                                                                                     echo'<span class="badge badge-soft-info">Quotation Added</span>';
-                                                                                } elseif($row['status']=='Recommended')
+                                                                                } elseif($row['status']=='Recommended' && $row['is_sendbacked'] != 1)
                                                                                 {
                                                                                     echo'<span class="badge badge-soft-info">Recommended</span>';
-                                                                                } elseif($row['status']=='Approved')
+                                                                                } elseif($row['status']=='Approved' && $row['is_sendbacked'] != 1)
                                                                                 {
                                                                                     echo'<span class="badge badge-soft-success">Approved</span>';
-                                                                                } elseif($row['status']=='Reference')
+                                                                                } elseif($row['status']=='Reference' && $row['is_sendbacked'] != 1)
                                                                                 {
                                                                                     echo'<span class="badge badge-soft-info">Reference</span>';
+                                                                                }
+                                                                                 elseif($row['status']=='Waiting_for_approval2' && $row['is_sendbacked'] != 1)
+                                                                                {
+                                                                                    echo'<span class="badge badge-soft-info">Waiting for final approver</span>';
+                                                                                }
+                                                                                elseif($row['is_sendbacked']=='1')
+                                                                                {
+                                                                                    echo'<span class="badge badge-soft-warning">Sendback</span>';
                                                                                 }
                                                                             }
                                                                         ?>
                                                                     </td>
                                                                     <td>
                                                                         <div class="action-btns">
+                                                                            <?php if($row['is_sendbacked'] != 1) { ?>
                                                                             <a href="view_purchase_apr_request.php?id=<?php echo $row['Request_ID'] ?>" class="action-btn btn-view bs-tooltip me-2" data-toggle="tooltip" data-placement="top" title="View">
                                                                             <i class="mdi mdi-eye"></i>
-                                                                        </a>
+                                                                            </a>
+                                                                            <?php } ?>
                                                                             <?php
-                                                                            if($row['status'] == 'Approved'){ 
+                                                                            if($row['status'] == 'Approved' && $row['is_sendbacked'] != 1){ 
                                                                                 echo'<a href="Update_purchase_apr_request.php?id='.$row['Request_ID'] .'" class="action-btn btn-edit bs-tooltip me-2" data-toggle="tooltip" data-placement="top" title="Edit">
                                                                                 <i class="mdi mdi-pencil"></i>
                                                                                 </a>';    
-                                                                            }elseif($row['status'] == 'Reference'){
+                                                                            }elseif($row['status'] == 'Reference' && $row['is_sendbacked'] != 1){
                                                                                 echo'<a href="Update_purchase_apr_request.php?id='.$row['Request_ID'] .'" class="action-btn btn-edit bs-tooltip me-2" data-toggle="tooltip" data-placement="top" title="Edit">
                                                                                 <i class="mdi mdi-pencil"></i>
                                                                                 </a>';

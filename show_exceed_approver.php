@@ -160,7 +160,7 @@ $Employee_Id = $_SESSION['EmpID'];
                                                                     INNER JOIN MaterialMaster ON MaterialMaster.Plant = Tb_Request.Plant AND MaterialMaster.MaterialGroup = Tb_Master_Emp.Material_Group AND
                                                                     MaterialMaster.StorageLocation = Tb_Request.Storage_Location
                                                                     INNER JOIN Tb_Approver ON Tb_Approver.Requested_to = Tb_Master_Emp.Approver_2
-                                                                    WHERE Tb_Master_Emp.Approver_2='".$Employee_Id."' and Tb_Request.status='Waiting_for_approval2' AND Tb_Master_Emp.Document_type IS NOT NULL AND Tb_Master_Emp.Document_type != ''
+                                                                    WHERE Tb_Master_Emp.Approver_2='".$Employee_Id."' and Tb_Request.status='Waiting_for_approval2' and (Tb_Request.is_sendbacked IS NULL OR Tb_Request.is_sendbacked = 0) AND Tb_Master_Emp.Document_type IS NOT NULL AND Tb_Master_Emp.Document_type != ''
                                                                      GROUP BY Tb_Request.Request_ID,Tb_Request.Request_Type,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Department,Tb_Request.status,Tb_Request.Id  
                                                                      ORDER BY Tb_Request.Id DESC";
 
@@ -359,11 +359,21 @@ $Employee_Id = $_SESSION['EmpID'];
                                                             <tbody>
                                                                 <?php
                                                                     $i = 1;
-                                                                    $sql = "SELECT Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status
+                                                                    $sql = "SELECT Request_ID, Time_Log, Request_Category, Request_Type, Department, status, Plant,is_sendbacked FROM (SELECT Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status
                                                                     FROM Tb_Approver Inner Join Tb_Master_Emp On Tb_Master_Emp.Approver=Tb_Approver.EMP_ID 
                                                                     INNER JOIN Tb_Request ON Tb_Request.Request_ID = Tb_Approver.Request_id
-                                                                    WHERE Tb_Master_Emp.Approver='$Employee_Id' GROUP BY Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status
-                                                                    ORDER BY Tb_Request.Request_ID DESC";
+                                                                    WHERE Tb_Master_Emp.Approver2='$Employee_Id' GROUP BY Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status 
+
+
+                                                                     UNION
+    
+                                                                    SELECT Tb_Request.Request_ID, Tb_Request.Time_Log, Tb_Request.Request_Category, Tb_Request.Request_Type, Tb_Request.Department, Tb_Request.status, Tb_Request.Plant,Tb_Request.is_sendbacked 
+                                                                    FROM Tb_Request 
+                                                                    WHERE Approver = '$Employee_Id' 
+                                                                    AND is_sendbacked = '1' 
+                                                                    AND Approver_back_remark IS NOT NULL
+                                                                    ) AS result ORDER BY Request_ID DESC";
+
                                                                     $params = array();
                                                                     $options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
                                                                     $stmt = sqlsrv_prepare($conn, $sql, $params, $options);

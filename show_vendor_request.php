@@ -152,6 +152,7 @@ if(!isset($_SESSION['EmpID']))
                                                                     <th>Request Type</th>
                                                                     <th>Category</th>
                                                                     <th>Department</th>
+                                                                    <th>Plant</th>
                                                                     <th>Status</th>
                                                                     <th>Action</th>
                                                                 </tr>
@@ -188,6 +189,10 @@ if(!isset($_SESSION['EmpID']))
                                                                         </td>
                                                                         <td>
                                                                             <?php echo $row['Department'] ?>
+                                                                        </td>
+
+                                                                        <td>
+                                                                            <?php echo $row['Plant'] ?>
                                                                         </td>
                                                                         <td>
                                                                             <?php
@@ -244,8 +249,12 @@ if(!isset($_SESSION['EmpID']))
                                                                 <?php
                                                                     $i = 1;
                                                                     
-                                                                    $sql = "SELECT * FROM Tb_Request Inner Join Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
-                                                                    WHERE Tb_Master_Emp.Purchaser='".$_SESSION['EmpID']."' and Tb_Request.status='Recommender Send Back' AND Tb_Request.Requested_to ='".$_SESSION['EmpID']."' ORDER BY Tb_Request.Request_ID DESC";
+                                                                    $sql = "SELECT Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status,Tb_Request.recommender_reject,Tb_Request.Approver_reject,Tb_Request.Plant,Tb_Request.Recommender_back_remark,Tb_Request.is_sendbacked FROM Tb_Request
+                                                                    inner join (SELECT Request_ID,MaterialGroup FROM Tb_Request_Items group by Request_ID,MaterialGroup) as Tb_Request_Items on Tb_Request_Items.Request_ID = Tb_Request.Request_ID 
+                                                                    Inner Join Tb_Master_Emp On Tb_Master_Emp.Purchaser = Tb_Request.Requested_to 
+                                                                        and Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category and Tb_Master_Emp.Plant = Tb_Request.Plant
+                                                                        and Tb_Master_Emp.Material_Group = Tb_Request_Items.MaterialGroup
+                                                                    WHERE Tb_Master_Emp.Purchaser='".$_SESSION['EmpID']."' and (Tb_Request.status !='Recommender_Rejected' and Tb_Request.status !='Approver_Reject') and Tb_Request.is_sendbacked='1' AND Tb_Request.Recommender_back_remark IS NOT NULL AND Tb_Request.Requested_to ='".$_SESSION['EmpID']."' GROUP BY Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status,Tb_Request.recommender_reject,Tb_Request.Approver_reject,Tb_Request.Plant,Tb_Request.Recommender_back_remark,Tb_Request.is_sendbacked ORDER BY Tb_Request.Request_ID DESC";
                                                                     $params = array();
                                                                     $options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
                                                                     $stmt = sqlsrv_prepare($conn, $sql, $params, $options);
@@ -276,10 +285,8 @@ if(!isset($_SESSION['EmpID']))
                                                                         </td>
                                                                         <td>
                                                                             <?php
-                                                                                if($row['status'] == 'Recommender Send Back'){ 
-                                                                                    echo'<span class="badge badge-soft-warning">Retern</span>';    
-                                                                                }else{
-                                                                                    
+                                                                                if($row['is_sendbacked'] == '1'){ 
+                                                                                    echo'<span class="badge badge-soft-warning">Sendback</span>';    
                                                                                 }
                                                                             ?>
                                                                         </td>
@@ -289,13 +296,10 @@ if(!isset($_SESSION['EmpID']))
                                                                             <i class="mdi mdi-eye"></i>
                                                                         </a>
                                                                             <?php
-                                                                            if($row['status'] == 'Recommender Send Back'){ 
+                                                                            if($row['is_sendbacked'] == '1'){ 
                                                                                 echo'<a href="update_quotation_request.php?id='.$row['Request_ID'] .'" class="action-btn btn-edit bs-tooltip me-2" data-toggle="tooltip" data-placement="top" title="Edit">
                                                                                 <i class="mdi mdi-pencil"></i>
                                                                                 </a>';    
-                                                                            }else{
-                                                                                
-
                                                                             }
                                                                             ?>
                                                                         </div>
@@ -319,6 +323,7 @@ if(!isset($_SESSION['EmpID']))
                                                                     <th>Request Type</th>
                                                                     <th>Category</th>
                                                                     <th>Department</th>
+                                                                    <th>Plant</th>
                                                                     <th>Rejected For Recommender Remark</th>
                                                                     <th>Status</th>
                                                                     <th>Action</th>
@@ -328,8 +333,14 @@ if(!isset($_SESSION['EmpID']))
                                                                 <?php
                                                                     $i = 1;
                                                                     
-                                                                    $sql = "SELECT * FROM Tb_Request Inner Join Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
-                                                                    WHERE Tb_Master_Emp.Purchaser='".$_SESSION['EmpID']."' and Tb_Request.status='Recommender_Rejected' AND Tb_Request.Requested_to ='".$_SESSION['EmpID']."' ORDER BY Tb_Request.Request_ID DESC";
+                                                                    $sql = "SELECT Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status,Tb_Request.recommender_reject,Tb_Request.Approver_reject,Tb_Request.Plant FROM Tb_Request
+                                                                        inner join (SELECT Request_ID,MaterialGroup FROM Tb_Request_Items group by Request_ID,MaterialGroup) as Tb_Request_Items on Tb_Request_Items.Request_ID = Tb_Request.Request_ID 
+                                                                        Inner Join Tb_Master_Emp On Tb_Master_Emp.Purchaser = Tb_Request.Requested_to 
+                                                                        and Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category and Tb_Master_Emp.Plant = Tb_Request.Plant
+                                                                        and Tb_Master_Emp.Material_Group = Tb_Request_Items.MaterialGroup
+                                                                    WHERE Tb_Master_Emp.Purchaser='".$_SESSION['EmpID']."' and (Tb_Request.status='Recommender_Rejected' OR Tb_Request.status='Approver_Reject') AND Tb_Request.Requested_to ='".$_SESSION['EmpID']."' 
+                                                                    GROUP BY Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status,Tb_Request.recommender_reject,Tb_Request.Approver_reject,Tb_Request.Plant
+                                                                    ORDER BY Tb_Request.Request_ID DESC";
                                                                     $params = array();
                                                                     $options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
                                                                     $stmt = sqlsrv_prepare($conn, $sql, $params, $options);
@@ -356,11 +367,20 @@ if(!isset($_SESSION['EmpID']))
                                                                             <?php echo $row['Department'] ?>
                                                                         </td>
                                                                         <td>
-                                                                            <?php echo $row['recommender_reject'] ?>
+                                                                            <?php echo $row['Plant'] ?>
+                                                                        </td>
+                                                                        <td>
+                                                                            <?php 
+                                                                                if($row['status'] == 'Recommender_Rejected'){ 
+                                                                                    echo $row['recommender_reject'];
+                                                                                } else if($row['status'] == 'Approver_Reject') {
+                                                                                    echo $row['Approver_reject'];
+                                                                                }
+                                                                            ?>
                                                                         </td>
                                                                         <td>
                                                                             <?php
-                                                                                if($row['status'] == 'Recommender_Rejected'){ 
+                                                                                if($row['status'] == 'Recommender_Rejected' || $row['status'] == 'Approver_Reject'){ 
                                                                                     echo'<span class="badge badge-soft-danger">Rejected</span>';    
                                                                                 }else{
                                                                                     
@@ -403,6 +423,7 @@ if(!isset($_SESSION['EmpID']))
                                                                     <th>Request Type</th>
                                                                     <th>Category</th>
                                                                     <th>Department</th>
+                                                                    <th>Plant</th>
                                                                     <th>Status</th>
                                                                     <th>Action</th>
                                                                 </tr>
@@ -411,10 +432,10 @@ if(!isset($_SESSION['EmpID']))
                                                                 <?php
                                                                     $i = 1;
                                                                     $emp_id = $_SESSION['EmpID'];
-                                                                    $sql = "SELECT Tb_Request.Id,Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status
+                                                                    $sql = "SELECT Tb_Request.Id,Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status,Tb_Request.Recommender,Tb_Request.Approver,Tb_Request.Plant  
                                                                     FROM Tb_Vendor_Selection Inner Join Tb_Master_Emp On Tb_Master_Emp.Purchaser = Tb_Vendor_Selection.EMP_ID 
                                                                     INNER JOIN Tb_Request ON Tb_Request.Request_ID = Tb_Vendor_Selection.Request_Id
-                                                                    WHERE Tb_Master_Emp.Purchaser='$emp_id' AND Tb_Request.Requested_to ='$emp_id' GROUP BY Tb_Request.Id,Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status
+                                                                    WHERE Tb_Master_Emp.Purchaser='$emp_id' AND Tb_Request.Requested_to ='$emp_id' and (Tb_Request.status !='Recommender_Rejected' and Tb_Request.status !='Approver_Reject')  and (Tb_Request.is_sendbacked IS NULL OR Tb_Request.is_sendbacked = '0') GROUP BY Tb_Request.Id,Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status,Tb_Request.Recommender,Tb_Request.Approver,Tb_Request.Plant  
                                                                     ORDER BY Tb_Request.Id DESC";
                                                                     
                                                                     $params = array();
@@ -443,6 +464,9 @@ if(!isset($_SESSION['EmpID']))
                                                                             <?php echo $row['Department'] ?>
                                                                         </td>
                                                                         <td>
+                                                                            <?php echo $row['Plant'] ?>
+                                                                        </td>                                                                        
+                                                                        <td>
                                                                             <?php
                                                                                 if($row['status'] == 'Added'){ 
                                                                                     echo'  <span class="badge badge-soft-primary">Quotation Added</span>';    
@@ -456,6 +480,10 @@ if(!isset($_SESSION['EmpID']))
                                                                                     {
                                                                                         echo'<span class="badge badge-soft-primary">Finance verification</span>';
                                                                                     } 
+                                                                                     elseif($row['status']=='Waiting_for_approval2')
+                                                                                    {
+                                                                                        echo'<span class="badge badge-soft-info">Waiting for Final Approve</span>';
+                                                                                    }
                                                                                 }
                                                                             ?>
                                                                         </td>
@@ -465,7 +493,7 @@ if(!isset($_SESSION['EmpID']))
                                                                             <i class="mdi mdi-eye"></i>
                                                                         </a>
                                                                             <?php
-                                                                            if($row['status'] == 'Added'){ 
+                                                                            if($row['status'] == 'Added' || ($row['Recommender'] == $row['Approver'] && $row['status'] == 'Recommended')){ 
                                                                                 echo'<a href="update_quotation_request.php?id='.$row['Request_ID'] .'" class="action-btn btn-edit bs-tooltip me-2" data-toggle="tooltip" data-placement="top" title="Edit">
                                                                                 <i class="mdi mdi-pencil"></i>
                                                                                 </a>';    

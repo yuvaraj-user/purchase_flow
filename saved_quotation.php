@@ -18,6 +18,8 @@ $saved_data = array();
 while($saved_quotation_res = sqlsrv_fetch_array($saved_quotation_exec,SQLSRV_FETCH_ASSOC)) {
 	$saved_data[] = $saved_quotation_res;
 }
+// $aat = explode(',',$saved_data[1]['Attachment']);
+// echo "<pre>";print_r(explode('.',$aat[0]));exit;
 
 $request_detail_sql = "SELECT * from Tb_Request WHERE Request_ID = '".$request_id."'";
 $request_detail_exec = sqlsrv_query($conn, $request_detail_sql);
@@ -51,6 +53,16 @@ if (isset($_POST["save"])) {
     $vendor_exist_query_exec = sqlsrv_query($conn, $vendor_exist_query,array(),array("Scrollable" => 'static'));
 	$vendor_exist_count = sqlsrv_num_rows($vendor_exist_query_exec);
 	if($vendor_exist_count > 0) {
+		$findex = 1;
+		while($row = sqlsrv_fetch_array($vendor_exist_query_exec,SQLSRV_FETCH_ASSOC)) {
+			if($row['Attachment'] != '' && $_FILES["Attachment_".$findex]["name"][0] != '') {
+				foreach (explode(',',$row['Attachment']) as $akey => $avalue) {
+		   			unlink('file/'.$avalue);
+		   		}
+			}
+
+			$findex++;	
+	   	}
 		// delete already saved quotation vendor detail 
 		sqlsrv_query($conn, "DELETE FROM Tb_Vendor_Selection where Request_Id = '".$request_id."'");		
 	}
@@ -67,7 +79,23 @@ if (isset($_POST["save"])) {
 		sqlsrv_query($conn, "DELETE FROM Tb_Vendor_Quantity where Request_Id = '".$request_id."'");	
 	}
 
+    // recommender detail exist check
+    $recommend_exist_sql = "SELECT * FROM Tb_Recommender WHERE Request_id = '".$request_id."'";
+    $recommend_exist_sql_exec = sqlsrv_query($conn, $recommend_exist_sql, array(), array( "Scrollable" => 'static' ));
+    $recommend_exist_row_count = sqlsrv_num_rows($recommend_exist_sql_exec);
 
+    if($recommend_exist_row_count > 0) {
+        sqlsrv_query($conn, "DELETE FROM Tb_Recommender where Request_Id = '".$request_id."'"); 
+    } 
+
+    // recommender material detail exist check
+    $recommend_mat_exist_sql = "SELECT * FROM Tb_Recommender_Meterial WHERE Request_id = '".$request_id."'";
+    $recommend_mat_exist_sql_exec = sqlsrv_query($conn, $recommend_mat_exist_sql, array(), array( "Scrollable" => 'static' ));
+    $recommend_mat_exist_row_count = sqlsrv_num_rows($recommend_mat_exist_sql_exec);
+
+    if($recommend_mat_exist_row_count > 0) {
+        sqlsrv_query($conn, "DELETE FROM Tb_Recommender_Meterial where Request_Id = '".$request_id."'"); 
+    } 
 
 	$data_count = 0;
 	foreach ($_POST['Vendor_SAP'] as $key => $sap_val) {
@@ -81,7 +109,7 @@ if (isset($_POST["save"])) {
     $query1 = sqlsrv_query($conn, "UPDATE Tb_Request set approval_mapping_id = '".$_POST['mapping_id']."' WHERE Request_id = '$request_id' ");
 
 	// for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
-
+	$file_index = 1;
 	for ($i = 0; $i < $data_count; $i++) {
 		
 		$Vendor_SAP = $_POST['Vendor_SAP'][$i];
@@ -105,27 +133,35 @@ if (isset($_POST["save"])) {
 		// $Requested_to = $Recommender_Code;
 		$Requested_to = $_POST['recommendor_id'];
 
-		$total_amount    = $_POST['amt_tot'][$i];
-		$discount_amount = $_POST['discount_amount'][$i];
-		$package_amount = $_POST['package_amount'][$i];
-		$package_percentage = $_POST['package_percentage'][$i];
+		$total_amount    = ($_POST['amt_tot'][$i] != '') ? $_POST['amt_tot'][$i] : 0;
+		$discount_amount = ($_POST['discount_amount'][$i] != '') ? $_POST['discount_amount'][$i] : 0;
+		$package_amount = ($_POST['package_amount'][$i] != '') ? $_POST['package_amount'][$i] : 0;
+		$package_percentage = ($_POST['package_percentage'][$i] != '') ? $_POST['package_percentage'][$i] : 0;
 		
 		$fil = '';
-		if($_FILES["Attachment"]["name"][$i] != '') {
-			$filename = $request_id.'_Vendor'.$file_index.'_';
-			$extension = pathinfo($_FILES["Attachment"]["name"][$i], PATHINFO_EXTENSION);
-			$fil = $filename.strtotime(date('h:i:s')).'.'.$extension;
+		if($_FILES["Attachment_".$file_index]["name"][0] != '') {
+			$file_count = COUNT($_FILES["Attachment_".$file_index]["name"]);
+			if($file_count > 0) {
+	 			$separate_findex = 1;
+					for($j=0;$j < $file_count;$j++) {
+						$extension = pathinfo($_FILES["Attachment_".$file_index]["name"][$j], PATHINFO_EXTENSION);
+						$allowed = array("jpg","jpeg", "png", "gif", "pdf", "wmv", "pdf", "zip");
+						if (in_array($extension, $allowed)) {
+							$filename = $request_id.'_Vendor'.$file_index.'_file'.$separate_findex.'_';
 
-			$tmp_name = $_FILES["Attachment"]["tmp_name"][$i];
-			$path = "file/" . $fil;
-			$file1 = explode(".", $fil);
-			if( !isset($file1[1]) ){
-	            $file1[1]=0;
-	        }
-			$ext = $file1[1];
-			$allowed = array("jpg", "png", "gif", "pdf", "wmv", "pdf", "zip");
-			if (in_array($ext, $allowed)) {
-				move_uploaded_file($tmp_name, $path);
+							$separator = ($file_count <= $j+1) ? '' : ','; 
+							$fil .= $filename.strtotime(date('h:i:s')).'.'.$extension.$separator;
+
+							$fil_save = $filename.strtotime(date('h:i:s')).'.'.$extension;
+
+
+							$tmp_name = $_FILES["Attachment_".$file_index]["tmp_name"][$j];
+							$path = "file/" . $fil_save;
+
+							move_uploaded_file($tmp_name, $path);
+						}
+						$separate_findex++;
+					}
 			}
 		} elseif(COUNT($saved_data) > 0) {
 			$fil = $saved_data[$i]['Attachment']; 
@@ -165,6 +201,7 @@ if (isset($_POST["save"])) {
 	        $rs = sqlsrv_query($conn, $query);
 		}
 
+		$file_index++;
 			
 	}
 
@@ -188,8 +225,8 @@ if (isset($_POST["save"])) {
 		$Total = $_POST['Total'][$i];
 		$V_id = $_POST['V_id'][$i];
 		$Requested_to = $_POST['recommendor_id'];
-		$gst_percentage      = $_POST['gst_percent'][$i];
-		$discount_percentage = $_POST['discount_percent'][$i];
+		$gst_percentage      = ($_POST['gst_percent'][$i] != '') ? $_POST['gst_percent'][$i] : 0;
+		$discount_percentage = ($_POST['discount_percent'][$i] != '') ? $_POST['discount_percent'][$i] : 0;
 
 		$meterial = "INSERT INTO Tb_Vendor_Quantity(Request_Id, Meterial_Name, Quantity, status, Price, Total,  V_id, EMP_ID,Requested_to,gst_percentage,discount_percentage) VALUES 
  			('$request_id','$Meterial_Name','$Quantity_Details','Added','$Price','$Total','$V_id','$emp_id','$Requested_to','$gst_percentage','$discount_percentage')";
@@ -214,8 +251,16 @@ if (isset($_POST["save"])) {
 
 		$update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Request INNER JOIN Tb_Request_Items 
 		ON Tb_Request.Request_ID = Tb_Request_Items.Request_Id WHERE Tb_Request.Request_ID = '$request_id'");
-		$updated_query = sqlsrv_fetch_array($update_qry);
-		$PERSION =  $updated_query['Persion_In_Workflow'];
+
+		$updated_query = [];
+        while ($row = sqlsrv_fetch_array($update_qry, SQLSRV_FETCH_ASSOC)) {
+            $updated_query[] = $row;
+        }
+
+        $item_numRows = COUNT($updated_query);
+
+		// $updated_query = sqlsrv_fetch_array($update_qry);
+		$PERSION =  $updated_query[0]['Persion_In_Workflow'];
 		// print_r($PERSION);exit;
 		$HR_Master_Table = sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code IN (SELECT * FROM SPLIT_STRING('$PERSION',','))  ");
 		$idss = array();
@@ -277,67 +322,163 @@ if (isset($_POST["save"])) {
 		// $mail->addAttachment($_FILES["attachements"]["tmp_name"], $fil);    // Optional name
 		$mail->isHTML(true);                                  // Set email format to HTML
 
-		$mail->Subject = $updated_query['Request_Category'];
+		$mail->Subject = $updated_query[0]['Request_Category'];
 				
-		$mail->Body = '
-		<html>
-		<head>
-			<style>
-			table, td, th {
-			border: 1px solid;
-			}
+		// $mail->Body = '
+		// <html>
+		// <head>
+		// 	<style>
+		// 	table, td, th {
+		// 	border: 1px solid;
+		// 	}
 			
-			table {
-			width: 100%;
-			border-collapse: collapse;
-			}
-			</style>
-			</head>
-				<body>
-					<table >
-						<thead>
-							<tr>
-								<th class="text-center">S.No</th>
-								<th class="text-center">Request ID</th>
-								<th class="text-center">Department</th>
-								<th class="text-center">Category</th>
-								<th class="text-center">Plant</th>
-								<th class="text-center">Meterial</th>
-								<th class="text-center">Quantity</th>                          
-								<th class="text-center">Status</th>                          
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td>
-									1
-								</td>
-								<td>
-									' . $request_id . '
-								</td>
-								<td>
-									' . $updated_query['Department'] . '
-								</td>
-								<td>
-									' . $updated_query['Request_Type'] . '
-								</td>
-								<td>
-									' . $updated_query['Plant'] . '
-								</td>
-								<td>
-									' . $updated_query['Item_Code'] . '
-								</td>
-								<td>
-									' . $updated_query['Quantity'] . '
-								</td>
-								<td>
-								<h4><span class="badge badge-success"><i class="fa fa-check"></i>Quotaion Added </span></h4>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</body>
-		</html>';
+		// 	table {
+		// 	width: 100%;
+		// 	border-collapse: collapse;
+		// 	}
+		// 	</style>
+		// 	</head>
+		// 		<body>
+		// 			<table >
+		// 				<thead>
+		// 					<tr>
+		// 						<th class="text-center">S.No</th>
+		// 						<th class="text-center">Request ID</th>
+		// 						<th class="text-center">Department</th>
+		// 						<th class="text-center">Category</th>
+		// 						<th class="text-center">Plant</th>
+		// 						<th class="text-center">Meterial</th>
+		// 						<th class="text-center">Quantity</th>                          
+		// 						<th class="text-center">Status</th>                          
+		// 					</tr>
+		// 				</thead>
+		// 				<tbody>
+		// 					<tr>
+		// 						<td>
+		// 							1
+		// 						</td>
+		// 						<td>
+		// 							' . $request_id . '
+		// 						</td>
+		// 						<td>
+		// 							' . $updated_query['Department'] . '
+		// 						</td>
+		// 						<td>
+		// 							' . $updated_query['Request_Type'] . '
+		// 						</td>
+		// 						<td>
+		// 							' . $updated_query['Plant'] . '
+		// 						</td>
+		// 						<td>
+		// 							' . $updated_query['Item_Code'] . '
+		// 						</td>
+		// 						<td>
+		// 							' . $updated_query['Quantity'] . '
+		// 						</td>
+		// 						<td>
+		// 						<h4><span class="badge badge-success"><i class="fa fa-check"></i>Quotaion Added </span></h4>
+		// 						</td>
+		// 					</tr>
+		// 				</tbody>
+		// 			</table>
+		// 		</body>
+		// </html>';
+		$mail_template = '
+        <html>
+        <head>
+            <style>
+            table, td, th {
+            border: 1px solid;
+            }
+            
+            table {
+            width: 100%;
+            border-collapse: collapse;
+            }
+            </style>
+            </head>
+                <body>
+                    <div style="display:flex;justify-content:space-between;">
+                        <label style="font-weight:bold;">Request ID</label>
+                        <span style="margin-left:20px;font-weight:bold;">:</span>
+                        <span style="margin-left:10px;">' . $request_id . '</span>
+                    </div>
+
+                    <div style="display:flex;">
+                        <label style="font-weight:bold;">Department</label>
+                        <span style="margin-left:15px;font-weight:bold;">:</span>
+                        <span style="margin-left:10px;">' . $updated_query[0]['Department'] . '</span>
+                    </div>
+                    <div style="display:flex;">
+                        <label style="font-weight:bold;">Category</label>
+                        <span style="margin-left:30px;font-weight:bold;">:</span>
+                        <span style="margin-left:10px;">' . $updated_query[0]['Request_Type'] . '</span>
+                    </div>
+                    <div style="display:flex;">
+                        <label style="font-weight:bold;">Plant</label>
+                        <span style="margin-left:55px;font-weight:bold;">:</span>
+                        <span style="margin-left:10px;">' . $updated_query[0]['Plant'] . '</span>
+                    </div>
+
+
+                    <br>
+                    <table >
+                        <thead>
+                            <tr>
+                                <th class="text-center">S.No</th>
+                                <th class="text-center">Meterial</th>
+                                <th class="text-center">Quantity</th>                          
+                                <th class="text-center">Status</th>                          
+                            </tr>
+                        </thead>
+                        <tbody>';
+
+        $msno = 1; 
+        foreach ($updated_query as $key => $value) {
+
+                $mail_template .=   '<tr>
+                                        <td>
+                                            <p style="text-align:center;">'.$msno.'</p>
+                                        </td>';
+
+                // if($msno == 1) {
+
+                //     $mail_template .=   '<td rowspan="'.$item_numRows.'">
+                //                                 <p style="text-align:center;">' . $request_id . '</p>
+                //                             </td>
+                //                            <td rowspan="'.$item_numRows.'">
+                //                                 <p style="text-align:center;">' . $value['Department'] . '</p>
+                //                             </td>
+                //                             <td rowspan="'.$item_numRows.'">
+                //                                 <p style="text-align:center;">' . $value['Request_Type'] . '</p>
+                //                             </td>
+                //                             <td rowspan="'.$item_numRows.'">
+                //                                 <p style="text-align:center;">' . $value['Plant'] . '</p>
+                //                             </td>';
+                // }
+
+                $mail_template .= '<td>
+                                        <p style="text-align:center;"> ' . $value['Item_Code'] . ' </p>
+                                    </td>
+                                    <td>
+                                        <p style="text-align:center;"> ' . $value['Quantity'] . ' </p>
+                                    </td>';
+                if($msno == 1) {
+                    $mail_template .= '<td rowspan="'.$item_numRows.'">
+                    <h4 style="text-align:center;"><span class="badge badge-success"><i class="fa fa-check"></i>Quotaion Added </span></h4>
+                    </td>';
+                }
+                $mail_template .= '</tr>';
+                $msno++;
+        }                      
+
+    $mail_template .=  '</tbody>
+                    </table>
+                </body>
+        </html>';
+
+
+        $mail->Body = $mail_template;
 
 		$mail->AltBody = 'This is the body in plain text for non-HTML mail clients';  
 		if (!$mail->send()) {
@@ -419,6 +560,18 @@ input[type=number]::-webkit-outer-spin-button {
 		.preview_image,.preview_pdf {
 			display: none;
 		}
+
+		.display_section {
+			cursor: pointer;
+		}
+
+		.preview_icon {
+			display: none;
+			position: absolute;
+		    top: 23%;
+		    left: 42%;
+		    font-size: 20px;
+		}
         </style>
 
     </head>
@@ -497,6 +650,14 @@ input[type=number]::-webkit-outer-spin-button {
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-body">
+                                        	<?php 
+                                        		$plant_sql = "SELECT Plant_Name FROM Plant_Master_PO WHERE Plant_Code = '".$po_creator['Plant']."'";
+                                        		$plant_sql_exec =  sqlsrv_query($conn,$plant_sql);
+                                        		$plant_detail = sqlsrv_fetch_array($plant_sql_exec);
+
+                                        	?>
+                                        	<h1 class="badge bg-success" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
+
                                             <form method="POST" enctype="multipart/form-data" id="quotation_form">
 			                                     <input type="hidden" id="mapping_id" name="mapping_id">
 			                                     <input type="hidden" id="po_creator_id" value="<?php echo $po_creator['EMP_ID']; ?>">
@@ -789,7 +950,7 @@ input[type=number]::-webkit-outer-spin-button {
 															$freight_index = 1;
 															for ($i=0; $i < $saved_count; $i++) { ?>
 															<td>
-																<input type="number" min="0" class="form-control  txtCal<?php echo ($i > 0) ? $i : '' ?>" name="Fright_Charges[]" placeholder="Enter Freight Charges" value="<?php echo $saved_data[$i]['Fright_Charges']; ?>" id="freight_charge_<?php echo $freight_index;?>" data-id="<?php echo $freight_index;?>">
+																<input type="number" min="0" class="form-control  txtCal<?php echo ($i > 0) ? $i : '' ?> additonal_charges" name="Fright_Charges[]" placeholder="Enter Freight Charges" value="<?php echo $saved_data[$i]['Fright_Charges']; ?>" id="freight_charge_<?php echo $freight_index;?>" data-id="<?php echo $freight_index;?>">
 															</td>
 															<?php $freight_index++; } ?>
 														</tr>
@@ -799,7 +960,7 @@ input[type=number]::-webkit-outer-spin-button {
 															$insurance_index = 1;
 															for ($i=0; $i < $saved_count; $i++) { ?>
 															<td>
-																<input type="number" min="0" class="form-control  txtCal<?php echo ($i > 0) ? $i : '' ?>" name="Insurance_Details[]" placeholder="Enter Insurance Details"  value="<?php echo $saved_data[$i]['Insurance_Details']; ?>" id="insurance_amount_<?php echo $insurance_index;?>" data-id="<?php echo $insurance_index;?>">
+																<input type="number" min="0" class="form-control  txtCal<?php echo ($i > 0) ? $i : '' ?> additonal_charges" name="Insurance_Details[]" placeholder="Enter Insurance Details"  value="<?php echo $saved_data[$i]['Insurance_Details']; ?>" id="insurance_amount_<?php echo $insurance_index;?>" data-id="<?php echo $insurance_index;?>">
 															</td>
 															<?php $insurance_index++; } ?>
 													
@@ -972,13 +1133,13 @@ input[type=number]::-webkit-outer-spin-button {
 															for ($i=0; $i < $saved_count; $i++) { ?>
 															<td>
 																<div class="d-flex align-items-center">
-																	<input class="form-control file-upload-input" type="file" name="Attachment[]" placeholder="" id="formFile" onchange="readURL(this)" data-id="<?php echo $rindex; ?>" accept="image/*,application/pdf" value="<?php echo $saved_data[$i]['Attachment']; ?>">
-																	<span class="ms-2 file_view" data-id="<?php echo $rindex; ?>" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-eye text-primary"></i></span>
+																	<input class="form-control file-upload-input" type="file" name="Attachment_<?php echo $rindex;?>[]" placeholder="" id="formFile" onchange="readURL(this)" data-id="<?php echo $rindex; ?>" accept="image/png, image/gif, image/jpeg,image/jpg,application/pdf" value="<?php echo $saved_data[$i]['Attachment']; ?>" multiple="multiple">
+																	<!-- <span class="ms-2 file_view" data-id="<?php echo $rindex; ?>" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-eye text-primary"></i></span> -->
 																	<span class="ms-2 file_remove" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-window-close text-danger"></i></span>
 																</div>
 
 																<?php
-																$file_extension = explode('.', $saved_data[$i]['Attachment'])[1];
+																// $file_extension = explode('.', $saved_data[$i]['Attachment'])[1];
 																?>
 
 																<!-- file preview modal -->
@@ -990,16 +1151,12 @@ input[type=number]::-webkit-outer-spin-button {
 																        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 																      </div>
 																      <div class="modal-body">
-																      		<?php if($file_extension != 'pdf') { ?>
-																				<img class="preview_file_img_<?php echo $rindex; ?> preview_image" src="file/<?php echo $saved_data[$i]['Attachment']; ?>" alt="your image" width="100%" style="display: block;">
-																      		<?php } ?>
+																				<img class="preview_file_img_<?php echo $rindex; ?> preview_image" src="" alt="your image" width="100%" style="display: block;">
 
-																      		<?php if($file_extension == 'pdf') { ?>
-																			 <iframe class="preview_file_pdf_<?php echo $rindex; ?> preview_pdf" src="file/<?php echo $saved_data[$i]['Attachment']; ?>#toolbar=0"
-                                                                                    style="width: 100%;height: 500px;display: block;"
+																			 <iframe class="preview_file_pdf_<?php echo $rindex; ?> preview_pdf" src=""
+                                                                                    style="width: 100%;height: 900px;display: block;"
                                                                                     frameborder="0">
                                                                               </iframe>
-																      		<?php } ?>
 
 																      </div>
 																      <div class="modal-footer">
@@ -1009,6 +1166,27 @@ input[type=number]::-webkit-outer-spin-button {
 																  </div>
 																</div>
 																<!-- file preview modal end -->
+
+																<div class="row mt-2 display_section p-3" id="file_display_section_<?php echo $rindex; ?>" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
+													                	<?php 
+													                	$multi_files = explode(',',$saved_data[$i]['Attachment']);
+
+													                	foreach ($multi_files as $key => $value) {
+																			$file_extension = explode('.', $value)[1];
+
+														                	if($file_extension == 'pdf') { ?>
+																				<div class="col-md-3 h-50 mt-2">
+																					<img src="https://play-lh.googleusercontent.com/IkcyuPcrQlDsv62dwGqteL_0K_Rt2BUTXfV3_vR4VmAGo-WSCfT2FgHdCBUsMw3TPGU"  class="multi_preview" style="width:100px;height: 100px;" data-filetype="pdf" data-id="<?php echo $rindex; ?>">
+																					<input type="hidden" id="pdf_input<?php echo $rindex; ?>" value="file/<?php echo $value; ?>">
+																				</div>	
+														                	<?php } else { ?>
+														                		<div class="col-md-3 h-50 mt-2">
+														                			<i class="fa fa-eye text-primary preview_icon"></i>
+																					<img src="file/<?php echo $value; ?>" class="multi_preview" data-filetype="img" style="width:100px;height: 100px;" data-id="<?php echo $rindex; ?>">
+																				</div>
+																			<?php }} ?>
+													                		
+                                                				</div>
 
 															</td>
 															<?php $rindex++; } ?>
@@ -1029,6 +1207,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                               <th>Purchaser</th>
                                                               <th>Recommender</th>
                                                               <th>Approver</th>
+                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
                                                             </tr>
                                                           </thead>
                                                           <tbody id="involved_persons_tbody">
@@ -1525,6 +1704,11 @@ input[type=number]::-webkit-outer-spin-button {
                     for (var i = 0; i < allRows.length; i++) {
                         allRows[i].deleteCell(4);
                     }
+
+                    var removed_column_count_update = parseInt($('#saved_vendor_count').val()) - parseInt(1);
+					$('#saved_vendor_count').val(removed_column_count_update);  
+                	var i = $('#saved_vendor_count').val();
+
                 }
 
                 var i = parseInt($('#saved_vendor_count').val()) + parseInt(1);
@@ -1533,6 +1717,9 @@ input[type=number]::-webkit-outer-spin-button {
                 $('#remove').attr('disabled', true);
 
                 $("#addColumn").click(function () {
+                	var added_column_count = parseInt($('#saved_vendor_count').val()) + parseInt(1);
+					$('#saved_vendor_count').val(added_column_count);                	
+	                var i = $('#saved_vendor_count').val();
 
                     //SUM //
                     $(document).ready(function () {
@@ -1776,7 +1963,7 @@ input[type=number]::-webkit-outer-spin-button {
                     // $('div').find('#pdf').append("<td><input class='form-control file-upload-input' type='file' name='Attachment[]' id='formFile'></td>");
             
                     $('div').find('#pdf').append(`<td><div class="d-flex align-items-center">
-																	<input class="form-control file-upload-input" type="file" name="Attachment[]" placeholder="" id="formFile" data-id="${i}" onchange="readURL(this)"  accept="image/*,application/pdf">
+																	<input class="form-control file-upload-input" type="file" name="Attachment_${i}[]" placeholder="" id="formFile" data-id="${i}" onchange="readURL(this)"  accept="image/png, image/gif, image/jpeg,image/jpg,application/pdf" multiple="multiple">
 																	<span class="ms-2 file_view" data-id="${i}"><i class="fa fa-eye text-primary"></i></span>
 																	<span class="ms-2 file_remove"><i class="fa fa-window-close text-danger"></i><span>
 																</div>
@@ -1792,7 +1979,7 @@ input[type=number]::-webkit-outer-spin-button {
 																			<img class="preview_file_img_${i} preview_image" src="#" alt="your image" width="100%"/>
 																			 
 																			 <iframe class="preview_file_pdf_${i} preview_pdf" src="#"
-                                                                                    style="width: 100%;height: 500px;"
+                                                                                    style="width: 100%;height: 900px;"
                                                                                     frameborder="0">
                                                                               </iframe>
 																      </div>
@@ -1803,6 +1990,8 @@ input[type=number]::-webkit-outer-spin-button {
 																  </div>
 																</div>
 																<!-- file preview modal end -->
+																<div class="row mt-2 display_section p-3" id="file_display_section_${i}" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
+                                                				</div>
 																</td>`);
 
 
@@ -1860,10 +2049,17 @@ input[type=number]::-webkit-outer-spin-button {
                         });
                     i = i + 1;
                     $("input[type='file']").on("change", function () {
-                        if (this.files[0].size > 2000000) {
-                            alert("Please upload file less than 2MB. Thanks!!");
-                            $(this).val('');
-                        }
+                        // if (this.files[0].size > 2000000) {
+                        //     alert("Please upload file less than 2MB. Thanks!!");
+                        //     $(this).val('');
+                        // }
+                        // var file_length = this.files.length;
+                        // for(i=0; i < file_length; i++) {
+		                //     if (this.files[i].size > 2000000) {
+		                //         alert("Please upload file less than 2MB. Thanks!!");
+		                //         // $(this).val('');
+		                //     }
+                		// }
                     });
 
                     if (i > 0) {
@@ -1874,10 +2070,18 @@ input[type=number]::-webkit-outer-spin-button {
                 // file size 
 
                 $("input[type='file']").on("change", function () {
-                    if (this.files[0].size > 2000000) {
-                        alert("Please upload file less than 2MB. Thanks!!");
-                        $(this).val('');
-                    }
+                    // if (this.files[0].size > 2000000) {
+                    //     alert("Please upload file less than 2MB. Thanks!!");
+                    //     $(this).val('');
+                    // }
+                    // var file_length = this.files.length;
+                	// for(i=0; i < file_length; i++) {
+	                //     if (this.files[i].size > 2000000) {
+	                //         alert("Please upload file less than 2MB. Thanks!!");
+	                //         $(this).val('');
+	                //     }
+
+                	// }
                 });
 
 
@@ -1963,17 +2167,25 @@ input[type=number]::-webkit-outer-spin-button {
 		                    // $('#ajax-preloader').show();
 		                },
 		                success: function (result) {
-		                    var table_data = '';
-		                    if(result.length > 0) {
-		                        table_data = `<tr>
-	                            <td>${ (result[0].purchaser_name != null) ? result[0].purchaser_name : '-' }</td>
-	                            <td>${ (result[0].recommendor_name != null) ? result[0].recommendor_name : '-' }</td>
-	                            <td>${ (result[0].approver_name != null) ? result[0].approver_name : '-' }</td>
-		                        </tr>`; 
+  							$('.inv_fin_appr').hide();
 
-		                    }
-		                    $('#involved_persons_tbody').html(table_data);  
-		                    $('#involved_persons_div').show();                                  
+                            var table_data = '';
+                            if(result.length > 0) {
+                                table_data = `<tr>
+                                <td>${ (result[0].purchaser_name != null) ? result[0].purchaser_name : '-' }</td>
+                                <td>${ (result[0].recommendor_name != null) ? result[0].recommendor_name : '-' }</td>
+                                <td>${ (result[0].approver_name != null) ? result[0].approver_name : '-' }</td>`;
+
+                                if(result[0].approver2_name != null) {
+                                    table_data += `<td>${ (result[0].approver2_name != null) ? result[0].approver2_name : '-' }</td>`;
+                                    $('.inv_fin_appr').show();
+                                }
+
+                                table_data += `</tr>`; 
+
+                            }
+                            $('#involved_persons_tbody').html(table_data);  
+                            $('#involved_persons_div').show();                                        
 		                },
 		                complete:function(){
 		                    // $('#ajax-preloader').hide();
@@ -1986,7 +2198,7 @@ input[type=number]::-webkit-outer-spin-button {
 		        	var image_value = $(this).val();
 		        	if(image_value != '') {
 		        		$(this).closest('div').find('.file_remove').show();
-		        		$(this).closest('div').find('.file_view').show();
+		        		// $(this).closest('div').find('.file_view').show();
 		        		
 		        	} else {
 		        		$(this).closest('div').find('.file_remove').hide();
@@ -1997,6 +2209,11 @@ input[type=number]::-webkit-outer-spin-button {
 		        $(document).on('click','.file_remove',function(){
 		        	$(this).closest('div').find('.file-upload-input').val('');
 		        	$(this).hide();
+
+		        	// multi display section empty
+		        	$(this).closest('td').find('.display_section').empty();
+
+
 		        });
 
 
@@ -2044,31 +2261,89 @@ input[type=number]::-webkit-outer-spin-button {
 
 
 
+			    // function readURL(input) {
+			    // 	var row_id = $(input).data('id');
+			    	
+			    //     if (input.files && input.files[0]) {
+			    //         var reader = new FileReader();
+			    //         var extension = input.files[0].name.split('.').pop().toLowerCase();
+			            
+			    //         reader.onload = function (e) {
+			    //             // $('#preview_image').attr('src', e.target.result);
+			    //             if(extension == 'pdf') {
+			    //             	$('.preview_file_pdf_'+row_id).attr('src', e.target.result+'#toolbar=0');
+			    //             	$('.preview_file_img_'+row_id).hide();
+			    //             	$('.preview_file_pdf_'+row_id).show();
+			    //             } else {
+			    //             	$('.preview_file_img_'+row_id).attr('src', e.target.result);
+			    //             	$('.preview_file_pdf_'+row_id).hide();
+			    //             	$('.preview_file_img_'+row_id).show();
+
+			    //             }    
+
+			    //         }
+
+			    //         reader.readAsDataURL(input.files[0]);
+			    //     }
+			    // }
+
 			    function readURL(input) {
 			    	var row_id = $(input).data('id');
-			    	
-			        if (input.files && input.files[0]) {
-			            var reader = new FileReader();
-			            var extension = input.files[0].name.split('.').pop().toLowerCase();
-			            
-			            reader.onload = function (e) {
-			                // $('#preview_image').attr('src', e.target.result);
-			                if(extension == 'pdf') {
-			                	$('.preview_file_pdf_'+row_id).attr('src', e.target.result+'#toolbar=0');
-			                	$('.preview_file_img_'+row_id).hide();
-			                	$('.preview_file_pdf_'+row_id).show();
-			                } else {
-			                	$('.preview_file_img_'+row_id).attr('src', e.target.result);
-			                	$('.preview_file_pdf_'+row_id).hide();
-			                	$('.preview_file_img_'+row_id).show();
 
-			                }    
+			        // multiple file display section 
+			        var file_length = input.files.length;
+			        if(file_length > 0) {
+				        
+				        // //multiple validation empty the display section 
+	                	var validation_passed = true;
+	                	for(k=0; k < file_length; k++) {
+		        			if (input.files[k].size > 2000000) {
+	                        	alert("Please upload file less than 2MB. Thanks!!");
+		        				validation_passed = false;
+		        				input.value = '';
+				        		$('#file_display_section_'+row_id).empty();
+		        				break;
+		                    }
+	                    }
 
-			            }
 
-			            reader.readAsDataURL(input.files[0]);
-			        }
+	                    if(validation_passed) {
+				        	var display_section = '';
+		                	for(i=0; i < file_length; i++) {
+
+
+		                		var reader = new FileReader();
+				            	var extension = input.files[i].name.split('.').pop().toLowerCase();
+				            
+					           if(extension == 'pdf') {
+					           		reader.onload = function (e) {
+						                	display_section += `<div class="col-md-3 h-50 mt-2">
+												<img src="https://play-lh.googleusercontent.com/IkcyuPcrQlDsv62dwGqteL_0K_Rt2BUTXfV3_vR4VmAGo-WSCfT2FgHdCBUsMw3TPGU"  class="multi_preview" style="width:100px;height: 100px;" data-filetype="pdf" data-id="${row_id}">
+												<input type="hidden" id="pdf_input${row_id}" value="${e.target.result}">
+											</div>`;	
+  
+					        			$('#file_display_section_'+row_id).html(display_section);
+				                	}
+						            reader.readAsDataURL(input.files[i]);
+					           } else {
+						            reader.onload = function (e) {
+					                		display_section += `<div class="col-md-3 h-50 mt-2">
+					                			<i class="fa fa-eye text-primary preview_icon"></i>
+												<img src="${e.target.result}" class="multi_preview" data-filetype="img" style="width:100px;height: 100px;" data-id="${row_id}">
+											</div>`;								
+
+					        			$('#file_display_section_'+row_id).html(display_section);
+				                	}
+						            reader.readAsDataURL(input.files[i]);
+
+					           }
+
+				        	}
+
+	                    }
+			    	}
 			    }
+
 
 
 				 function validation(){
@@ -2299,11 +2574,16 @@ input[type=number]::-webkit-outer-spin-button {
 			        	
 		        		//discount entered percentage check
 			        	var discount_percent = 0;
-		        		$('.vendor_discount_percent_'+rowid).each(function(){
+		        		// $('.vendor_discount_percent_'+rowid).each(function(){
+		        		// 	discount_percent += $(this).val();
+		        		// });
+
+		        		$('.discount_percent').each(function(){
 		        			discount_percent += $(this).val();
 		        		});
 
-		        		if(discount_percent <= 0) {
+
+		        		if(discount_percent <= 0 || ($('#discount_amount_'+rowid).val() == '' || $('#discount_amount_'+rowid).val() == 0)) {
 			        		$('#discount_amount_'+rowid).removeAttr('readonly');
 		        		}
 			    	}
@@ -2386,7 +2666,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 		        	var qty =$('.vendor'+vendor_rowid+'_qty_material'+material_row_id).val();
 		        	var price =$('.vendor'+vendor_rowid+'_price_material'+material_row_id).val();
-		        	var total_base_amount = parseInt(qty) * parseFloat(price);
+		        	var total_base_amount = parseFloat(qty) * parseFloat(price);
 
 		        	if(discount_percentage > 0) {
 			        	var discount_amount   = parseFloat(total_base_amount) * parseFloat(discount_percentage)/100; 
@@ -2472,6 +2752,28 @@ input[type=number]::-webkit-outer-spin-button {
        				 event.preventDefault(); // Prevent these keys
     				}
     			});
+
+
+    			$(document).on('click','.multi_preview',function(){
+    				var file_type = $(this).data('filetype');
+    				var src = $(this).attr('src');
+    				var row_id = $(this).data('id');
+
+
+					 if(file_type == 'pdf') {
+					 	// var src = $('#pdf_input'+row_id).val();
+                        var src = $(this).closest('div').find('#pdf_input'+row_id).val();
+	                	$('.preview_file_pdf_'+row_id).attr('src', src+'#toolbar=0');
+	                	$('.preview_file_img_'+row_id).hide();
+	                	$('.preview_file_pdf_'+row_id).show();
+				     } else {
+	                	$('.preview_file_img_'+row_id).attr('src', src);
+	                	$('.preview_file_pdf_'+row_id).hide();
+	                	$('.preview_file_img_'+row_id).show();
+				     } 
+		        	$('#file_preview_modal_'+row_id).modal('show');
+
+		  		});
 		        
 				
         </script>

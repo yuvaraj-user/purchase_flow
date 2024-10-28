@@ -51,6 +51,17 @@ if (isset($_POST["save"])) {
     $vendor_exist_query_exec = sqlsrv_query($conn, $vendor_exist_query,array(),array("Scrollable" => 'static'));
     $vendor_exist_count = sqlsrv_num_rows($vendor_exist_query_exec);
     if($vendor_exist_count > 0) {
+                $findex = 1;
+        while($row = sqlsrv_fetch_array($vendor_exist_query_exec,SQLSRV_FETCH_ASSOC)) {
+            if($row['Attachment'] != '' && $_FILES["Attachment_".$findex]["name"][0] != '') {
+                foreach (explode(',',$row['Attachment']) as $akey => $avalue) {
+                    unlink('file/'.$avalue);
+                }
+            }
+
+            $findex++;  
+        }
+
         // delete already saved quotation vendor detail 
         sqlsrv_query($conn, "DELETE FROM Tb_Vendor_Selection where Request_Id = '".$request_id."'");        
     }
@@ -68,6 +79,23 @@ if (isset($_POST["save"])) {
     }
 
 
+    // recommender detail exist check
+    $recommend_exist_sql = "SELECT * FROM Tb_Recommender WHERE Request_id = '".$request_id."'";
+    $recommend_exist_sql_exec = sqlsrv_query($conn, $recommend_exist_sql, array(), array( "Scrollable" => 'static' ));
+    $recommend_exist_row_count = sqlsrv_num_rows($recommend_exist_sql_exec);
+
+    if($recommend_exist_row_count > 0) {
+        sqlsrv_query($conn, "DELETE FROM Tb_Recommender where Request_Id = '".$request_id."'"); 
+    } 
+
+    // recommender material detail exist check
+    $recommend_mat_exist_sql = "SELECT * FROM Tb_Recommender_Meterial WHERE Request_id = '".$request_id."'";
+    $recommend_mat_exist_sql_exec = sqlsrv_query($conn, $recommend_mat_exist_sql, array(), array( "Scrollable" => 'static' ));
+    $recommend_mat_exist_row_count = sqlsrv_num_rows($recommend_mat_exist_sql_exec);
+
+    if($recommend_mat_exist_row_count > 0) {
+        sqlsrv_query($conn, "DELETE FROM Tb_Recommender_Meterial where Request_Id = '".$request_id."'"); 
+    } 
 
     $data_count = 0;
     foreach ($_POST['Vendor_SAP'] as $key => $sap_val) {
@@ -81,7 +109,7 @@ if (isset($_POST["save"])) {
     $query1 = sqlsrv_query($conn, "UPDATE Tb_Request set approval_mapping_id = '".$_POST['mapping_id']."' WHERE Request_id = '$request_id' ");
 
     // for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
-
+    $file_index = 1;
     for ($i = 0; $i < $data_count; $i++) {
         
         $Vendor_SAP = $_POST['Vendor_SAP'][$i];
@@ -105,27 +133,35 @@ if (isset($_POST["save"])) {
         // $Requested_to = $Recommender_Code;
         $Requested_to = $_POST['recommendor_id'];
 
-        $total_amount    = $_POST['amt_tot'][$i];
-        $discount_amount = $_POST['discount_amount'][$i];
-        $package_amount = $_POST['package_amount'][$i];
-        $package_percentage = $_POST['package_percentage'][$i];
+        $total_amount    = ($_POST['amt_tot'][$i] != '') ? $_POST['amt_tot'][$i] : 0;
+        $discount_amount = ($_POST['discount_amount'][$i] != '') ? $_POST['discount_amount'][$i] : 0;
+        $package_amount = ($_POST['package_amount'][$i] != '') ? $_POST['package_amount'][$i] : 0;
+        $package_percentage = ($_POST['package_percentage'][$i] != '') ? $_POST['package_percentage'][$i] : 0;
         
         $fil = '';
-        if($_FILES["Attachment"]["name"][$i] != '') {
-            $filename = $request_id.'_Vendor'.$file_index.'_';
-            $extension = pathinfo($_FILES["Attachment"]["name"][$i], PATHINFO_EXTENSION);
-            $fil = $filename.strtotime(date('h:i:s')).'.'.$extension;
+        if($_FILES["Attachment_".$file_index]["name"][0] != '') {
+            $file_count = COUNT($_FILES["Attachment_".$file_index]["name"]);
+            if($file_count > 0) {
+                $separate_findex = 1;
+                    for($j=0;$j < $file_count;$j++) {
+                        $extension = pathinfo($_FILES["Attachment_".$file_index]["name"][$j], PATHINFO_EXTENSION);
+                        $allowed = array("jpg","jpeg", "png", "gif", "pdf", "wmv", "pdf", "zip");
+                        if (in_array($extension, $allowed)) {
+                            $filename = $request_id.'_Vendor'.$file_index.'_file'.$separate_findex.'_';
 
-            $tmp_name = $_FILES["Attachment"]["tmp_name"][$i];
-            $path = "file/" . $fil;
-            $file1 = explode(".", $fil);
-            if( !isset($file1[1]) ){
-                $file1[1]=0;
-            }
-            $ext = $file1[1];
-            $allowed = array("jpg", "png", "gif", "pdf", "wmv", "pdf", "zip");
-            if (in_array($ext, $allowed)) {
-                move_uploaded_file($tmp_name, $path);
+                            $separator = ($file_count <= $j+1) ? '' : ','; 
+                            $fil .= $filename.strtotime(date('h:i:s')).'.'.$extension.$separator;
+
+                            $fil_save = $filename.strtotime(date('h:i:s')).'.'.$extension;
+
+
+                            $tmp_name = $_FILES["Attachment_".$file_index]["tmp_name"][$j];
+                            $path = "file/" . $fil_save;
+
+                            move_uploaded_file($tmp_name, $path);
+                        }
+                        $separate_findex++;
+                    }
             }
         } elseif(COUNT($saved_data) > 0) {
             $fil = $saved_data[$i]['Attachment']; 
@@ -151,13 +187,15 @@ if (isset($_POST["save"])) {
         if(($_POST['recommendor_id'] == '' && $_POST['finance_verifier_id'] == '') || ($_POST['recommendor_id'] == $_POST['approver_id'] && $_POST['finance_verifier_id'] == '')) {
             $Requested_to = $_POST['approver_id'];
 
+
             $query = "INSERT INTO Tb_Recommender (Request_id,V_id,Vendor_SAP,Vendor_Name,Vendor_City,vendor_Active_SAP,Last_Purchase,Delivery_Time1,
             Value_Of,Fright_Charges,Insurance_Details,GST_Component,Warrenty,Payment_Terms,Requester_Remarks,
             Recommender_Remarks,Attachment,Time_Log,Status,Requester_Selection,Recommender_Selection,Finance_Verification,EMP_ID,Requested_to,total_amount,discount_amount,package_amount,package_percentage)  
             VALUES('$request_id','$V_id','$Vendor_SAP','$Vendor_Name','$Vendor_City',
             '$vendor_Active_SAP','$Last_Purchase','$Delivery_Time','$Value_Of','$Fright_Charges','$Insurance_Details','$GST_Component',
             '$Warrenty','$Payment_Terms','$Requester_Remarks','$Requester_Remarks',
-            '$fil',GETDATE(),'Recommended','$Requester_Selection','$Requester_Selection','$value','$emp_id','$Requested_to','$total_amount','$discount_amount','$package_amount','$package_percentage')";
+            '$fil',GETDATE(),'Recommended','$Requester_Selection','$Requester_Selection','No','$emp_id','$Requested_to','$total_amount','$discount_amount','$package_amount','$package_percentage')";
+
 
             $query1 = sqlsrv_query($conn, "UPDATE Tb_Request set status = 'Recommended',Approver = '".$_POST['approver_id']."' WHERE Request_Id = '$request_id'");
             $query1 = sqlsrv_query($conn, "UPDATE Tb_Request_Items set status = 'Recommended',Approver = '".$_POST['approver_id']."' WHERE Request_Id = '$request_id'");
@@ -165,7 +203,7 @@ if (isset($_POST["save"])) {
             $rs = sqlsrv_query($conn, $query);
         }
 
-            
+        $file_index++;            
     }
 
 
@@ -188,8 +226,8 @@ if (isset($_POST["save"])) {
         $Total = $_POST['Total'][$i];
         $V_id = $_POST['V_id'][$i];
         $Requested_to = $_POST['recommendor_id'];
-        $gst_percentage      = $_POST['gst_percent'][$i];
-        $discount_percentage = $_POST['discount_percent'][$i];
+        $gst_percentage      = ($_POST['gst_percent'][$i] != '') ? $_POST['gst_percent'][$i] : 0;
+        $discount_percentage = ($_POST['discount_percent'][$i] != '') ? $_POST['discount_percent'][$i] : 0;
 
         $meterial = "INSERT INTO Tb_Vendor_Quantity(Request_Id, Meterial_Name, Quantity, status, Price, Total,  V_id, EMP_ID,Requested_to,gst_percentage,discount_percentage) VALUES 
             ('$request_id','$Meterial_Name','$Quantity_Details','Added','$Price','$Total','$V_id','$emp_id','$Requested_to','$gst_percentage','$discount_percentage')";
@@ -214,8 +252,16 @@ if (isset($_POST["save"])) {
 
         $update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Request INNER JOIN Tb_Request_Items 
         ON Tb_Request.Request_ID = Tb_Request_Items.Request_Id WHERE Tb_Request.Request_ID = '$request_id'");
-        $updated_query = sqlsrv_fetch_array($update_qry);
-        $PERSION =  $updated_query['Persion_In_Workflow'];
+        
+        $updated_query = [];
+        while ($row = sqlsrv_fetch_array($update_qry, SQLSRV_FETCH_ASSOC)) {
+            $updated_query[] = $row;
+        }
+
+        $item_numRows = COUNT($updated_query);
+
+        // $updated_query = sqlsrv_fetch_array($update_qry);
+        $PERSION =  $updated_query[0]['Persion_In_Workflow'];
         // print_r($PERSION);exit;
         $HR_Master_Table = sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code IN (SELECT * FROM SPLIT_STRING('$PERSION',','))  ");
         $idss = array();
@@ -277,9 +323,9 @@ if (isset($_POST["save"])) {
         // $mail->addAttachment($_FILES["attachements"]["tmp_name"], $fil);    // Optional name
         $mail->isHTML(true);                                  // Set email format to HTML
 
-        $mail->Subject = $updated_query['Request_Category'];
+        $mail->Subject = $updated_query[0]['Request_Category'];
                 
-        $mail->Body = '
+    $mail_template = '
         <html>
         <head>
             <style>
@@ -294,59 +340,103 @@ if (isset($_POST["save"])) {
             </style>
             </head>
                 <body>
+                    <div style="display:flex;justify-content:space-between;">
+                        <label style="font-weight:bold;">Request ID</label>
+                        <span style="margin-left:20px;font-weight:bold;">:</span>
+                        <span style="margin-left:10px;">' . $request_id . '</span>
+                    </div>
+
+                    <div style="display:flex;">
+                        <label style="font-weight:bold;">Department</label>
+                        <span style="margin-left:15px;font-weight:bold;">:</span>
+                        <span style="margin-left:10px;">' . $updated_query[0]['Department'] . '</span>
+                    </div>
+                    <div style="display:flex;">
+                        <label style="font-weight:bold;">Category</label>
+                        <span style="margin-left:30px;font-weight:bold;">:</span>
+                        <span style="margin-left:10px;">' . $updated_query[0]['Request_Type'] . '</span>
+                    </div>
+                    <div style="display:flex;">
+                        <label style="font-weight:bold;">Plant</label>
+                        <span style="margin-left:55px;font-weight:bold;">:</span>
+                        <span style="margin-left:10px;">' . $updated_query[0]['Plant'] . '</span>
+                    </div>
+
+
+                    <br>
                     <table >
                         <thead>
                             <tr>
                                 <th class="text-center">S.No</th>
-                                <th class="text-center">Request ID</th>
-                                <th class="text-center">Department</th>
-                                <th class="text-center">Category</th>
-                                <th class="text-center">Plant</th>
                                 <th class="text-center">Meterial</th>
                                 <th class="text-center">Quantity</th>                          
                                 <th class="text-center">Status</th>                          
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    1
-                                </td>
-                                <td>
-                                    ' . $request_id . '
-                                </td>
-                                <td>
-                                    ' . $updated_query['Department'] . '
-                                </td>
-                                <td>
-                                    ' . $updated_query['Request_Type'] . '
-                                </td>
-                                <td>
-                                    ' . $updated_query['Plant'] . '
-                                </td>
-                                <td>
-                                    ' . $updated_query['Item_Code'] . '
-                                </td>
-                                <td>
-                                    ' . $updated_query['Quantity'] . '
-                                </td>
-                                <td>
-                                <h4><span class="badge badge-success"><i class="fa fa-check"></i>Quotaion Added </span></h4>
-                                </td>
-                            </tr>
-                        </tbody>
+                        <tbody>';
+
+        $msno = 1; 
+        foreach ($updated_query as $key => $value) {
+
+                $mail_template .=   '<tr>
+                                        <td>
+                                            <p style="text-align:center;">'.$msno.'</p>
+                                        </td>';
+
+                // if($msno == 1) {
+
+                //     $mail_template .=   '<td rowspan="'.$item_numRows.'">
+                //                                 <p style="text-align:center;">' . $request_id . '</p>
+                //                             </td>
+                //                            <td rowspan="'.$item_numRows.'">
+                //                                 <p style="text-align:center;">' . $value['Department'] . '</p>
+                //                             </td>
+                //                             <td rowspan="'.$item_numRows.'">
+                //                                 <p style="text-align:center;">' . $value['Request_Type'] . '</p>
+                //                             </td>
+                //                             <td rowspan="'.$item_numRows.'">
+                //                                 <p style="text-align:center;">' . $value['Plant'] . '</p>
+                //                             </td>';
+                // }
+
+                $mail_template .= '<td>
+                                        <p style="text-align:center;"> ' . $value['Item_Code'] . ' </p>
+                                    </td>
+                                    <td>
+                                        <p style="text-align:center;"> ' . $value['Quantity'] . ' </p>
+                                    </td>';
+                if($msno == 1) {
+                    $mail_template .= '<td rowspan="'.$item_numRows.'">
+                    <h4 style="text-align:center;"><span class="badge badge-success"><i class="fa fa-check"></i>Quotaion Updated </span></h4>
+                    </td>';
+                }
+                $mail_template .= '</tr>';
+                $msno++;
+        }                      
+
+    $mail_template .=  '</tbody>
                     </table>
                 </body>
         </html>';
+
+
+        $mail->Body = $mail_template;
 
         $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';  
         if (!$mail->send()) {
             echo 'Message could not be sent.';
             echo 'Mailer Error: ' . $mail->ErrorInfo;
           }else{
+
+            // sendbacked request reset 
+            if($request_details['is_sendbacked'] == '1') {
+                $sql = "UPDATE Tb_Request SET is_sendbacked = '0' WHERE Request_ID = '".$request_id."'";
+                sqlsrv_query($conn,$sql);
+            }
+
             ?>
             <script type="text/javascript">
-                alert("Quotation added successsfully");
+                alert("Quotation Updated successsfully");
                 window.location = "show_vendor_request.php";
             </script>
             <?php
@@ -418,6 +508,17 @@ input[type=number]::-webkit-outer-spin-button {
 
         .preview_image,.preview_pdf {
             display: none;
+        }
+        .display_section {
+            cursor: pointer;
+        }
+
+        .preview_icon {
+            display: none;
+            position: absolute;
+            top: 23%;
+            left: 42%;
+            font-size: 20px;
         }
         </style>
 
@@ -497,6 +598,14 @@ input[type=number]::-webkit-outer-spin-button {
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-body">
+                                            <?php 
+                                                $plant_sql = "SELECT Plant_Name FROM Plant_Master_PO WHERE Plant_Code = '".$po_creator['Plant']."'";
+                                                $plant_sql_exec =  sqlsrv_query($conn,$plant_sql);
+                                                $plant_detail = sqlsrv_fetch_array($plant_sql_exec);
+
+                                            ?>
+                                            <h1 class="badge bg-success" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
+
                                             <form method="POST" enctype="multipart/form-data" id="quotation_form">
                                                  <input type="hidden" id="mapping_id" name="mapping_id">
                                                  <input type="hidden" id="po_creator_id" value="<?php echo $po_creator['EMP_ID']; ?>">
@@ -701,8 +810,8 @@ input[type=number]::-webkit-outer-spin-button {
                                                                         <thead>
                                                                             <td>Quantity</td>
                                                                             <th>Price</th>
-                                                                            <th>GST(%)</th>
                                                                             <th>Discount(%)</th>
+                                                                            <th>GST(%)</th>
                                                                             <th>Total</th>
                                                                         </thead>
                                                                     </tr>
@@ -735,27 +844,28 @@ input[type=number]::-webkit-outer-spin-button {
                                                                                     <input type="number" min="0"
                                                                                         class="form-control vendor_price_<?php echo $i;?> price<?php echo $array_ind; ?> required_for_valid material_price vendor<?php echo $tbl_index;?>_price_material<?php echo $inner_index;?>" style="width: 75px;"
                                                                                         name="Price[]" value="<?php echo $quantity_sql_res['Price'] ?>"
-                                                                                        placeholder="Enter Price" step=".01"  required error-msg='Price is mandatory.' data-rowid="<?php echo $tbl_index;?>">
+                                                                                        placeholder="Enter Price" step=".01"  required error-msg='Price is mandatory.' data-rowid="<?php echo $tbl_index;?>" data-materialindex="<?php echo $inner_index;?>">
+                                                                                    <span class="error_msg text-danger"></span>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <input type="number" min="0"
+                                                                                        class="form-control vendor_discount_percent_<?php echo $tbl_index;?> discount_percent" style="width: 75px;"
+                                                                                        name="discount_percent[]"
+                                                                                        placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="<?php echo $tbl_index;?>" id="vendor<?php echo $tbl_index;?>_discount_percentage_material<?php echo $inner_index;?>" value="<?php echo $quantity_sql_res['discount_percentage']; ?>" data-materialindex="<?php echo $inner_index;?>">
                                                                                     <span class="error_msg text-danger"></span>
                                                                                 </td>
                                                                                 <td>
                                                                                     <input type="number" min="0"
                                                                                         class="form-control vendor_gst_percent_<?php echo $tbl_index;?> gst_percent" style="width: 75px;"
                                                                                         name="gst_percent[]" 
-                                                                                        placeholder="Enter GST" step=".01"  required error-msg='Price is mandatory.' data-rowid="<?php echo $tbl_index;?>" id="vendor<?php echo $tbl_index;?>_gst_percentage_material<?php echo $inner_index;?>" value="<?php echo $quantity_sql_res['gst_percentage']; ?>">
+                                                                                        placeholder="Enter GST" step=".01"  required error-msg='Price is mandatory.' data-rowid="<?php echo $tbl_index;?>" id="vendor<?php echo $tbl_index;?>_gst_percentage_material<?php echo $inner_index;?>" value="<?php echo $quantity_sql_res['gst_percentage']; ?>" data-materialindex="<?php echo $inner_index;?>">
                                                                                     <span class="error_msg text-danger"></span>
                                                                                 </td>
 
                                                                                 <td>
-                                                                                    <input type="number" min="0"
-                                                                                        class="form-control vendor_discount_percent_<?php echo $tbl_index;?> discount_percent" style="width: 75px;"
-                                                                                        name="discount_percent[]"
-                                                                                        placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="<?php echo $tbl_index;?>" id="vendor<?php echo $tbl_index;?>_discount_percentage_material<?php echo $inner_index;?>" value="<?php echo $quantity_sql_res['discount_percentage']; ?>">
-                                                                                    <span class="error_msg text-danger"></span>
-                                                                                </td>
-                                                                                <td>
+                                                                                    <input type="hidden" class="vendor<?php echo $tbl_index;?>_discount_reduced_total_material<?php echo $inner_index;?>">
                                                                                     <input type="text"
-                                                                                        class="form-control  amount<?php echo $array_ind; ?>" style="width: 75px; " 
+                                                                                        class="form-control  amount<?php echo $array_ind; ?> vendor<?php echo $tbl_index;?>_total_material<?php echo $inner_index;?>" style="width: 75px; " 
                                                                                         readonly name="Total[]" value="<?php echo $quantity_sql_res['Total'] ?>">
                                                                                 </td>
                                                                             </tr>
@@ -842,9 +952,11 @@ input[type=number]::-webkit-outer-spin-button {
                                                             <?php
                                                             $discount_index = 1; 
                                                             for ($i=0; $i < $saved_count; $i++) { ?>
-                                                            <td><input type="number" min="0" class="form-control"
+                                                            <td>
+                                                                <input type="number" min="0" class="form-control discount_charges"
                                                                     name="discount_amount[]"
-                                                                    placeholder="Enter Discount Amount" id="discount_amount_<?php echo $discount_index; ?>" readonly value="<?php echo $saved_data[$i]['discount_amount']; ?>"></td>
+                                                                    placeholder="Enter Discount Amount" id="discount_amount_<?php echo $discount_index; ?>" readonly value="<?php echo $saved_data[$i]['discount_amount']; ?>" data-id="<?php echo $discount_index; ?>">
+                                                            </td>
                                                             <?php $discount_index++; } ?>
                                                         </tr>
                                                         <tr id="seven">
@@ -937,9 +1049,9 @@ input[type=number]::-webkit-outer-spin-button {
                                                                 <select class="form-control task request_selection required_for_valid request_selection_<?php echo $rindex;?>"
                                                                     name="Requester_Selection[]" required data-id="<?php echo $rindex;?>" error-msg='Selection is mandatory.'>
                                                                     <option value="">Select Requester Selection</option>
-                                                                    <option value="1" <?php if($saved_data[$i]['Requester_Selection'] == 1) { ?> selected <?php } ?>>1</option>
-                                                                    <option value="2" <?php if($saved_data[$i]['Requester_Selection'] == 2) { ?> selected <?php } ?>>2</option>
-                                                                    <option value="3" <?php if($saved_data[$i]['Requester_Selection'] == 3) { ?> selected <?php } ?>>3</option>
+                                                                    <?php for ($j=1; $j <= $saved_count; $j++) { ?>
+                                                                        <option value="<?php echo $j; ?>" <?php if($saved_data[$i]['Requester_Selection'] == $j) { ?> selected <?php } ?>><?php echo $j; ?></option>
+                                                                    <?php } ?>
                                                                 </select>
                                                                 <span class="error_msg text-danger"></span>
                                                             </td>
@@ -969,13 +1081,13 @@ input[type=number]::-webkit-outer-spin-button {
                                                             for ($i=0; $i < $saved_count; $i++) { ?>
                                                             <td>
                                                                 <div class="d-flex align-items-center">
-                                                                    <input class="form-control file-upload-input" type="file" name="Attachment[]" placeholder="" id="formFile" onchange="readURL(this)" data-id="<?php echo $rindex; ?>" accept="image/*,application/pdf" value="<?php echo $saved_data[$i]['Attachment']; ?>">
-                                                                    <span class="ms-2 file_view" data-id="<?php echo $rindex; ?>" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-eye text-primary"></i></span>
+                                                                    <input class="form-control file-upload-input" type="file" name="Attachment[]" placeholder="" id="formFile" onchange="readURL(this)" data-id="<?php echo $rindex; ?>" accept="image/png, image/gif, image/jpeg,image/jpg,application/pdf" value="<?php echo $saved_data[$i]['Attachment']; ?>">
+                                                                    <!-- <span class="ms-2 file_view" data-id="<?php echo $rindex; ?>" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-eye text-primary"></i></span> -->
                                                                     <span class="ms-2 file_remove" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-window-close text-danger"></i></span>
                                                                 </div>
 
                                                                 <?php
-                                                                $file_extension = explode('.', $saved_data[$i]['Attachment'])[1];
+                                                                // $file_extension = explode('.', $saved_data[$i]['Attachment'])[1];
                                                                 ?>
 
                                                                 <!-- file preview modal -->
@@ -987,16 +1099,12 @@ input[type=number]::-webkit-outer-spin-button {
                                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                                       </div>
                                                                       <div class="modal-body">
-                                                                            <?php if($file_extension != 'pdf') { ?>
-                                                                                <img class="preview_file_img_<?php echo $rindex; ?> preview_image" src="file/<?php echo $saved_data[$i]['Attachment']; ?>" alt="your image" width="100%" style="display: block;">
-                                                                            <?php } ?>
+                                                                                <img class="preview_file_img_<?php echo $rindex; ?> preview_image" src="" alt="your image" width="100%" style="display: block;">
 
-                                                                            <?php if($file_extension == 'pdf') { ?>
-                                                                             <iframe class="preview_file_pdf_<?php echo $rindex; ?> preview_pdf" src="file/<?php echo $saved_data[$i]['Attachment']; ?>#toolbar=0"
-                                                                                    style="width: 100%;height: 500px;display: block;"
+                                                                             <iframe class="preview_file_pdf_<?php echo $rindex; ?> preview_pdf" src=""
+                                                                                    style="width: 100%;height: 900px;display: block;"
                                                                                     frameborder="0">
                                                                               </iframe>
-                                                                            <?php } ?>
 
                                                                       </div>
                                                                       <div class="modal-footer">
@@ -1006,6 +1114,28 @@ input[type=number]::-webkit-outer-spin-button {
                                                                   </div>
                                                                 </div>
                                                                 <!-- file preview modal end -->
+
+
+                                                                <div class="row mt-2 display_section p-3" id="file_display_section_<?php echo $rindex; ?>" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
+                                                                        <?php 
+                                                                        $multi_files = explode(',',$saved_data[$i]['Attachment']);
+
+                                                                        foreach ($multi_files as $key => $value) {
+                                                                            $file_extension = explode('.', $value)[1];
+
+                                                                            if($file_extension == 'pdf') { ?>
+                                                                                <div class="col-md-3 h-50 mt-2">
+                                                                                    <img src="https://play-lh.googleusercontent.com/IkcyuPcrQlDsv62dwGqteL_0K_Rt2BUTXfV3_vR4VmAGo-WSCfT2FgHdCBUsMw3TPGU"  class="multi_preview" style="width:100px;height: 100px;" data-filetype="pdf" data-id="<?php echo $rindex; ?>">
+                                                                                    <input type="hidden" id="pdf_input<?php echo $rindex; ?>" value="file/<?php echo $value; ?>">
+                                                                                </div>  
+                                                                            <?php } else { ?>
+                                                                                <div class="col-md-3 h-50 mt-2">
+                                                                                    <i class="fa fa-eye text-primary preview_icon"></i>
+                                                                                    <img src="file/<?php echo $value; ?>" class="multi_preview" data-filetype="img" style="width:100px;height: 100px;" data-id="<?php echo $rindex; ?>">
+                                                                                </div>
+                                                                            <?php }} ?>
+                                                                            
+                                                                </div>
 
                                                             </td>
                                                             <?php $rindex++; } ?>
@@ -1026,6 +1156,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                               <th>Purchaser</th>
                                                               <th>Recommender</th>
                                                               <th>Approver</th>
+                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
                                                             </tr>
                                                           </thead>
                                                           <tbody id="involved_persons_tbody">
@@ -1329,6 +1460,7 @@ input[type=number]::-webkit-outer-spin-button {
             if(package_type == 'percent') {
                 package_percent = $(this).val() || 0;
                 package_amount = (package_percent > 0 && total_amount > 0) ? total_amount * $(this).val()/100 : 0;
+                package_amount = package_amount.toFixed(2);
             } else if(package_type == 'amount') {
                 package_amount = $(this).val() || 0;
                 package_percent = (package_amount > 0 && total_amount > 0) ? (package_amount/total_amount) * 100 : 0;
@@ -1358,13 +1490,16 @@ input[type=number]::-webkit-outer-spin-button {
                 var net_amount = parseFloat(total_amount) + parseFloat(gst_amount) + parseFloat(freight_amount) + parseFloat(insurance_amount) + parseFloat(package_amount) - parseFloat(discount_amount);
 
                 $('.valueof'+rowid).val(net_amount.toFixed(2));
-
+                console.log(package_percent);
                 
                 package_amount = (package_amount > 0) ? parseFloat(package_amount) : ''; 
-                package_percent = (package_percent > 0) ? parseFloat(package_percent).toFixed(2) : '';  
+                package_percent = (package_percent > 0) ? package_percent : '';     
 
-                $('#package_amount_'+rowid).val(package_amount);
-                $('#package_percentage_'+rowid).val(package_percent);
+                if(package_type == 'percent') {
+                    $('#package_amount_'+rowid).val(package_amount);
+                } else if(package_type == 'amount') {
+                    $('#package_percentage_'+rowid).val(package_percent);
+                }
             }
 
         });
@@ -1425,6 +1560,17 @@ input[type=number]::-webkit-outer-spin-button {
                     var amount = (qty * price)
                     sum += amount;
                     $(this).find('.amount').val('' + amount);
+
+                    // update total value if the discount or gst having that row  
+                    var discount = $(this).find('.discount_percent').val();
+                    var gst      = $(this).find('.gst_percent').val();
+                    var vendor_row_id = $(this).find('.discount_percent').data('rowid');
+                    var material_row_id = $(this).find('.discount_percent').data('materialindex');
+
+
+                    if((discount != '' || discount != 0) || (gst != '' || gst != 0)) {
+                        update_material_tot_amount(vendor_row_id,material_row_id,discount,gst);
+                    }
                 });
                 $('input.totale2').val(sum);
                 $('#old_totale2').val(sum);
@@ -1446,6 +1592,17 @@ input[type=number]::-webkit-outer-spin-button {
                     var amount = (qty * price)
                     sum += amount;
                     $(this).find('.amount1').val('' + amount);
+
+                    // update total value if the discount or gst having that row  
+                    var discount = $(this).find('.discount_percent').val();
+                    var gst      = $(this).find('.gst_percent').val();
+                    var vendor_row_id = $(this).find('.discount_percent').data('rowid');
+                    var material_row_id = $(this).find('.discount_percent').data('materialindex');
+
+
+                    if((discount != '' || discount != 0) || (gst != '' || gst != 0)) {
+                        update_material_tot_amount(vendor_row_id,material_row_id,discount,gst);
+                    }
                 });
                 $('input.total1').val(sum);
                 $('#old_total1').val(sum);
@@ -1466,6 +1623,17 @@ input[type=number]::-webkit-outer-spin-button {
                     var amount = (qty * price)
                     sum += amount;
                     $(this).find('.amount2').val('' + amount);
+
+                    // update total value if the discount or gst having that row  
+                    var discount = $(this).find('.discount_percent').val();
+                    var gst      = $(this).find('.gst_percent').val();
+                    var vendor_row_id = $(this).find('.discount_percent').data('rowid');
+                    var material_row_id = $(this).find('.discount_percent').data('materialindex');
+
+
+                    if((discount != '' || discount != 0) || (gst != '' || gst != 0)) {
+                        update_material_tot_amount(vendor_row_id,material_row_id,discount,gst);
+                    }
                 });
                 $('input.total2').val(sum);
                 $('#old_total2').val(sum);
@@ -1510,6 +1678,17 @@ input[type=number]::-webkit-outer-spin-button {
                                     var amount = (qty * price)
                                     sum += amount;
                                     $(this).find('#amount3' + index).val('' + amount);
+
+                                    // update total value if the discount or gst having that row  
+                                    var discount = $(this).find('.discount_percent').val();
+                                    var gst      = $(this).find('.gst_percent').val();
+                                    var vendor_row_id = $(this).find('.discount_percent').data('rowid');
+                                    var material_row_id = $(this).find('.discount_percent').data('materialindex');
+
+
+                                    if((discount != '' || discount != 0) || (gst != '' || gst != 0)) {
+                                        update_material_tot_amount(vendor_row_id,material_row_id,discount,gst);
+                                    }
                                 });
                                 $('input#total3' + index).val(sum);
                                 $('#old_total3' + index).val(sum);
@@ -1624,8 +1803,8 @@ input[type=number]::-webkit-outer-spin-button {
                                                                         <thead>
                                                                             <td>Quantity</td>
                                                                             <th>Price</th>
-                                                                            <th>GST(%)</th>
                                                                             <th>Discount(%)</th>
+                                                                            <th>GST(%)</th>
                                                                             <th>Total</th>
                                                                         </thead>
                                                                     </tr>
@@ -1641,8 +1820,15 @@ input[type=number]::-webkit-outer-spin-button {
                                                                                     <input type="hidden" class="form-control" name="V_id[]" value="Vendor ${i}" >
                                                                                 </td>
                                                                                 <td>
-                                                                                    <input type="number" style="width: 75px;" min="0" class="form-control vendor_price_${i} price3 material_price vendor${i}_price_material<?php echo $mat_index;?>" data-id="${i}" id='price3${i}' name="Price[]-<?php echo $row['ID'] ?>${i}" value="" placeholder="Enter Price" step=".01" readonly error-msg='Price is mandatory.' data-rowid="${i}" >
+                                                                                    <input type="number" style="width: 75px;" min="0" class="form-control vendor_price_${i} price3 material_price vendor${i}_price_material<?php echo $mat_index;?>" data-id="${i}" id='price3${i}' name="Price[]-<?php echo $row['ID'] ?>${i}" value="" placeholder="Enter Price" step=".01" readonly error-msg='Price is mandatory.' data-rowid="${i}" data-materialindex="<?php echo $mat_index;?>">
                                                                                     <span class="text-danger"></span>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <input type="number" min="0"
+                                                                                        class="form-control vendor_discount_percent_${i} discount_percent" style="width: 75px;"
+                                                                                        name="discount_percent[]" 
+                                                                                        placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="${i}" readonly id="vendor${i}_discount_percentage_material<?php echo $mat_index;?>" data-materialindex="<?php echo $mat_index;?>">
+                                                                                    <span class="error_msg text-danger"></span>
                                                                                 </td>
                                                                                 <td>
                                                                                     <input type="number" min="0"
@@ -1652,14 +1838,8 @@ input[type=number]::-webkit-outer-spin-button {
                                                                                     <span class="error_msg text-danger"></span>
                                                                                 </td>
                                                                                 <td>
-                                                                                    <input type="number" min="0"
-                                                                                        class="form-control vendor_discount_percent_${i} discount_percent" style="width: 75px;"
-                                                                                        name="discount_percent[]" 
-                                                                                        placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="${i}" readonly id="vendor${i}_discount_percentage_material<?php echo $mat_index;?>">
-                                                                                    <span class="error_msg text-danger"></span>
-                                                                                </td>
-                                                                                <td>
-                                                                                    <input type="text" style="width: 75px; " class="form-control  amount3"  readonly data-id="${i}" id='amount3${i}' name="Total[]-<?php echo $row['ID'] ?>${i}" value="" >
+                                                                                    <input type="hidden" class="vendor${i}_discount_reduced_total_material<?php echo $mat_index;?>">
+                                                                                    <input type="text" style="width: 75px; " class="form-control  amount3 vendor${i}_total_material<?php echo $mat_index;?>"  readonly data-id="${i}" id='amount3${i}' name="Total[]-<?php echo $row['ID'] ?>${i}" value="" >
                                                                                 </td>
                                                                             </tr>
                                                                         <?php
@@ -1685,8 +1865,8 @@ input[type=number]::-webkit-outer-spin-button {
                     $('div').find('#eleven').append(`<td><input type='number' min='0' class='form-control  txtCali${i}' data-id="${i}"  name='GST_Component[]' id="gst_amount_${i}" readonly placeholder='Enter GST Component'></td>`);
                                                     
                                                         
-                    $('div').find('#eleven1').append(`<td><input type="number" min="0" class="form-control" name="discount_amount[]"
-                            placeholder="Enter Discount Amount" id="discount_amount_${i}" readonly></td>`);
+                    $('div').find('#eleven1').append(`<td><input type="number" min="0" class="form-control discount_charges" name="discount_amount[]"
+                            placeholder="Enter Discount Amount" id="discount_amount_${i}" readonly data-id="${i}"></td>`);
 
                     $('div').find('#seven').append(`<td><input type="hidden" id="totCal4${i}" data-id="${i}"  onBlur="reSum();">
                                                     <input type="hidden" id="old_total3${i}" >
@@ -1722,7 +1902,7 @@ input[type=number]::-webkit-outer-spin-button {
                     // $('div').find('#pdf').append("<td><input class='form-control file-upload-input' type='file' name='Attachment[]' id='formFile'></td>");
             
                     $('div').find('#pdf').append(`<td><div class="d-flex align-items-center">
-                                                                    <input class="form-control file-upload-input" type="file" name="Attachment[]" placeholder="" id="formFile" data-id="${i}" onchange="readURL(this)"  accept="image/*,application/pdf">
+                                                                    <input class="form-control file-upload-input" type="file" name="Attachment[]" placeholder="" id="formFile" data-id="${i}" onchange="readURL(this)"  accept="accept="image/png, image/gif, image/jpeg,image/jpg,application/pdf" multiple="multiple">
                                                                     <span class="ms-2 file_view" data-id="${i}"><i class="fa fa-eye text-primary"></i></span>
                                                                     <span class="ms-2 file_remove"><i class="fa fa-window-close text-danger"></i><span>
                                                                 </div>
@@ -1749,6 +1929,8 @@ input[type=number]::-webkit-outer-spin-button {
                                                                   </div>
                                                                 </div>
                                                                 <!-- file preview modal end -->
+                                                                <div class="row mt-2 display_section p-3" id="file_display_section_${i}" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
+                                                                </div>
                                                                 </td>`);
 
 
@@ -1806,10 +1988,10 @@ input[type=number]::-webkit-outer-spin-button {
                         });
                     i = i + 1;
                     $("input[type='file']").on("change", function () {
-                        if (this.files[0].size > 2000000) {
-                            alert("Please upload file less than 2MB. Thanks!!");
-                            $(this).val('');
-                        }
+                        // if (this.files[0].size > 2000000) {
+                        //     alert("Please upload file less than 2MB. Thanks!!");
+                        //     $(this).val('');
+                        // }
                     });
 
                     if (i > 0) {
@@ -1820,10 +2002,10 @@ input[type=number]::-webkit-outer-spin-button {
                 // file size 
 
                 $("input[type='file']").on("change", function () {
-                    if (this.files[0].size > 2000000) {
-                        alert("Please upload file less than 2MB. Thanks!!");
-                        $(this).val('');
-                    }
+                    // if (this.files[0].size > 2000000) {
+                    //     alert("Please upload file less than 2MB. Thanks!!");
+                    //     $(this).val('');
+                    // }
                 });
 
 
@@ -1909,13 +2091,21 @@ input[type=number]::-webkit-outer-spin-button {
                             // $('#ajax-preloader').show();
                         },
                         success: function (result) {
+                            $('.inv_fin_appr').hide();
+
                             var table_data = '';
                             if(result.length > 0) {
                                 table_data = `<tr>
                                 <td>${ (result[0].purchaser_name != null) ? result[0].purchaser_name : '-' }</td>
                                 <td>${ (result[0].recommendor_name != null) ? result[0].recommendor_name : '-' }</td>
-                                <td>${ (result[0].approver_name != null) ? result[0].approver_name : '-' }</td>
-                                </tr>`; 
+                                <td>${ (result[0].approver_name != null) ? result[0].approver_name : '-' }</td>`;
+
+                                if(result[0].approver2_name != null) {
+                                    table_data += `<td>${ (result[0].approver2_name != null) ? result[0].approver2_name : '-' }</td>`;
+                                    $('.inv_fin_appr').show();
+                                }
+
+                                table_data += `</tr>`; 
 
                             }
                             $('#involved_persons_tbody').html(table_data);  
@@ -1954,8 +2144,8 @@ input[type=number]::-webkit-outer-spin-button {
 
                     if(value != '' && value != 'Select Vendor SAP') {
                         $('.vendor_price_'+row_id).removeAttr('readonly');
-                        $('.vendor_gst_percent_'+row_id).removeAttr('readonly');
-                        $('.vendor_discount_percent_'+row_id).removeAttr('readonly');
+                        // $('.vendor_gst_percent_'+row_id).removeAttr('readonly');
+                        // $('.vendor_discount_percent_'+row_id).removeAttr('readonly');
 
                         //price validation message add
                         $('.vendor_price_'+row_id).addClass('required_for_valid');
@@ -1990,29 +2180,86 @@ input[type=number]::-webkit-outer-spin-button {
 
 
 
+                // function readURL(input) {
+                //     var row_id = $(input).data('id');
+                    
+                //     if (input.files && input.files[0]) {
+                //         var reader = new FileReader();
+                //         var extension = input.files[0].name.split('.').pop().toLowerCase();
+                        
+                //         reader.onload = function (e) {
+                //             // $('#preview_image').attr('src', e.target.result);
+                //             if(extension == 'pdf') {
+                //                 $('.preview_file_pdf_'+row_id).attr('src', e.target.result+'#toolbar=0');
+                //                 $('.preview_file_img_'+row_id).hide();
+                //                 $('.preview_file_pdf_'+row_id).show();
+                //             } else {
+                //                 $('.preview_file_img_'+row_id).attr('src', e.target.result);
+                //                 $('.preview_file_pdf_'+row_id).hide();
+                //                 $('.preview_file_img_'+row_id).show();
+
+                //             }    
+
+                //         }
+
+                //         reader.readAsDataURL(input.files[0]);
+                //     }
+                // }
+
                 function readURL(input) {
                     var row_id = $(input).data('id');
-                    
-                    if (input.files && input.files[0]) {
-                        var reader = new FileReader();
-                        var extension = input.files[0].name.split('.').pop().toLowerCase();
+
+                    // multiple file display section 
+                    var file_length = input.files.length;
+                    if(file_length > 0) {
                         
-                        reader.onload = function (e) {
-                            // $('#preview_image').attr('src', e.target.result);
-                            if(extension == 'pdf') {
-                                $('.preview_file_pdf_'+row_id).attr('src', e.target.result+'#toolbar=0');
-                                $('.preview_file_img_'+row_id).hide();
-                                $('.preview_file_pdf_'+row_id).show();
-                            } else {
-                                $('.preview_file_img_'+row_id).attr('src', e.target.result);
-                                $('.preview_file_pdf_'+row_id).hide();
-                                $('.preview_file_img_'+row_id).show();
-
-                            }    
-
+                        // //multiple validation empty the display section 
+                        var validation_passed = true;
+                        for(k=0; k < file_length; k++) {
+                            if (input.files[k].size > 2000000) {
+                                alert("Please upload file less than 2MB. Thanks!!");
+                                validation_passed = false;
+                                input.value = '';
+                                $('#file_display_section_'+row_id).empty();
+                                break;
+                            }
                         }
 
-                        reader.readAsDataURL(input.files[0]);
+
+                        if(validation_passed) {
+                            var display_section = '';
+                            for(i=0; i < file_length; i++) {
+
+
+                                var reader = new FileReader();
+                                var extension = input.files[i].name.split('.').pop().toLowerCase();
+                            
+                               if(extension == 'pdf') {
+                                    reader.onload = function (e) {
+                                            display_section += `<div class="col-md-3 h-50 mt-2">
+                                                <img src="https://play-lh.googleusercontent.com/IkcyuPcrQlDsv62dwGqteL_0K_Rt2BUTXfV3_vR4VmAGo-WSCfT2FgHdCBUsMw3TPGU"  class="multi_preview" style="width:100px;height: 100px;" data-filetype="pdf" data-id="${row_id}">
+                                                <input type="hidden" id="pdf_input${row_id}" value="${e.target.result}">
+                                            </div>`;    
+  
+                                        $('#file_display_section_'+row_id).html(display_section);
+                                    }
+                                    reader.readAsDataURL(input.files[i]);
+                               } else {
+                                    reader.onload = function (e) {
+                                            display_section += `<div class="col-md-3 h-50 mt-2">
+                                                <i class="fa fa-eye text-primary preview_icon"></i>
+                                                <img src="${e.target.result}" class="multi_preview" data-filetype="img" style="width:100px;height: 100px;" data-id="${row_id}">
+                                            </div>`;                                
+
+                                        $('#file_display_section_'+row_id).html(display_section);
+                                    }
+                                    reader.readAsDataURL(input.files[i]);
+
+                               }
+
+                            }
+
+                        }
                     }
                 }
 
@@ -2176,6 +2423,11 @@ input[type=number]::-webkit-outer-spin-button {
 
                 $(document).on('keyup','.gst_percent',function(){
                     var rowid = $(this).data('rowid');
+                    var material_row_id = $(this).data('materialindex');
+                    var current_material_dicount_percent = $('#vendor'+rowid+'_discount_percentage_material'+material_row_id).val();
+                    var current_material_gst_percent = $(this).val();
+
+                    update_material_tot_amount(rowid,material_row_id,current_material_dicount_percent,current_material_gst_percent);
 
                     update_gst_amount(rowid);
 
@@ -2184,8 +2436,16 @@ input[type=number]::-webkit-outer-spin-button {
 
                 $(document).on('keyup','.discount_percent',function(){
                     var rowid = $(this).data('rowid');
+                    var material_row_id = $(this).data('materialindex');
+
+                    var current_material_dicount_percent = $(this).val();
+                    var current_material_gst_percent     = $('#vendor'+rowid+'_gst_percentage_material'+material_row_id).val();
+
+                    update_material_tot_amount(rowid,material_row_id,current_material_dicount_percent,current_material_gst_percent);
 
                     update_discount_amount(rowid);
+
+                    update_gst_amount(rowid);
 
                     update_net_amount(rowid);
 
@@ -2229,14 +2489,18 @@ input[type=number]::-webkit-outer-spin-button {
                         $('#insurance_amount_'+rowid).removeAttr('readonly');
                         $('#package_percentage_'+rowid).removeAttr('readonly');
                         $('#package_amount_'+rowid).removeAttr('readonly');
-                        
+                                                
                         //discount entered percentage check
                         var discount_percent = 0;
-                        $('.vendor_discount_percent_'+rowid).each(function(){
+                        // $('.vendor_discount_percent_'+rowid).each(function(){
+                        //  discount_percent += $(this).val();
+                        // });
+
+                        $('.discount_percent').each(function(){
                             discount_percent += $(this).val();
                         });
 
-                        if(discount_percent <= 0) {
+                        if(discount_percent <= 0 || ($('#discount_amount_'+rowid).val() == '' || $('#discount_amount_'+rowid).val() == 0)) {
                             $('#discount_amount_'+rowid).removeAttr('readonly');
                         }
                     }
@@ -2254,7 +2518,8 @@ input[type=number]::-webkit-outer-spin-button {
                         console.log(qty);
                         
                         if(qty > 0) {
-                            price  = qty * $(".vendor"+rowid+"_price_material"+i).val();
+                            // price  = qty * $(".vendor"+rowid+"_price_material"+i).val();
+                            price  = $(".vendor"+rowid+"_discount_reduced_total_material"+i).val();
                         }
 
                         console.log(price);
@@ -2308,10 +2573,123 @@ input[type=number]::-webkit-outer-spin-button {
 
 
                     var net_amount = parseFloat(total_amount) + parseFloat(gst_amount) + parseFloat(freight_amount) + parseFloat(insurance_amount) + parseFloat(package_amount) - parseFloat(discount_amount);
-                    $('.valueof'+rowid).val(net_amount);
+                    $('.valueof'+rowid).val(net_amount.toFixed(2));
 
                 }
+
+
+                function update_material_tot_amount(vendor_rowid,material_row_id,discount_percentage,gst_percentage = '')
+                {
+
+                    var qty =$('.vendor'+vendor_rowid+'_qty_material'+material_row_id).val();
+                    var price =$('.vendor'+vendor_rowid+'_price_material'+material_row_id).val();
+                    var total_base_amount = parseFloat(qty) * parseFloat(price);
+
+                    if(discount_percentage > 0) {
+                        var discount_amount   = parseFloat(total_base_amount) * parseFloat(discount_percentage)/100; 
+                        var final_total = parseFloat(total_base_amount) - parseFloat(discount_amount);
+
+                        // discount reduced total update 
+                        $('.vendor'+vendor_rowid+'_discount_reduced_total_material'+material_row_id).val(final_total);
+
+                        if(gst_percentage > 0) {
+                            var price      = $('.vendor'+vendor_rowid+'_discount_reduced_total_material'+material_row_id).val(); 
+
+                            var gst_amount = parseFloat(price) * parseFloat(gst_percentage)/100;  
+                            final_total    = parseFloat(final_total) + parseFloat(gst_amount);      
+
+                        }
+
+                        $('.vendor'+vendor_rowid+'_total_material'+material_row_id).val(final_total);
+
+                    } else if((discount_percentage == '' || discount_percentage == 0) && gst_percentage > 0) {
+                        var gst_amount = parseFloat(total_base_amount) * parseFloat(gst_percentage)/100;  
+                        var final_total = parseFloat(total_base_amount) + parseFloat(gst_amount);
+
+                        $('.vendor'+vendor_rowid+'_discount_reduced_total_material'+material_row_id).val(total_base_amount);
+
+                        $('.vendor'+vendor_rowid+'_total_material'+material_row_id).val(final_total);
+
+                    } else {
+                        $('.vendor'+vendor_rowid+'_discount_reduced_total_material'+material_row_id).val(total_base_amount);
+
+                        $('.vendor'+vendor_rowid+'_total_material'+material_row_id).val(total_base_amount);                     
+                    }
+
+                }
+
+                $(document).on('keyup','.discount_charges',function(){
+                    var rowid = $(this).data('id');         
+                    var total_amount =$('.amt_tot'+rowid).val();
+                    var gst_amount = $('#gst_amount_'+rowid).val() ||  0;
+                    var freight_amount = $('#freight_charge_'+rowid).val() || 0;
+                    var insurance_amount = $('#insurance_amount_'+rowid).val() || 0;
+                    var package_amount = $('#package_amount_'+rowid).val() || 0;
+
+                    var discount_amount = $('#discount_amount_'+rowid).val() || 0;
+
+
+                    console.log(total_amount);
+                    console.log(gst_amount);
+                    console.log(freight_amount);
+                    console.log(insurance_amount);
+                    console.log(package_amount);
+                    console.log(discount_amount);
+
+
+                    if(parseFloat(discount_amount) > parseFloat(total_amount)) {
+                        swal({
+                          title: "Warning!",
+                          text: "Dicount amount cannot be greater than total price amount.",
+                          icon: "warning",
+                        }); 
+                        $('#discount_amount_'+rowid).val(0)
+
+                    } else if(parseFloat(discount_amount) > 0 && parseFloat(discount_amount) < parseFloat(total_amount)) {
+                        var net_amount = parseFloat(total_amount) + parseFloat(gst_amount) + parseFloat(freight_amount) + parseFloat(insurance_amount) + parseFloat(package_amount) - parseFloat(discount_amount);
+
+                        $('.valueof'+rowid).val(net_amount.toFixed(2));
+
+                        $('.vendor_discount_percent_'+rowid).each(function(){
+                            $(this).attr('readonly', true);
+                        }); 
+                    } else {
+                        var net_amount = parseFloat(total_amount) + parseFloat(gst_amount) + parseFloat(freight_amount) + parseFloat(insurance_amount) + parseFloat(package_amount) - parseFloat(discount_amount);
+
+                        $('.valueof'+rowid).val(net_amount.toFixed(2));
+                    }
+
+                });
+
+
+                $('input[type="number"]').on('keydown', function(event) {
+                    // return isNumberKey(evt,this); 
+                       // this.value = this.value.replace(/[^0-9.]/g, ''); // Allow digits and decimal points
+                    if (event.key === 'E' || event.key === 'e' || event.key === '-') {
+                     event.preventDefault(); // Prevent these keys
+                    }
+                });
                 
+
+                $(document).on('click','.multi_preview',function(){
+                    var file_type = $(this).data('filetype');
+                    var src = $(this).attr('src');
+                    var row_id = $(this).data('id');
+
+
+                     if(file_type == 'pdf') {
+                        var src = $(this).closest('div').find('#pdf_input'+row_id).val();
+                        $('.preview_file_pdf_'+row_id).attr('src', src+'#toolbar=0');
+                        $('.preview_file_img_'+row_id).hide();
+                        $('.preview_file_pdf_'+row_id).show();
+                     } else {
+                        $('.preview_file_img_'+row_id).attr('src', src);
+                        $('.preview_file_pdf_'+row_id).hide();
+                        $('.preview_file_img_'+row_id).show();
+                     } 
+                    $('#file_preview_modal_'+row_id).modal('show');
+
+                });
                 
         </script>
         <!-- CUSTOM SCRIPT END -->

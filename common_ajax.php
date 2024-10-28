@@ -308,6 +308,7 @@ if(isset($_POST['Action'])) {
 
 		    $purchaser_code = sqlsrv_fetch_array($sql_exec,SQLSRV_FETCH_ASSOC)['Purchaser'];
 
+			// echo "<pre>";print_r($purchaser_code);exit;
 
 		 	$emp_id = $_SESSION['EmpID'];
 		    $Requested_to = $purchaser_code;
@@ -477,13 +478,14 @@ if(isset($_POST['Action'])) {
 
 		$amount =  (isset($_POST['value']) && $_POST['value'] != '') ? $_POST['value'] : '';
 
- 		$sql = " SELECT TOP 1 purchaser_table.Employee_Name as purchaser_name,recommendor_table.Employee_Name as recommendor_name,
-		 verifier_table.Employee_Name as verifier_name,approver_table.Employee_Name as approver_name
+ 		 $sql = " SELECT TOP 1 purchaser_table.Employee_Name as purchaser_name,recommendor_table.Employee_Name as recommendor_name,
+		 verifier_table.Employee_Name as verifier_name,approver_table.Employee_Name as approver_name,approver2_table.Employee_Name as approver2_name
 		 FROM Tb_Master_Emp 
 		 LEFT JOIN HR_Master_Table as purchaser_table ON purchaser_table.Employee_Code = Tb_Master_Emp.Purchaser
 		 LEFT JOIN HR_Master_Table as recommendor_table ON recommendor_table.Employee_Code = Tb_Master_Emp.Recommender
 		 LEFT JOIN HR_Master_Table as verifier_table ON verifier_table.Employee_Code = Tb_Master_Emp.Finance_Verfier
 		 LEFT JOIN HR_Master_Table as approver_table ON approver_table.Employee_Code = Tb_Master_Emp.Approver
+		 LEFT JOIN HR_Master_Table as approver2_table ON approver2_table.Employee_Code = Tb_Master_Emp.Approver_2
 		 WHERE PO_creator_Release_Codes = '".$po_creator_code."' and Purchase_Type = 'Purchase & Vendor selection (R&VS)' AND Plant = '".$_POST['Plant']."' AND Material_Group = '".$_POST['MaterialGroup']."' AND Tb_Master_Emp.Status = 'Active'";
 
 		 if($amount == '') {
@@ -492,7 +494,14 @@ if(isset($_POST['Action'])) {
 
 		 if($amount != '' && $amount > 50000) {
 		 	$sql .= " AND Value != ''";
+		 }else if($amount != '' && $amount < 50000){
+
+		 	$sql .= " AND Value = ''";
+
+
 		 }
+
+		 //echo $sql;
 
 	    $sql_exec = sqlsrv_query($conn, $sql);
 
@@ -618,8 +627,15 @@ if(isset($_POST['Action'])) {
 		$response['status']  = 422;
 		$response['message'] = "Something Went Wrong.";
 
+
+		$sql = "SELECT TOP 1 * FROM Tb_Master_Emp WHERE PO_creator_Release_Codes = '".$_SESSION['EmpID']."' and Purchase_Type = 'Purchase & Vendor selection (R&VS)' AND Plant = '".$_POST['plant_id']."' AND Material_Group = '".$_POST['mat_group']."'";
+
+	    $sql_exec = sqlsrv_query($conn, $sql);
+
+	    $purchaser_code = sqlsrv_fetch_array($sql_exec,SQLSRV_FETCH_ASSOC)['Purchaser'];
+
 	    $emp_id = $_SESSION['EmpID'];
-	    $Requested_to = $Purchaser_Code;
+	    $Requested_to = $purchaser_code;
 	    $request_id = $_POST['request_id'];
 	    $request_type = $_POST['request_type'];
 	    $plant_id = $_POST['plant_id'];
@@ -642,7 +658,7 @@ if(isset($_POST['Action'])) {
 	        }
 
 	        $query1 = sqlsrv_query($conn, "UPDATE Tb_Request set Request_ID = '$request_id',Request_Type = '$request_type',Plant ='$plant_id',Storage_Location ='$storage_location',
-	        Request_Category ='$request_type1',status ='$status',Department ='$Department',Finance_Verification = '$Finance_Verification',Persion_In_Workflow ='$Persion',Reference = '$Reference' WHERE Request_ID = '$req_id' ");
+	        Request_Category ='$request_type1',status ='$status',Department ='$Department',Finance_Verification = '$Finance_Verification',Persion_In_Workflow ='$Persion',Reference = '$Reference',Requested_to = '$Requested_to' WHERE Request_ID = '$req_id' ");
 
 
 		    for ($i = 0; $i < count($_POST['item_code']); $i++) {
@@ -723,7 +739,10 @@ if(isset($_POST['Action'])) {
 
 
 	if ($_POST['Action'] == 'save_quotation') {
-		// echo "<pre>";print_r($_POST);exit;
+		  // foreach ($_FILES['Attachment1'] as $fileInput) {
+
+		  // }
+		   // echo "<pre>";print_r($_FILES);exit;
 		$response['status']  = 422;
 		$response['message'] = "Something Went Wrong.";
 
@@ -738,9 +757,8 @@ if(isset($_POST['Action'])) {
 	         }
 	  	}, $_POST);
 
-
 		$request_id = $_POST['req_id'];
-		
+
 		$saved_quotation_sql = "SELECT * FROM Tb_Vendor_Selection WHERE Request_ID = '".$request_id."'";
 		$saved_quotation_exec = sqlsrv_query($conn, $saved_quotation_sql, array(), array("Scrollable" => 'static'));
 		$saved_count = sqlsrv_num_rows($saved_quotation_exec);
@@ -748,6 +766,39 @@ if(isset($_POST['Action'])) {
 		while($saved_quotation_res = sqlsrv_fetch_array($saved_quotation_exec,SQLSRV_FETCH_ASSOC)) {
 			$saved_data[] = $saved_quotation_res;
 		}
+
+		// vendor detail exist check
+		$vendor_exist_query ="SELECT * from Tb_Vendor_Selection where Request_Id = '".$request_id."'";
+	    $vendor_exist_query_exec = sqlsrv_query($conn, $vendor_exist_query,array(),array("Scrollable" => 'static'));
+		$vendor_exist_count = sqlsrv_num_rows($vendor_exist_query_exec);
+		if($vendor_exist_count > 0) {
+			$findex = 1;
+			while($row = sqlsrv_fetch_array($vendor_exist_query_exec,SQLSRV_FETCH_ASSOC)) {
+				if($row['Attachment'] != '' && $_FILES["Attachment_".$findex]["name"][0] != '') {
+					foreach (explode(',',$row['Attachment']) as $akey => $avalue) {
+			   			unlink('file/'.$avalue);
+			   		}
+				}
+
+				$findex++;	
+		   	}
+
+			// delete already saved quotation vendor detail 
+			sqlsrv_query($conn, "DELETE FROM Tb_Vendor_Selection where Request_Id = '".$request_id."'");		
+		}
+
+
+		// vendor detail quantity exist check
+		$vendor_quantity_exist_query ="SELECT * from Tb_Vendor_Quantity where Request_Id = '".$request_id."'";
+	    $vendor_quantity_exist_query_exec = sqlsrv_query($conn, $vendor_quantity_exist_query,array(),array("Scrollable" => 'static'));
+		$vendor_quantity_exist_count = sqlsrv_num_rows($vendor_quantity_exist_query_exec);
+
+
+		if($vendor_quantity_exist_count > 0) {
+			// delete already saved quotation vendor quantity 
+			sqlsrv_query($conn, "DELETE FROM Tb_Vendor_Quantity where Request_Id = '".$request_id."'");	
+		}
+
 
 		// save only how many vendors filled by customer  
 		$data_count = 0;
@@ -757,6 +808,8 @@ if(isset($_POST['Action'])) {
 			}
 		}
 
+
+		// echo "<pre>";print_r($saved_data);exit;
 
 		//approval mapping id insertion
 	    $query1 = sqlsrv_query($conn, "UPDATE Tb_Request set approval_mapping_id = '".$_POST['mapping_id']."' WHERE Request_id = '$request_id' ");
@@ -780,12 +833,11 @@ if(isset($_POST['Action'])) {
 			$Requester_Selection = $_POST['Requester_Selection'][$i];
 			$Requester_Remarks = $_POST['Requester_Remarks'][$i];
 			
-			$total_amount    = $_POST['amt_tot'][$i];
-			$discount_amount = $_POST['discount_amount'][$i];
-			$package_amount = $_POST['package_amount'][$i];
-			$package_percentage = $_POST['package_percentage'][$i];
-
-
+			$total_amount    = ($_POST['amt_tot'][$i] != '') ? $_POST['amt_tot'][$i] : 0;
+			$discount_amount = ($_POST['discount_amount'][$i] != '') ? $_POST['discount_amount'][$i] : 0;
+			$package_amount = ($_POST['package_amount'][$i] != '') ? $_POST['package_amount'][$i] : 0;
+			$package_percentage = ($_POST['package_percentage'][$i] != '') ? $_POST['package_percentage'][$i] : 0;
+		
 
 			$V_id = $_POST['V1_id'][$i];
 			$emp_id = $Employee_Id;
@@ -793,43 +845,53 @@ if(isset($_POST['Action'])) {
 			$Requested_to = $_POST['recommendor_id'];
 			
 			$fil = '';
-			if($_FILES["Attachment"]["name"][$i] != '') {
-				$filename = $request_id.'_Vendor'.$file_index.'_';
-				$extension = pathinfo($_FILES["Attachment"]["name"][$i], PATHINFO_EXTENSION);
-				$fil = $filename.strtotime(date('h:i:s')).'.'.$extension;
+		
+			// echo "<pre>";print_r($_FILES);exit; 
+			if($_FILES["Attachment_".$file_index]["name"][0] != '') {
+				$file_count = COUNT($_FILES["Attachment_".$file_index]["name"]);
+				if($file_count > 0) {
+		 			$separate_findex = 1;
+						for($j=0;$j < $file_count;$j++) {
+							$extension = pathinfo($_FILES["Attachment_".$file_index]["name"][$j], PATHINFO_EXTENSION);
+							$allowed = array("jpg","jpeg", "png", "gif", "pdf", "wmv", "pdf", "zip");
+							if (in_array($extension, $allowed)) {
+								$filename = $request_id.'_Vendor'.$file_index.'_file'.$separate_findex.'_';
 
-				$tmp_name = $_FILES["Attachment"]["tmp_name"][$i];
-				$path = "file/" . $fil;
-				$file1 = explode(".", $fil);
-				if( !isset($file1[1]) ){
-		            $file1[1]=0;
-		        }
-				$ext = $file1[1];
-				$allowed = array("jpg", "png", "gif", "pdf", "wmv", "pdf", "zip");
-				if (in_array($ext, $allowed)) {
-					move_uploaded_file($tmp_name, $path);
+								$separator = ($file_count <= $j+1) ? '' : ','; 
+								$fil .= $filename.strtotime(date('h:i:s')).'.'.$extension.$separator;
+
+								$fil_save = $filename.strtotime(date('h:i:s')).'.'.$extension;
+
+
+								$tmp_name = $_FILES["Attachment_".$file_index]["tmp_name"][$j];
+								$path = "file/" . $fil_save;
+
+								move_uploaded_file($tmp_name, $path);
+							}
+							$separate_findex++;
+						}
 				}
 			} elseif(COUNT($saved_data) > 0) {
 				$fil = $saved_data[$i]['Attachment']; 
 			}
 
 
-			$vendor_exist_query ="SELECT * from Tb_Vendor_Selection where Request_Id = '".$request_id."' and V_id = '".$V_id."'";
-            $vendor_exist_query_exec = sqlsrv_query($conn, $vendor_exist_query,array(),array("Scrollable" => 'static'));
-			$vendor_exist_count = sqlsrv_num_rows($vendor_exist_query_exec);
+			// $vendor_exist_query ="SELECT * from Tb_Vendor_Selection where Request_Id = '".$request_id."' and V_id = '".$V_id."'";
+            // $vendor_exist_query_exec = sqlsrv_query($conn, $vendor_exist_query,array(),array("Scrollable" => 'static'));
+			// $vendor_exist_count = sqlsrv_num_rows($vendor_exist_query_exec);
 
 
-			if($vendor_exist_count > 0) {
-				$vendor = "UPDATE Tb_Vendor_Selection SET Vendor_SAP='$Vendor_SAP', Vendor_Name='$Vendor_Name', Vendor_City='$Vendor_City', vendor_Active_SAP='$vendor_Active_SAP', Last_Purchase='$Last_Purchase', Delivery_Time='$Delivery_Time', Value_Of='$Value_Of', Fright_Charges='$Fright_Charges', Insurance_Details='$Insurance_Details', GST_Component='$GST_Component', Warrenty='$Warrenty', Payment_Terms='$Payment_Terms', Requester_Selection='$Requester_Selection', Requester_Remarks='$Requester_Remarks', Attachment='$fil', Time_Log=GETDATE(), status='Requested', V_id='$V_id', EMP_ID='$emp_id', Requested_to='$Requested_to',total_amount='$total_amount',discount_amount='$discount_amount',package_amount='$package_amount',package_percentage = '$package_percentage' WHERE Request_Id='$request_id' and V_id = '".$V_id."'";
-			} else {
+			// if($vendor_exist_count > 0) {
+			// 	$vendor = "UPDATE Tb_Vendor_Selection SET Vendor_SAP='$Vendor_SAP', Vendor_Name='$Vendor_Name', Vendor_City='$Vendor_City', vendor_Active_SAP='$vendor_Active_SAP', Last_Purchase='$Last_Purchase', Delivery_Time='$Delivery_Time', Value_Of='$Value_Of', Fright_Charges='$Fright_Charges', Insurance_Details='$Insurance_Details', GST_Component='$GST_Component', Warrenty='$Warrenty', Payment_Terms='$Payment_Terms', Requester_Selection='$Requester_Selection', Requester_Remarks='$Requester_Remarks', Attachment='$fil', Time_Log=GETDATE(), status='Requested', V_id='$V_id', EMP_ID='$emp_id', Requested_to='$Requested_to',total_amount='$total_amount',discount_amount='$discount_amount',package_amount='$package_amount',package_percentage = '$package_percentage' WHERE Request_Id='$request_id' and V_id = '".$V_id."'";
+			// } else {
 				$vendor ="INSERT INTO Tb_Vendor_Selection(Request_Id, Vendor_SAP, Vendor_Name, Vendor_City,vendor_Active_SAP,
 					Last_Purchase, Delivery_Time, Value_Of, Fright_Charges, Insurance_Details, GST_Component, Warrenty,
 					Payment_Terms, Requester_Selection, Requester_Remarks, Attachment, Time_Log, status, V_id, EMP_ID,Requested_to,total_amount,discount_amount,package_amount,package_percentage) VALUES 
 					('$request_id','$Vendor_SAP','$Vendor_Name','$Vendor_City','$vendor_Active_SAP','$Last_Purchase',
 					'$Delivery_Time','$Value_Of','$Fright_Charges','$Insurance_Details','$GST_Component','$Warrenty','$Payment_Terms','$Requester_Selection',
 					'$Requester_Remarks','$fil',GETDATE(),'Requested','$V_id','$emp_id','$Requested_to','$total_amount','$discount_amount','$package_amount','$package_percentage')";
-			}
-
+			// }
+			// echo $vendor;exit;
 
             $rs_vendor = sqlsrv_query($conn, $vendor);
 
@@ -857,22 +919,22 @@ if(isset($_POST['Action'])) {
 			$Total = $_POST['Total'][$i];
 			$V_id = $_POST['V_id'][$i];
 			$Requested_to = $_POST['recommendor_id'];
+			
+			$gst_percentage      = ($_POST['gst_percent'][$i] != '') ? $_POST['gst_percent'][$i] : 0;
+			$discount_percentage = ($_POST['discount_percent'][$i] != '') ? $_POST['discount_percent'][$i] : 0;
 
-			$gst_percentage      = $_POST['gst_percent'][$i];
-			$discount_percentage = $_POST['discount_percent'][$i];
-
-			$vendor_quantity_exist_query ="SELECT * from Tb_Vendor_Quantity where Request_Id = '".$request_id."' and V_id = '".$V_id."' and Meterial_Name = '".$Meterial_Name."'";
-            $vendor_quantity_exist_query_exec = sqlsrv_query($conn, $vendor_quantity_exist_query,array(),array("Scrollable" => 'static'));
-			$vendor_quantity_exist_count = sqlsrv_num_rows($vendor_quantity_exist_query_exec);
+			// $vendor_quantity_exist_query ="SELECT * from Tb_Vendor_Quantity where Request_Id = '".$request_id."' and V_id = '".$V_id."' and Meterial_Name = '".$Meterial_Name."'";
+            // $vendor_quantity_exist_query_exec = sqlsrv_query($conn, $vendor_quantity_exist_query,array(),array("Scrollable" => 'static'));
+			// $vendor_quantity_exist_count = sqlsrv_num_rows($vendor_quantity_exist_query_exec);
 
 
-			if($vendor_quantity_exist_count > 0) {
-				$meterial = "UPDATE Tb_Vendor_Quantity SET Meterial_Name='$Meterial_Name', Quantity='$Quantity_Details', status='Requested', Price='$Price', Total='$Total', V_id='$V_id', EMP_ID='$emp_id', Requested_to='$Requested_to',gst_percentage='$gst_percentage',discount_percentage='$discount_percentage' WHERE Request_Id='$request_id' and V_id = '".$V_id."' and Meterial_Name = '".$Meterial_Name."'";
+			// if($vendor_quantity_exist_count > 0) {
+			// 	$meterial = "UPDATE Tb_Vendor_Quantity SET Meterial_Name='$Meterial_Name', Quantity='$Quantity_Details', status='Requested', Price='$Price', Total='$Total', V_id='$V_id', EMP_ID='$emp_id', Requested_to='$Requested_to',gst_percentage='$gst_percentage',discount_percentage='$discount_percentage' WHERE Request_Id='$request_id' and V_id = '".$V_id."' and Meterial_Name = '".$Meterial_Name."'";
 
-			} else {
+			// } else {
 				$meterial = "INSERT INTO Tb_Vendor_Quantity(Request_Id, Meterial_Name, Quantity, status, Price, Total,  V_id, EMP_ID,Requested_to,gst_percentage,discount_percentage) VALUES 
 	 			('$request_id','$Meterial_Name','$Quantity_Details','Requested','$Price','$Total','$V_id','$emp_id','$Requested_to','$gst_percentage','$discount_percentage')";
-			}
+			// }
 
 			$rs_material = sqlsrv_query($conn, $meterial);			
 		}
@@ -903,6 +965,48 @@ if(isset($_POST['Action'])) {
 
 		$response['status']  = 200;
 		$response['data'] 	 = $payment_terms_array;
+        echo json_encode($response);exit;
+	}
+
+	if ($_POST['Action'] == 'purchase_request_sendback') {
+		// echo "<pre>";print_r($_POST);exit;
+		$response['status']  = 422;
+		$response['message'] = "Something Went Wrong.";
+		
+		$request_id = $_POST['request_id'];
+		$sendback_from = $_POST['sendback_from'];
+		$remark = $_POST['remark'];
+
+		if($sendback_from == 'Recommender') {
+			$sendback_sql = "UPDATE Tb_Request SET is_sendbacked = '1',sendback_created_time = '".date('Y-m-d h:i:s')."',Recommender_back_remark = '".$remark."' WHERE Request_ID = '".$request_id."'";
+		} elseif($sendback_from == 'Approver') {
+			//check approver and recommender is same 
+			$role_check_sql = "SELECT * FROM Tb_Request WHERE Request_ID = '".$request_id."'";
+			$role_check_sql_exec = sqlsrv_query($conn,$role_check_sql);
+			$role_check_sql_res = sqlsrv_fetch_array($role_check_sql_exec); 
+
+			if($role_check_sql_res['Approver'] == $role_check_sql_res['Recommender']) {
+				$sendback_sql = "UPDATE Tb_Request SET is_sendbacked = '1',sendback_created_time = '".date('Y-m-d h:i:s')."',Recommender_back_remark = '".$remark."',Approver_back_remark = '".$remark."' WHERE Request_ID = '".$request_id."'";	
+
+			} else {
+				$sendback_sql = "UPDATE Tb_Request SET is_sendbacked = '1',sendback_created_time = '".date('Y-m-d h:i:s')."',Approver_back_remark = '".$remark."' WHERE Request_ID = '".$request_id."'";	
+			}
+
+		} elseif($sendback_from == 'Approver2') {
+			$sendback_sql = "UPDATE Tb_Request SET is_sendbacked = '1',sendback_created_time = '".date('Y-m-d h:i:s')."',Approver2_back_remark = '".$remark."' WHERE Request_ID = '".$request_id."'";	
+		} 
+
+		$sendback_sql_exec = sqlsrv_query($conn,$sendback_sql);
+
+		if ($sendback_sql_exec === false) {
+			// print_r(sqlsrv_errors());exit;
+			$response['status']  = 500;
+			$response['message'] = "Request sendbacked failed.";
+		} else {
+			$response['status']  = 200;
+			$response['message'] = "Request sendbacked successfully.";
+		}
+
         echo json_encode($response);exit;
 	}
 }
