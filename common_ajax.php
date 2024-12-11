@@ -8,6 +8,12 @@ require 'PHPMailer/Exception.php';
 require 'PHPMailer/PHPMailer.php';
 require 'PHPMailer/SMTP.php';
 
+require 'Send_Mail.php';
+
+require_once "../Libraries/Excel/PHPExcel.php";
+
+$mail = new Send_Mail();
+
 function auto_increment_request_id($conn)
 {
 	$previous_request_id_sql = "SELECT TOP 1 Request_ID from Tb_Request order by Id desc";
@@ -31,6 +37,72 @@ function auto_increment_request_id($conn)
 		$incremented_request_id = "PV".$leading_zeros.$number_request_id;
 	}
 	return $incremented_request_id; 
+}
+
+function fetch_items($conn,$request_type_code,$plant = '',$MaterialGroup='',$itemcode = '')
+{
+	if($request_type_code == 'ZSER') {
+		$result = sqlsrv_query($conn, "SELECT DISTINCT ASNUM as ItemCode,ASKTX as ItemDescription from SERVICE_MATERIAL_MASTER"); 
+	} else {	
+		$result = sqlsrv_query($conn, "SELECT MaterialMaster.Plant,MaterialMaster.ItemCode,MaterialMaster.ItemDescription,
+		MaterialMaster.MaterialGroup,Tb_Master_Emp.Material_Group FROM MaterialMaster 
+		INNER JOIN (SELECT DISTINCT Material_Group,PO_creator_Release_Codes FROM Tb_Master_Emp) as Tb_Master_Emp ON MaterialMaster.MaterialGroup = Tb_Master_Emp.Material_Group 
+		WHERE  MaterialMaster.Plant = '".trim($plant)."' AND MaterialMaster.MaterialGroup = '".trim($MaterialGroup)."' 
+		GROUP BY MaterialMaster.Plant,MaterialMaster.ItemCode,MaterialMaster.ItemDescription,MaterialMaster.MaterialGroup,Tb_Master_Emp.Material_Group",array(),array('Scrollable' => 'static'));
+	}
+
+	$item_count = sqlsrv_num_rows($result);
+
+	$option = '<option value="">Select Item Code</option>';
+	$option .= '<option value="New_Item">New Item</option>';
+
+	$response = array();
+	while ($row = sqlsrv_fetch_array($result)) {
+		$action = (trim($itemcode) == trim($row["ItemCode"])) ? 'selected' : ''; 
+
+		$option .= '<option value="'.trim($row["ItemCode"]).'" '.$action.'>'.trim($row["ItemDescription"]).' - '.trim($row["ItemCode"]).'</option>';
+	}
+
+	$response['option']      = $option;
+	$response['item_count']  = $item_count;
+
+	return $response;
+}
+
+
+function get_material_details($conn,$itemcode,$request_type_code)
+{
+	$res = array();
+	if($request_type_code == 'ZSER') {
+		$sql = sqlsrv_query($conn, "SELECT DISTINCT MEINS as UOM,ASKTX as ItemDescription from SERVICE_MATERIAL_MASTER WHERE ASNUM = '".trim($itemcode)."'"); 
+	} else {	
+		$sql = sqlsrv_query($conn, "SELECT UOM,ItemDescription FROM MaterialMaster WHERE ItemCode = 
+		'".trim($itemcode)."'");
+	}
+
+	while($row = sqlsrv_fetch_array($sql,SQLSRV_FETCH_ASSOC)) {
+		$res[] = $row;
+	}
+
+	return $res; 
+}
+
+function get_material_group($conn,$itemcode,$request_type_code)
+{
+	$res = array();
+	if($request_type_code == 'ZSER') {
+		$result = sqlsrv_query($conn, "SELECT DISTINCT ASNUM as ItemCode,ASKTX as ItemDescription from SERVICE_MATERIAL_MASTER WHERE ASNUM = '".trim($itemcode)."'"); 
+	} else {	
+		$sql = sqlsrv_query($conn, "SELECT MaterialMaster.MaterialGroup,Tb_Master_Emp.Material_Group FROM MaterialMaster 
+		INNER JOIN Tb_Master_Emp ON MaterialMaster.MaterialGroup = Tb_Master_Emp.Material_Group WHERE MaterialMaster.ItemCode = '".trim($itemcode)."' 
+		GROUP BY MaterialMaster.MaterialGroup,Tb_Master_Emp.Material_Group");
+	}
+
+	while($row = sqlsrv_fetch_array($sql,SQLSRV_FETCH_ASSOC)) {
+		$res[] = $row;
+	}
+
+	return $res; 
 }
 
 if(isset($_POST['Action'])) {
@@ -286,6 +358,8 @@ if(isset($_POST['Action'])) {
 	    echo json_encode($response);exit;
 	} 
 	elseif ($_POST['Action'] == 'save_purchase_request_div') {
+		// echo "<pre>";print_r($_POST);exit;
+
 		if(isset($_SESSION['EmpID']) && $_SESSION['EmpID'] != '') {
 			$_POST = array_map(function($value) { 
 		         if(is_array($value)){
@@ -489,7 +563,7 @@ if(isset($_POST['Action'])) {
 		 WHERE PO_creator_Release_Codes = '".$po_creator_code."' and Purchase_Type = 'Purchase & Vendor selection (R&VS)' AND Plant = '".$_POST['Plant']."' AND Material_Group = '".$_POST['MaterialGroup']."' AND Tb_Master_Emp.Status = 'Active'";
 
 		 if($amount == '') {
-		 	$sql .= " AND Value = ''";
+		 	//$sql .= " AND Value = ''";
 		 }
 
 		 if($amount != '' && $amount > 50000) {
@@ -501,7 +575,7 @@ if(isset($_POST['Action'])) {
 
 		 }
 
-		 //echo $sql;
+		 // echo $sql;exit;
 
 	    $sql_exec = sqlsrv_query($conn, $sql);
 
@@ -623,6 +697,7 @@ if(isset($_POST['Action'])) {
 	         }
 	  	}, $_POST);
 
+    	// echo "<pre>";print_r($_POST);exit;
 		// echo "<pre>";print_r($_POST);exit;
 		$response['status']  = 422;
 		$response['message'] = "Something Went Wrong.";
@@ -657,10 +732,12 @@ if(isset($_POST['Action'])) {
 	          }
 	        }
 
-	        $query1 = sqlsrv_query($conn, "UPDATE Tb_Request set Request_ID = '$request_id',Request_Type = '$request_type',Plant ='$plant_id',Storage_Location ='$storage_location',
-	        Request_Category ='$request_type1',status ='$status',Department ='$Department',Finance_Verification = '$Finance_Verification',Persion_In_Workflow ='$Persion',Reference = '$Reference',Requested_to = '$Requested_to' WHERE Request_ID = '$req_id' ");
+	        // $query1 = sqlsrv_query($conn, "UPDATE Tb_Request set Request_ID = '$request_id',Request_Type = '$request_type',Plant ='$plant_id',Storage_Location ='$storage_location',
+	        // Request_Category ='$request_type1',status ='$status',Department ='$Department',Finance_Verification = '$Finance_Verification',Persion_In_Workflow ='$Persion',Reference = '$Reference',Requested_to = '$Requested_to' WHERE Request_ID = '$req_id' ");
 
 
+		    sqlsrv_query($conn, "DELETE from Tb_Request_Items WHERE Request_ID = '".$request_id."'");
+		    
 		    for ($i = 0; $i < count($_POST['item_code']); $i++) {
 
 		        $item_code = $_POST['item_code'][$i];
@@ -686,7 +763,12 @@ if(isset($_POST['Action'])) {
 		        // $_paymentID =  $nextID;
 
 
-		        if(!isset($_POST['id'][$i])){
+
+		        $check_item_exist = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '".$request_id."' and Item_Code = '".$item_code."'",array(),array('Scrollable' => 'static'));
+		        $check_item_exist_count = sqlsrv_num_rows($check_item_exist);
+
+
+		        if($check_item_exist_count == 0){
 		            $sql = "INSERT INTO Tb_Request_Items (Request_ID, Item_Code, UOM, Description, Quantity, Budget, Time_Log, status, Expected_Date, Specification, Attachment,
 		            MaterialGroup, EMP_ID,Requested_to,Reference,Replace_Type,Date_of_Purchase,Replace_Qty,Replace_Remarks,Replace_Cost) VALUES 
 		            ('$request_id','$item_code','$uom','$description','$quantity','$budgest',GETDATE(),'$status','$Expected_Date','$Specification','$fil',
@@ -837,6 +919,7 @@ if(isset($_POST['Action'])) {
 			$discount_amount = ($_POST['discount_amount'][$i] != '') ? $_POST['discount_amount'][$i] : 0;
 			$package_amount = ($_POST['package_amount'][$i] != '') ? $_POST['package_amount'][$i] : 0;
 			$package_percentage = ($_POST['package_percentage'][$i] != '') ? $_POST['package_percentage'][$i] : 0;
+        	$vendor_justification = $_POST['justification'];
 		
 
 			$V_id = $_POST['V1_id'][$i];
@@ -896,7 +979,7 @@ if(isset($_POST['Action'])) {
             $rs_vendor = sqlsrv_query($conn, $vendor);
 
             // is saved - 1 means saved 
-			$query1 = sqlsrv_query($conn, "UPDATE Tb_Request set is_saved = '1' WHERE Request_Id = '$request_id' ");
+			$query1 = sqlsrv_query($conn, "UPDATE Tb_Request set is_saved = '1',vendor_justification = '$vendor_justification' WHERE Request_Id = '$request_id' ");
 
 			$file_index++;
 		}
@@ -946,7 +1029,7 @@ if(isset($_POST['Action'])) {
 
 	if ($_POST['Action'] == 'get_vendors_list') {
 		$vendor_detail_array = array();
-		$vendor_detail = sqlsrv_query($conn, "Select DISTINCT VendorCode,VendorName from vendor_master where VendorCode like 'ST%' ");
+		$vendor_detail = sqlsrv_query($conn, "Select DISTINCT VendorCode,VendorName from vendor_master where 1=1 AND VendorCode like 'ST%'");
 		while ($c = sqlsrv_fetch_array($vendor_detail,SQLSRV_FETCH_ASSOC)) {
 			$vendor_detail_array[] = $c; 
 		}
@@ -1003,12 +1086,214 @@ if(isset($_POST['Action'])) {
 			$response['status']  = 500;
 			$response['message'] = "Request sendbacked failed.";
 		} else {
+
+			$update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Request INNER JOIN Tb_Request_Items 
+			ON Tb_Request.Request_ID = Tb_Request_Items.Request_Id WHERE Tb_Request.Request_ID = '$request_id'");
+			$updated_query = sqlsrv_fetch_array($update_qry);
+			$PERSION =  $updated_query['Persion_In_Workflow'];
+
+			$HR_Master_Table = sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code IN (SELECT * FROM SPLIT_STRING('$PERSION',','))  ");
+			$idss = array();
+			while ($ids = sqlsrv_fetch_array($HR_Master_Table)){
+				$idss[] = $ids['Office_Email_Address'];
+			}
+			$implode = implode(',', $idss);
+
+			if($sendback_from == 'Recommender') {
+				$to_emloyee_code = $updated_query['Requested_to'];
+			} elseif($sendback_from == 'Approver') {
+				$to_emloyee_code = $updated_query['Recommender'];
+			} elseif($sendback_from == 'Approver2') {
+				$to_emloyee_code = $updated_query['Approver'];
+			}
+
+			$update_qry1 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '$to_emloyee_code'");
+			$updated_query1 = sqlsrv_fetch_array($update_qry1);
+			$To =  $updated_query1['Office_Email_Address'];
+
+			$to = explode(',',$To);
+
+			// informer mail cc
+			$cc = ($implode != '') ? explode(',', $implode) : array();
+
+			$bcc = array('jr_developer4@mazenetsolution.com','sathish.r@rasiseeds.com');
+			    
+			$subject = $emp_id.' - Purchase Request Sendbacked';
+					
+			$mail_template = '
+			<html>
+			<head>
+				<style>
+				table, td, th {
+				border: 1px solid;
+				}
+				
+				table {
+				width: 100%;
+				border-collapse: collapse;
+				}
+				</style>
+				</head>
+					<body>
+						<table >
+							<thead>
+								<tr>
+									<th class="text-center">S.No</th>
+									<th class="text-center">Request ID</th>
+									<th class="text-center">Department</th>
+									<th class="text-center">Category</th>
+									<th class="text-center">Plant</th>
+									<th class="text-center">Meterial</th>
+									<th class="text-center">Quantity</th>                          
+									<th class="text-center">Status</th>                          
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>
+										1
+									</td>
+									<td>
+										' . $request_id . '
+									</td>
+									<td>
+										' . $updated_query['Department'] . '
+									</td>
+									<td>
+										' . $updated_query['Request_Type'] . '
+									</td>
+									<td>
+										' . $updated_query['Plant'] . '
+									</td>
+									<td>
+										' .$updated_query['Description'].'('.$updated_query['Item_Code'] . ')
+									</td>
+									<td>
+										' . $updated_query['Quantity'] . '
+									</td>
+									<td>
+									<h4><span class="badge badge-success"><i class="fa fa-check"></i>Send Back</span></h4>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</body>
+			</html>';
+
+			$process_mail = $mail->Send_Mail_Details($subject,'','',$mail_template,$to,$cc,$bcc);
+
+			if (!$process_mail) {
+				echo 'Message could not be sent.';
+				echo 'Mailer Error: ' . $mail->ErrorInfo;
+			}
+
 			$response['status']  = 200;
 			$response['message'] = "Request sendbacked successfully.";
 		}
 
         echo json_encode($response);exit;
 	}
+
+	if ($_POST['Action'] == 'read_request_excel') {
+		$extension 			 = pathinfo($_FILES['file']['name'],PATHINFO_EXTENSION);
+		$status  			 = 422;
+		$message  			 = "unprocessable entry";
+		$finaldata 		     = array();
+		$duplicate_date 	 = '';
+		if($extension == 'xlsx' || $extension == 'xlx') {
+			$file 			= $_FILES['file']['tmp_name'];
+			$objPHPExcel 	= PHPExcel_IOFactory::load($file);
+			$sheet 			= $objPHPExcel->getSheet(0);
+			
+			$highestRow 	= $sheet->getHighestRow();
+			$highestColumn 	= $sheet->getHighestColumn();
+			$finaldata 		= $sheet->toArray();
+
+			// Iterate through each row and column
+			foreach ($sheet->getRowIterator() as $row) {
+				foreach ($row->getCellIterator() as $cell) {
+					if (!empty($cell->getValue())) {
+						// Cell has a value, set the flag and break out of the loop
+						$dataFound = true;
+						break 2; // Break both inner and outer loops
+					}
+				}
+			}
+	
+			$data = array();
+			// Check if any data is found
+			if ($dataFound) {
+				$i=0;
+				foreach ($finaldata as $key => $value) {
+					if($key > 0) {
+						/* NOTE
+						$value[0] --> itemcode from excel
+						$value[1] --> quantity from excel
+						$value[2] --> replacement from excel
+						$value[3] --> expected date from excel
+						$value[4] --> specification from excel
+						$value[5] --> budgeted from excel */						
+
+						$material_details = get_material_details($conn,$value[0],$_POST['request_category']);
+						$material_group   = get_material_group($conn,$value[0],$_POST['request_category']); 
+
+						if(COUNT($material_details) > 0) {
+							$items_details_arr = fetch_items($conn,$_POST['request_category'],$_POST['plant'],$material_group[0]['MaterialGroup'],$value[0]);
+
+							if($items_details_arr['item_count'] == 0) {
+								$status   = 403;
+								$message  = 'Row no ' . ($key + 1) . ': Item code ' . trim($value[0]) . ' not found for the chosen plant and material group.';
+								$response['status']         = $status;
+								$response['message']        = $message;
+								echo json_encode($response);exit;
+							} else {
+								$data[$i]['items'] = $items_details_arr['option'];
+								$data[$i]['item_code'] = trim($value[0]);
+								$data[$i]['item_description'] = trim($material_details[0]['ItemDescription']);
+								$data[$i]['UOM'] = trim($material_details[0]['UOM']);
+								$data[$i]['material_group'] = trim($material_group[0]['MaterialGroup']);
+								$data[$i]['quantity'] = $value[1];
+
+		                        
+		                       	$replacement_option = '<option value=""'.(($value[2] == '') ? 'selected' : ''). '>Select</option><option value="new"'.(($value[2] == 'new') ? 'selected' : ''). '>New</option><option value="replacement"'.(($value[2] == 'replacement') ? 'selected' : ''). '>Replacement</option>';
+
+								$data[$i]['replacement'] = $replacement_option;
+								
+								// $data[$i]['expected_date'] = date('Y-m-d',strtotime($value[3]));
+								$data[$i]['specification'] = $value[3];
+
+								$budget_yes_selected = (trim($value[4]) == "Yes") ? 'selected' : '';
+								$budget_no_selected = (trim($value[4]) == "No") ? 'selected' : '';
+
+								$data[$i]['whether_budgeted'] = '<option value="Yes"' .$budget_yes_selected.'>Yes</option><option value="No"' .$budget_no_selected.'>No</option>';
+								$i++;
+							}
+
+						} else {
+							$status   = 403;
+							$message  = 'Row no '.($key+1).': Item code not found.please enter correct item code.';
+							$response['status']         = $status;
+							$response['message']        = $message;
+							echo json_encode($response);exit;
+						}
+
+					}
+				}
+			} 
+
+			$status  			 = 200;
+			$message  			 = "Data Readed successfully.";
+		} else {
+			$status  			 = 422;
+			$message  			 = "Invalid file format.Only XlSX and XLS format are allowed.";
+		}
+
+		$response['status']         = $status;
+		$response['message']        = $message;
+		$response['data']           = $data;
+		echo json_encode($response);exit;
+
+    }
 }
 
 ?>

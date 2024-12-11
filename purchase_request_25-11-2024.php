@@ -121,26 +121,6 @@ $Plant = $selector_arr1['Plant'];
             display: none !important;
         }*/
 
-
-        @media only screen and (max-width: 600px) {
-            .footer {
-                left: 0 !important;
-                text-align: center;
-             }      
-        }
-
-        .swal-footer {
-            text-align: center !important;
-        }
-
-        .excel_upload_div {
-            display: none;
-        }
-
-        .excel_request_upload_sample{
-            cursor: pointer;
-        }
-
         </style>
     </head>
 
@@ -257,53 +237,6 @@ $Plant = $selector_arr1['Plant'];
                                                             </select>
                                                         </div>
                                                     </div>
-
-                                                <?php if($department == 'Sales & Marketing') { ?>
-
-                                                    <div class="col-md-2 season-div" style="display:none;">
-                                                        <div class="mb-3">
-                                                            <label for="season" class="form-label season_label" >Season</label>
-                                                           <select class="season form-select w-100" name="season" id="season" style="width:100%;">
-                                                                <option value="">Select Season</option>
-                                                                <?php 
-                                                                    $season_sql = "SELECT DISTINCT Season_Code from Master_Season where Default_Season = '1'";
-                                                                    $season_exec = sqlsrv_query($conn,$season_sql);
-                                                                    while($season_res  = sqlsrv_fetch_array($season_exec)) {
-                                                                ?>
-                                                                <option value="<?php echo $season_res['Season_Code']; ?>"><?php echo $season_res['Season_Code']; ?></option>
-                                                                <?php } ?>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="col-md-2 activity-div" style="display:none;">
-                                                        <div class="mb-3">
-                                                            <label for="activity" class="form-label activity_label" >Activity</label>
-                                                           <select class="activity form-select w-100" name="activity" id="activity" style="width:100%;">
-                                                                <option value="">Select Activty</option>
-                                                                <option value="PSA">PSA</option>
-                                                                <option value="PDA">PDA</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="col-md-2 crop-year-div" style="display:none;">
-                                                        <div class="mb-3">
-                                                            <label for="crop_year" class="form-label crop_year_label" >Year</label>
-                                                            <?php
-                                                             $year_sql = "SELECT * from ANP_Config_Business_Year WHERE CAST(GETDATE() AS DATE) BETWEEN from_date AND to_date";
-                                                             $year_exec = sqlsrv_query($conn,$year_sql);
-                                                             $year_res  = sqlsrv_fetch_array($year_exec);
-
-                                                            ?>
-                                                           <select class="crop_year form-select" name="crop_year" id="crop_year" style="width:100%;">
-                                                                <option value="">Select Year</option>
-                                                                <option value="<?php echo $year_res['Business_Year']; ?>"><?php echo $year_res['Business_Year']; ?></option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-
-                                                    <?php } ?>
                                                 </div>
 
                                                 <div class="row" style="padding: 0px 0px 20px 0px;">
@@ -335,25 +268,8 @@ $Plant = $selector_arr1['Plant'];
                                                     </div>
                                                     <!-- END MODEL -->
                                                 </div>
-                                                <div class="row justify-content-end mt-3 mb-3">
-                                                    <div class="col-md-4 excel_upload_div">
-                                                        <div class="row">
-                                                            <div class="col-md-9">
-                                                                <a href="assets/purchase_request_sample/sample_purchase_request.xlsx" download class="excel_request_upload_sample text-danger"><i class="fa fa-download"></i>  Click here to download sample file</a>
-                                                                <input type="file" id="material_upload_file" class="form-control" name="material_upload_file">
-                                                            </div>
-                                                            <div class="col-md-3 mt-4">
-
-                                                                <button type="button" class="btn btn-sm btn-info text-white request_upload">
-                                                                <span class="btn-label">
-                                                                    <i class="fa fa-upload" aria-hidden="true"></i>
-                                                                </span> Upload 
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="col-md-1 text-end pb-3 mt-4">
+                                                <div class="row">
+                                                    <div class="text-end pb-3">
                                                         <button type="button" class="btn btn-primary btn-sm" id="add">
                                                         <span class="btn-label">
                                                             <i class="fa fa-plus"></i>
@@ -381,7 +297,7 @@ $Plant = $selector_arr1['Plant'];
                                                 <div class="row mb-3">
                                                     <label for="example-datetime-local-input" class="col-md-2 col-sm-2 col-form-label">Informer Details</label>
                                                     <div class="col-md-10 col-sm-10 informer-div">
-                                                        <select class="select2 form-control select2-multiple" name="persionp"  implode multiple data-placeholder="Choose ...">
+                                                        <select class="select2 form-control select2-multiple" name="persionp[]"  implode multiple data-placeholder="Choose ...">
                                                             <?php
                                                                 $HR_Master_Table = sqlsrv_query($conn, "Select * from HR_Master_Table ");
                                                                 while ($HR = sqlsrv_fetch_array($HR_Master_Table)) {
@@ -682,11 +598,6 @@ $Plant = $selector_arr1['Plant'];
 
                 $('#save').attr('disabled', true);
                 $('#add').attr('disabled', true);
-
-
-                $('.season').select2();
-                $('.activity').select2();
-                $('.crop_year').select2();
             });
 
             $(document).on('input', '.quantity', function () {
@@ -702,11 +613,6 @@ $Plant = $selector_arr1['Plant'];
                 $(".plant_div").hide();
                 $(".storage_div").hide();
                 $(".mat_group_div").hide();
-
-                $('.season-div').hide();
-                $('.activity-div').hide();
-                $('.crop-year-div').hide();  
-                $('.excel_upload_div').hide();
 
                 $('.material_section_body').empty();
 
@@ -760,11 +666,6 @@ $Plant = $selector_arr1['Plant'];
 
                 $(".storage_div").hide();
                 $(".mat_group_div").hide();
-                $('.season-div').hide();
-                $('.activity-div').hide();
-                $('.crop-year-div').hide();  
-                $('.excel_upload_div').hide();
-
                 $('.material_section_body').empty();
                 $('#trow_no').val(1);
 
@@ -829,11 +730,6 @@ $Plant = $selector_arr1['Plant'];
 
                 var request_type = $('#request_category').val();
 
-                $('.season-div').hide();
-                $('.activity-div').hide();
-                $('.crop-year-div').hide();  
-                $('.excel_upload_div').hide();
-
               // request type document no set 
                 var request_type_code = (request_type == 'Asset purchases') ? 'ZCAP' : ((request_type == 'Material purchases') ? 'ZNB' : 'ZSER');
 
@@ -883,10 +779,6 @@ $Plant = $selector_arr1['Plant'];
 
               // request type document no set 
                 var request_type_code = (request_type == 'Asset purchases') ? 'ZCAP' : ((request_type == 'Material purchases') ? 'ZNB' : 'ZSER');
-
-                $('.season-div').show();
-                $('.activity-div').show();
-                $('.crop-year-div').show();     
 
                 $.ajax({
                     url: "fetch-item-code.php?employe=<?php echo $Employee_Id ?>",
@@ -964,13 +856,7 @@ $Plant = $selector_arr1['Plant'];
 
             $(document).on('change', '.add', function () {
                 add_row();
-                $('#save').attr('disabled',false);
-                
-                // Material purchase request type only enable excel upload
-                var request_type = $('#request_category').val();
-                if(request_type == 'Material purchases') {
-                    $('.excel_upload_div').show();
-                }
+                $('#save').attr('disabled',false)
             });
 
             $(document).on('change', '.items-dropdown', function () {
@@ -1254,7 +1140,7 @@ $Plant = $selector_arr1['Plant'];
                                         <div class="modal-body">
                                                 <div class="form-group">
                                                     <div class="input-group mb-3">
-                                                        <textarea class="form-control" name="budget_remark" aria-label="With textarea"></textarea>
+                                                        <textarea class="form-control" name="budget_remark[]" aria-label="With textarea"></textarea>
                                                     </div>
                                                 </div>
                                         </div>
@@ -1275,7 +1161,7 @@ $Plant = $selector_arr1['Plant'];
                             </td>
                             <td>
                                 <div class="col-md-12" >
-                                    <select class="select2 form-control items-dropdown required_for_valid" id="item-dropdown${row_no}" style="width: 175px;" name="item_code" placeholder="Select Name." data-id="${row_no}" error-msg='Item code is mandatory.'>
+                                    <select class="select2 form-control items-dropdown required_for_valid" id="item-dropdown${row_no}" style="width: 175px;" name="item_code[]" placeholder="Select Name." data-id="${row_no}" error-msg='Item code is mandatory.'>
                                     </select>
                                 </div>
                                 <span class="error_msg text-danger"></span>
@@ -1283,23 +1169,23 @@ $Plant = $selector_arr1['Plant'];
                             </td>
                             <td id="divn">
                                 <div class="col-md-12">
-                                <textarea id="description${row_no}" style="width: 210px;" class="form-control disabled description" name="description"   row="2" placeholder="Enter Description" required=""></textarea>
+                                <textarea id="description${row_no}" style="width: 210px;" class="form-control disabled description" name="description[]"   row="2" placeholder="Enter Description" required=""></textarea>
 
                                 </div>
                             </td>
                             <td id="divb">
                                 <div class="col-md-12" >
-                                    <input type="text" class="form-control disabled uom" id="uom${row_no}" style="width: 110px;"  name="uom" readonly placeholder="Enter UOM" >
+                                    <input type="text" class="form-control disabled uom" id="uom${row_no}" style="width: 110px;"  name="uom[]" readonly placeholder="Enter UOM" >
                                 </div>
                             </td>
                             <td id="divb">
                                 <div class="col-md-12" id="existing_material_div">
-                                    <input type="text" class="form-control  disabled MaterialGroup" style="width: 100px;" id="MaterialGroup${row_no}"  readonly name="MaterialGroup" placeholder="Enter MaterialGroup">
+                                    <input type="text" class="form-control  disabled MaterialGroup" style="width: 100px;" id="MaterialGroup${row_no}"  readonly name="MaterialGroup[]" placeholder="Enter MaterialGroup">
                                 </div>
                             </td>
                             <td>
                                 <div class="col-md-12">
-                                    <input type="number" min="0" class="form-control required_for_valid quantity" id="quantity${row_no}" style="width: 125px;" name="quantity"  placeholder="Enter Quantity" required="" data-id="${row_no}" error-msg='Quantity is mandatory.'>
+                                    <input type="number" min="0" class="form-control required_for_valid quantity" id="quantity${row_no}" style="width: 125px;" name="quantity[]"  placeholder="Enter Quantity" required="" data-id="${row_no}" error-msg='Quantity is mandatory.'>
                                 </div>
                                 <span class="error_msg text-danger"></span>
                             </td>
@@ -1307,39 +1193,39 @@ $Plant = $selector_arr1['Plant'];
                             <td class="replacement_feature" style="${style}">
                                 <div class="col-md-12">
                                 
-                                    <select class="select2 form-control ${required_class} replacement-dropdown" id="replace${row_no}" data-id="${row_no}"  name="replace" style="width: 145px;" disabled>
+                                    <select class="select2 form-control ${required_class} replacement-dropdown" id="replace${row_no}" data-id="${row_no}"  name="replace[]" style="width: 145px;" disabled>
                                         <option value="">Select</option>
                                         <option value="new">New</option>
                                         <option value="replacement">Replacement</option>
                                     </select>
 
-                                    <input type="hidden" id="rdateofpurchase${row_no}" name="rdateofpurchase">
-                                    <input type="hidden" id="rqty${row_no}" name="rqty">
-                                    <input type="hidden" id="rremarks${row_no}" name="rremarks">
-                                    <input type="hidden" id="rcost${row_no}" name="rcost">
+                                    <input type="hidden" id="rdateofpurchase${row_no}" name="rdateofpurchase[]">
+                                    <input type="hidden" id="rqty${row_no}" name="rqty[]">
+                                    <input type="hidden" id="rremarks${row_no}" name="rremarks[]">
+                                    <input type="hidden" id="rcost${row_no}" name="rcost[]">
                                 </div>
                                 <span class="error_msg text-danger"></span>
                             </td>
 
                             <td>
                                 <div class="col-md-12">
-                                    <input type="date" class="form-control" id="Expected_Date${row_no}"style="width: 155px;" min="<?php echo date("Y-m-d"); ?>" value="<?php echo date('Y-m-d'); ?>" name="Expected_Date"  placeholder="Enter Quantity" required="">
+                                    <input type="date" class="form-control" id="Expected_Date${row_no}"style="width: 155px;" min="<?php echo date("Y-m-d"); ?>" value="<?php echo date('Y-m-d'); ?>" name="Expected_Date[]"  placeholder="Enter Quantity" required="">
                                 </div>
                             </td>
                             <td>
                                 <div class="col-md-12">
-                                    <textarea id="Specification${row_no}" class="form-control" name="Specification" style="width: 155px;height: 36px;"  row="2" placeholder="Enter Specification" required=""></textarea>
+                                    <textarea id="Specification${row_no}" class="form-control" name="Specification[]" style="width: 155px;height: 36px;"  row="2" placeholder="Enter Specification" required=""></textarea>
                                 </div>
                             </td>
                             <td>
                                 <div class="col-md-12">
-                                    <input class="form-control file-upload-input" type="file"  id="Attachment${row_no}" style="width: 170px;" name="Attachment"  placeholder="Enter Quantity" >
+                                    <input class="form-control file-upload-input" type="file"  id="Attachment${row_no}" style="width: 170px;" name="Attachment[]"  placeholder="Enter Quantity" >
                                 </div>
                             </td>
                             <td>
                                 <div class="col-md-12">
                                 
-                                    <select class="select2 form-control" id="type_val${row_no}" data-id="${row_no}"  name="budget" style="width: 145px;"  onchange="openPopup(this);" >
+                                    <select class="select2 form-control" id="type_val${row_no}" data-id="${row_no}"  name="budget[]" style="width: 145px;"  onchange="openPopup(this);" >
                                         <option value="Yes">Yes</option>
                                         <option value="No">No</option>
                                     </select>
@@ -1392,55 +1278,32 @@ $Plant = $selector_arr1['Plant'];
                   });
             }
 
-            // Function to read file as Base64
-            function readFileAsBase64(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result); // Resolve with Base64 string
-                    reader.onerror = reject; // Reject on error
-                    reader.readAsDataURL(file); // Read file as Base64
-                });
-            }
+            // async function json_data_conversion(form)
+            // {
+            //     const jsonData = {};
 
-            async function json_data_conversion(form)
-            {
-                const jsonData = {};
+            //     for (let [key, value] of form.entries()) {
+            //         // If the value is a File, convert it to Base64
+            //         if (value instanceof File) {
+            //             const fileContent = await readFileAsBase64(value);
+            //             // Use an array for files if multiple are uploaded
+            //             if (!Array.isArray(jsonData[key])) {
+            //                 jsonData[key] = []; // Initialize as an array if not already
+            //             }
+            //             jsonData[key].push(fileContent); // Add the Base64 string to the array
+            //         } else if (Array.isArray(jsonData[key])) {
+            //             jsonData[key].push(value); // If it's already an array, push the value
+            //         } else if (jsonData[key]) {
+            //               jsonData[key] = [jsonData[key], value]; // Convert to array if it has a value
+            //         } else {
+            //               jsonData[key] = value; // Normal form field
+            //         }
+            //     }
 
-                for (let [key, value] of form.entries()) {
-                    // If the value is a File, convert it to Base64
-                    if (value instanceof File) {
-                        const fileContent = await readFileAsBase64(value);
-                        // Use an array for files if multiple are uploaded
-                        if (!Array.isArray(jsonData[key])) {
-                            jsonData[key] = []; // Initialize as an array if not already
-                        }
-                        jsonData[key].push(fileContent); // Add the Base64 string to the array
-                    } else if (Array.isArray(jsonData[key])) {
-                        jsonData[key].push(value); // If it's already an array, push the value
-                    } else if (jsonData[key]) {
-                          jsonData[key] = [jsonData[key], value]; // Convert to array if it has a value
-                    } else {
-                          jsonData[key] = value; // Normal form field
-                    }
-                }
-                return jsonData;
-            }
+            //     return jsonData;
+            // }
 
-            $(document).on('change','.file-upload-input',function(){
-                 // console.log(this.files[0]);
-                 let file = this.files[0];
-                    // Maximum file size: 1 MB (1,048,576 bytes)
-                    const MAX_FILE_SIZE = 1 * 1024 * 1024;
-
-                    // Validate the file size
-                    if (file.size > MAX_FILE_SIZE) {
-                        $(this).val('');
-                        alert("The file is too large. Please select a file that is less than 1 MB.");
-                        return false;
-                    }
-            });
-
-            $(document).on('click','#save',async function(){
+            $(document).on('click','#save',function(){
 
                   // duplicate items validation functionality Start
                   var items_arr = [];
@@ -1478,12 +1341,13 @@ $Plant = $selector_arr1['Plant'];
                         form.append('Attachment'+index , $('#Attachment'+index)[0].files[0]);
                       });
 
-                     var jsonData = await json_data_conversion(form);
+                     // var jsonData = json_data_conversion(form);
+
 
                       $.ajax({
-                          url: 'common_json_ajax.php',
+                          url: 'common_ajax.php',
                           type: 'POST',
-                          data: JSON.stringify(jsonData),
+                          data: form,
                           processData: false,
                           contentType: false,
                           dataType: 'json',
@@ -1571,167 +1435,6 @@ $Plant = $selector_arr1['Plant'];
                 }
 
             // END MORE 
-                function Alert_Msg(title,message,icon) {
-                    swal({
-                      title: title,
-                      text: message,
-                      icon: icon,
-                    });
-                }
-
-                $(document).on('click','.request_upload',function(){
-                    var file_data    = $('#material_upload_file').prop('files')[0];
-                    var request_type = $('#request_category').val();
-                    var request_category = (request_type == 'Asset purchases') ? 'ZCAP' : ((request_type == 'Material purchases') ? 'ZNB' : 'ZSER');
-                    var plant = $('#plant-dropdown').val();
-                    
-                    if(file_data == '' || file_data == undefined) {
-                        Alert_Msg("Warning","Please choose file for import data.","warning");  
-                    } else {
-                        var form_data  = new FormData();
-                        form_data.append("Action","read_request_excel");
-                        form_data.append("file",file_data);
-                        form_data.append("request_category",request_category);
-                        form_data.append("plant",plant);
-
-                        $.ajax({
-                            type: "POST",
-                            url: "common_ajax.php",
-                            data: form_data,
-                            dataType:"json",
-                            cache: false,
-                            contentType: false,
-                            processData: false,
-                            beforeSend:function(){
-                                $('#ajax-preloader').show();
-                            },
-                            success: function(result) {
-                                if(result.status == 200) {
-                                    $('#trow_no').val(1)
-                                    var row_no = $('#trow_no').val();
-                                    
-                                    if(row_no == 0) {
-                                        $('#trow_no').val(1);
-                                        $('#save').attr('disabled',false);
-                                    }
-
-                                    var html = '';
-                                    if(result.data.length > 0) {
-                                        let style = (request_type != 'Asset purchases') ? 'display:none !important;' : '';   
-                                        let required_class = (request_type == 'Asset purchases') ? 'required_for_valid' : '';
-                                        var output = '';
-                                        for(i in result.data) {
-                                            output += `
-                                            <tr data-rowno="${row_no}">
-                                                <td class="sr_no">
-                                                    `+ (row_no) + `
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12" >
-                                                        <select class="select2 form-control items-dropdown required_for_valid" id="item-dropdown${row_no}" style="width: 175px;" name="item_code" placeholder="Select Name." data-id="${row_no}" error-msg='Item code is mandatory.'>
-                                                            ${result.data[i].items}
-                                                        </select>
-                                                    </div>
-                                                    <span class="error_msg text-danger"></span>
-                                                    <span class="badge bg-info text-white text-center p-1 mt-2 item_code_info" style="font-size: 13px;">${result.data[i].item_code}</span>
-                                                </td>
-                                                <td id="divn">
-                                                    <div class="col-md-12">
-                                                    <textarea id="description${row_no}" style="width: 210px;" class="form-control disabled description" name="description"   row="2" placeholder="Enter Description" required="">${result.data[i].item_description}</textarea>
-
-                                                    </div>
-                                                </td>
-                                                <td id="divb">
-                                                    <div class="col-md-12" >
-                                                        <input type="text" class="form-control disabled uom" id="uom${row_no}" style="width: 110px;"  name="uom" readonly placeholder="Enter UOM" value="${result.data[i].UOM}">
-                                                    </div>
-                                                </td>
-                                                <td id="divb">
-                                                    <div class="col-md-12" id="existing_material_div">
-                                                        <input type="text" class="form-control  disabled MaterialGroup" style="width: 100px;" id="MaterialGroup${row_no}"  readonly name="MaterialGroup" placeholder="Enter MaterialGroup" value="${result.data[i].material_group}">
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12">
-                                                        <input type="number" min="0" class="form-control required_for_valid quantity" id="quantity${row_no}" style="width: 125px;" name="quantity"  placeholder="Enter Quantity" required="" data-id="${row_no}" error-msg='Quantity is mandatory.' value="${result.data[i].quantity}">
-                                                    </div>
-                                                    <span class="error_msg text-danger"></span>
-                                                </td>
-
-                                                <td class="replacement_feature" style="${style}">
-                                                    <div class="col-md-12">
-                                                    
-                                                        <select class="select2 form-control ${required_class} replacement-dropdown" id="replace${row_no}" data-id="${row_no}"  name="replace" style="width: 145px;">
-                                                            ${result.data[i].replacement}
-                                                        </select>
-
-                                                        <input type="hidden" id="rdateofpurchase${row_no}" name="rdateofpurchase">
-                                                        <input type="hidden" id="rqty${row_no}" name="rqty">
-                                                        <input type="hidden" id="rremarks${row_no}" name="rremarks">
-                                                        <input type="hidden" id="rcost${row_no}" name="rcost">
-                                                    </div>
-                                                    <span class="error_msg text-danger"></span>
-                                                </td>
-
-                                                <td>
-                                                    <div class="col-md-12">
-                                                        <input type="date" class="form-control" id="Expected_Date${row_no}"style="width: 155px;" min="<?php echo date("Y-m-d"); ?>" value="<?php echo date("Y-m-d"); ?>" name="Expected_Date"  placeholder="Enter Quantity" required="">
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12">
-                                                        <textarea id="Specification${row_no}" class="form-control" name="Specification" style="width: 155px;height: 36px;"  row="2" placeholder="Enter Specification" required="">${result.data[i].specification}</textarea>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12">
-                                                        <input class="form-control file-upload-input" type="file"  id="Attachment${row_no}" style="width: 170px;" name="Attachment"  placeholder="Enter Quantity" >
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12">
-                                                    
-                                                        <select class="select2 form-control whether_budgeted" id="type_val${row_no}" data-id="${row_no}"  name="budget" style="width: 145px;"  onchange="openPopup(this);" >
-                                                            ${result.data[i].whether_budgeted}
-                                                        </select>
-                                                    </div>
-                                                </td>`;
-
-                                                if(row_no != 1) {
-                                                    output += `<td>
-                                                        <i class="fa fa-times remove text-danger"  ></i>
-                                                    </td>`;
-                                                } 
-
-                                            output += `</tr>`;
-
-
-                                            row_no++;
-                                            $('#trow_no').val(row_no);
-                                        }
-                                            $(".tbody").html(output);
-                                            $('.items-dropdown').select2();
-                                            $('.whether_budgeted').select2();
-                                            $('.replacement-dropdown').select2();
-
-                                    } else {
-                                        $('#material_upload_file').val('');
-                                        Alert_Msg("wanring","No data found","warning");   
-                                    }
-                                } else {
-                                    $("#material_upload_file").val('');
-                                    Alert_Msg("Failed",result.message,"error");  
-                                }
-                            },
-                            complete:function(){
-                                $('#ajax-preloader').hide();
-                            }
-                        });
-            
-                    }
-
-                });
-
         </script>
         <!-- CUSTOM JS END -->
     </body>

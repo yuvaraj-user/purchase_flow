@@ -36,7 +36,9 @@
                             </a>
                         </li>
 
-                    <?php  if($_SESSION['Dcode']=='ADMIN' || $_SESSION['Dcode']=='SUPERADMIN') {
+                    <?php  //if($_SESSION['Dcode']=='ADMIN' || $_SESSION['Dcode']=='SUPERADMIN') {
+                        if($_SESSION['EmpID']=='RS3015' || $_SESSION['EmpID']=='RS4310' || $_SESSION['EmpID']=='RS7361') {
+
                         ?>
                         <li>
                             <a href="show_master.php" class="waves-effect">
@@ -422,7 +424,7 @@
                         <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                 <i class="dripicons-checklist"></i>
-                                <span>Informer Selection</span>
+                                <span>Reference Selection</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
                             

@@ -128,19 +128,6 @@ $Plant = $selector_arr1['Plant'];
                 text-align: center;
              }      
         }
-
-        .swal-footer {
-            text-align: center !important;
-        }
-
-        .excel_upload_div {
-            display: none;
-        }
-
-        .excel_request_upload_sample{
-            cursor: pointer;
-        }
-
         </style>
     </head>
 
@@ -335,25 +322,8 @@ $Plant = $selector_arr1['Plant'];
                                                     </div>
                                                     <!-- END MODEL -->
                                                 </div>
-                                                <div class="row justify-content-end mt-3 mb-3">
-                                                    <div class="col-md-4 excel_upload_div">
-                                                        <div class="row">
-                                                            <div class="col-md-9">
-                                                                <a href="assets/purchase_request_sample/sample_purchase_request.xlsx" download class="excel_request_upload_sample text-danger"><i class="fa fa-download"></i>  Click here to download sample file</a>
-                                                                <input type="file" id="material_upload_file" class="form-control" name="material_upload_file">
-                                                            </div>
-                                                            <div class="col-md-3 mt-4">
-
-                                                                <button type="button" class="btn btn-sm btn-info text-white request_upload">
-                                                                <span class="btn-label">
-                                                                    <i class="fa fa-upload" aria-hidden="true"></i>
-                                                                </span> Upload 
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="col-md-1 text-end pb-3 mt-4">
+                                                <div class="row">
+                                                    <div class="text-end pb-3">
                                                         <button type="button" class="btn btn-primary btn-sm" id="add">
                                                         <span class="btn-label">
                                                             <i class="fa fa-plus"></i>
@@ -706,7 +676,6 @@ $Plant = $selector_arr1['Plant'];
                 $('.season-div').hide();
                 $('.activity-div').hide();
                 $('.crop-year-div').hide();  
-                $('.excel_upload_div').hide();
 
                 $('.material_section_body').empty();
 
@@ -763,8 +732,6 @@ $Plant = $selector_arr1['Plant'];
                 $('.season-div').hide();
                 $('.activity-div').hide();
                 $('.crop-year-div').hide();  
-                $('.excel_upload_div').hide();
-
                 $('.material_section_body').empty();
                 $('#trow_no').val(1);
 
@@ -832,7 +799,6 @@ $Plant = $selector_arr1['Plant'];
                 $('.season-div').hide();
                 $('.activity-div').hide();
                 $('.crop-year-div').hide();  
-                $('.excel_upload_div').hide();
 
               // request type document no set 
                 var request_type_code = (request_type == 'Asset purchases') ? 'ZCAP' : ((request_type == 'Material purchases') ? 'ZNB' : 'ZSER');
@@ -964,13 +930,7 @@ $Plant = $selector_arr1['Plant'];
 
             $(document).on('change', '.add', function () {
                 add_row();
-                $('#save').attr('disabled',false);
-                
-                // Material purchase request type only enable excel upload
-                var request_type = $('#request_category').val();
-                if(request_type == 'Material purchases') {
-                    $('.excel_upload_div').show();
-                }
+                $('#save').attr('disabled',false)
             });
 
             $(document).on('change', '.items-dropdown', function () {
@@ -1571,167 +1531,6 @@ $Plant = $selector_arr1['Plant'];
                 }
 
             // END MORE 
-                function Alert_Msg(title,message,icon) {
-                    swal({
-                      title: title,
-                      text: message,
-                      icon: icon,
-                    });
-                }
-
-                $(document).on('click','.request_upload',function(){
-                    var file_data    = $('#material_upload_file').prop('files')[0];
-                    var request_type = $('#request_category').val();
-                    var request_category = (request_type == 'Asset purchases') ? 'ZCAP' : ((request_type == 'Material purchases') ? 'ZNB' : 'ZSER');
-                    var plant = $('#plant-dropdown').val();
-                    
-                    if(file_data == '' || file_data == undefined) {
-                        Alert_Msg("Warning","Please choose file for import data.","warning");  
-                    } else {
-                        var form_data  = new FormData();
-                        form_data.append("Action","read_request_excel");
-                        form_data.append("file",file_data);
-                        form_data.append("request_category",request_category);
-                        form_data.append("plant",plant);
-
-                        $.ajax({
-                            type: "POST",
-                            url: "common_ajax.php",
-                            data: form_data,
-                            dataType:"json",
-                            cache: false,
-                            contentType: false,
-                            processData: false,
-                            beforeSend:function(){
-                                $('#ajax-preloader').show();
-                            },
-                            success: function(result) {
-                                if(result.status == 200) {
-                                    $('#trow_no').val(1)
-                                    var row_no = $('#trow_no').val();
-                                    
-                                    if(row_no == 0) {
-                                        $('#trow_no').val(1);
-                                        $('#save').attr('disabled',false);
-                                    }
-
-                                    var html = '';
-                                    if(result.data.length > 0) {
-                                        let style = (request_type != 'Asset purchases') ? 'display:none !important;' : '';   
-                                        let required_class = (request_type == 'Asset purchases') ? 'required_for_valid' : '';
-                                        var output = '';
-                                        for(i in result.data) {
-                                            output += `
-                                            <tr data-rowno="${row_no}">
-                                                <td class="sr_no">
-                                                    `+ (row_no) + `
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12" >
-                                                        <select class="select2 form-control items-dropdown required_for_valid" id="item-dropdown${row_no}" style="width: 175px;" name="item_code" placeholder="Select Name." data-id="${row_no}" error-msg='Item code is mandatory.'>
-                                                            ${result.data[i].items}
-                                                        </select>
-                                                    </div>
-                                                    <span class="error_msg text-danger"></span>
-                                                    <span class="badge bg-info text-white text-center p-1 mt-2 item_code_info" style="font-size: 13px;">${result.data[i].item_code}</span>
-                                                </td>
-                                                <td id="divn">
-                                                    <div class="col-md-12">
-                                                    <textarea id="description${row_no}" style="width: 210px;" class="form-control disabled description" name="description"   row="2" placeholder="Enter Description" required="">${result.data[i].item_description}</textarea>
-
-                                                    </div>
-                                                </td>
-                                                <td id="divb">
-                                                    <div class="col-md-12" >
-                                                        <input type="text" class="form-control disabled uom" id="uom${row_no}" style="width: 110px;"  name="uom" readonly placeholder="Enter UOM" value="${result.data[i].UOM}">
-                                                    </div>
-                                                </td>
-                                                <td id="divb">
-                                                    <div class="col-md-12" id="existing_material_div">
-                                                        <input type="text" class="form-control  disabled MaterialGroup" style="width: 100px;" id="MaterialGroup${row_no}"  readonly name="MaterialGroup" placeholder="Enter MaterialGroup" value="${result.data[i].material_group}">
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12">
-                                                        <input type="number" min="0" class="form-control required_for_valid quantity" id="quantity${row_no}" style="width: 125px;" name="quantity"  placeholder="Enter Quantity" required="" data-id="${row_no}" error-msg='Quantity is mandatory.' value="${result.data[i].quantity}">
-                                                    </div>
-                                                    <span class="error_msg text-danger"></span>
-                                                </td>
-
-                                                <td class="replacement_feature" style="${style}">
-                                                    <div class="col-md-12">
-                                                    
-                                                        <select class="select2 form-control ${required_class} replacement-dropdown" id="replace${row_no}" data-id="${row_no}"  name="replace" style="width: 145px;">
-                                                            ${result.data[i].replacement}
-                                                        </select>
-
-                                                        <input type="hidden" id="rdateofpurchase${row_no}" name="rdateofpurchase">
-                                                        <input type="hidden" id="rqty${row_no}" name="rqty">
-                                                        <input type="hidden" id="rremarks${row_no}" name="rremarks">
-                                                        <input type="hidden" id="rcost${row_no}" name="rcost">
-                                                    </div>
-                                                    <span class="error_msg text-danger"></span>
-                                                </td>
-
-                                                <td>
-                                                    <div class="col-md-12">
-                                                        <input type="date" class="form-control" id="Expected_Date${row_no}"style="width: 155px;" min="<?php echo date("Y-m-d"); ?>" value="<?php echo date("Y-m-d"); ?>" name="Expected_Date"  placeholder="Enter Quantity" required="">
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12">
-                                                        <textarea id="Specification${row_no}" class="form-control" name="Specification" style="width: 155px;height: 36px;"  row="2" placeholder="Enter Specification" required="">${result.data[i].specification}</textarea>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12">
-                                                        <input class="form-control file-upload-input" type="file"  id="Attachment${row_no}" style="width: 170px;" name="Attachment"  placeholder="Enter Quantity" >
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12">
-                                                    
-                                                        <select class="select2 form-control whether_budgeted" id="type_val${row_no}" data-id="${row_no}"  name="budget" style="width: 145px;"  onchange="openPopup(this);" >
-                                                            ${result.data[i].whether_budgeted}
-                                                        </select>
-                                                    </div>
-                                                </td>`;
-
-                                                if(row_no != 1) {
-                                                    output += `<td>
-                                                        <i class="fa fa-times remove text-danger"  ></i>
-                                                    </td>`;
-                                                } 
-
-                                            output += `</tr>`;
-
-
-                                            row_no++;
-                                            $('#trow_no').val(row_no);
-                                        }
-                                            $(".tbody").html(output);
-                                            $('.items-dropdown').select2();
-                                            $('.whether_budgeted').select2();
-                                            $('.replacement-dropdown').select2();
-
-                                    } else {
-                                        $('#material_upload_file').val('');
-                                        Alert_Msg("wanring","No data found","warning");   
-                                    }
-                                } else {
-                                    $("#material_upload_file").val('');
-                                    Alert_Msg("Failed",result.message,"error");  
-                                }
-                            },
-                            complete:function(){
-                                $('#ajax-preloader').hide();
-                            }
-                        });
-            
-                    }
-
-                });
-
         </script>
         <!-- CUSTOM JS END -->
     </body>

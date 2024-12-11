@@ -173,16 +173,24 @@ $purchase_is = $_GET['id'];
                                                     </div>
                                                     <div class="col-md-2">
                                                         <div class="mb-3">
+                                                            <?php 
+                                                            $sql = sqlsrv_query($conn, "SELECT DISTINCT Plant_Name from Plant_Master_PO where Plant_Code = '".$updated_query['Plant']."'");
+                                                            $plant_name = sqlsrv_fetch_array($sql)['Plant_Name'];
+                                                            ?>
                                                             <label for="app" class="form-label">Plant</label>
                                                             <input type="text" class="form-control" name="department" id="plant" readonly
-                                                                value="<?php echo $updated_query['Plant'] ?>" >
+                                                                value="<?php echo $updated_query['Plant'].'-'.$plant_name ?>" >
                                                         </div>
                                                     </div>
                                                     <div class="col-md-2" style="<?php if($updated_query['Request_Type'] == 'Services'){ ?> display: none; <?php } ?>">
                                                         <div class="mb-3">
+                                                            <?php 
+                                                            $sql = sqlsrv_query($conn, "SELECT DISTINCT Storage_description from MaterialMaster where StorageLocation = '".$updated_query['Storage_Location']."'");
+                                                            $storage_desc = sqlsrv_fetch_array($sql)['Storage_description'];
+                                                            ?>
                                                             <label for="department" class="form-label">Storage Location</label>
                                                              <input type="text" class="form-control"  readonly
-                                                                value="<?php echo $updated_query['Storage_Location'] ?>" >
+                                                                value="<?php echo trim($updated_query['Plant']).'-'.trim($updated_query['Storage_Location']).'-'.trim($storage_desc) ?>" >
                                                         </div>
                                                     </div>
                                                     <div class="col-md-2">
@@ -383,6 +391,8 @@ $purchase_is = $_GET['id'];
                                                               <!-- <th>Finance</th> -->
                                                               <th>Recommender</th>
                                                               <th>Approver</th>
+                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
+
                                                             </tr>
                                                           </thead>
                                                           <tbody id="involved_persons_tbody">
@@ -470,12 +480,19 @@ $purchase_is = $_GET['id'];
                     success: function (result) {
                         var table_data = '';
                         if(result.length > 0) {
+                            $('.inv_fin_appr').hide();
+                            
                             // <td>${ result[0].verifier_name }</td>
                             table_data = `<tr>
                             <td>${ (result[0].purchaser_name != '' && result[0].purchaser_name != null) ? result[0].purchaser_name : '-' }</td>
                             <td>${ (result[0].recommendor_name != '' && result[0].recommendor_name != null) ? result[0].recommendor_name : '-' }</td>
-                            <td>${ (result[0].approver_name != '' && result[0].approver_name != null) ? result[0].approver_name : '-' }</td>
-                            </tr>`; 
+                            <td>${ (result[0].approver_name != '' && result[0].approver_name != null) ? result[0].approver_name : '-' }</td>`; 
+
+                            if(result[0].approver2_name != null) {
+                                table_data += `<td>${ (result[0].approver2_name != null) ? result[0].approver2_name : '-' }</td>`;
+                                $('.inv_fin_appr').show();
+                            }
+                            table_data += `</tr>`; 
 
                         }
                         $('#involved_persons_tbody').html(table_data);  

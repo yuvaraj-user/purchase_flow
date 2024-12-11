@@ -191,8 +191,7 @@ if ($updated_query['Request_id'] == '') {
 		} else {
 			$Available_Budget = $_POST['Available_Budget'][$i];
 		}
-		// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-		$Approver_Remarks = $_POST['approver_remarks'];
+		$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 		$Approver_Selection = trim($_POST['Approver_Selection'][$i]);
 		// $fil = $_POST["Attachment"][$i];
 		if (!isset($_POST['Attachment'])) {
@@ -668,8 +667,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];	
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = $_POST['Approver_Selection'][$i];
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -731,8 +729,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = $_POST['Approver_Selection'][$i];
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -972,8 +969,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = $_POST['Approver_Selection'][$i];
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -1035,8 +1031,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = $_POST['Approver_Selection'][$i];
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -1232,8 +1227,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = $_POST['Approver_Selection'][$i];
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -1296,8 +1290,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = trim($_POST['Approver_Selection'][$i]);
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -1538,8 +1531,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = trim($_POST['Approver_Selection'][$i]);
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -1607,8 +1599,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = trim($_POST['Approver_Selection'][$i]);
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -3085,7 +3076,7 @@ body {
 													} ?>
 
 												</tr>
-												<!-- <tr class="remark">
+												<tr class="remark">
 													<?php
 													$array_Details11 = sqlsrv_query($conn, "SELECT  Tb_Approver.Request_id,Tb_Approver.V_id,
 													Tb_Approver_Meterial.Request_id,Tb_Approver_Meterial.V_id,Tb_Approver.Approver_Remarks
@@ -3163,7 +3154,7 @@ body {
 													}
 													?>
 
-												</tr> -->
+												</tr>
 												<tr id="pdf">
 													<?php
 													$view16 = sqlsrv_query($conn, "SELECT * FROM Tb_Recommender WHERE Request_id = '$request_id' ");
@@ -3420,7 +3411,7 @@ body {
                                     <br>
 									<div class="row justification_div justify-content-center"> 
 	                                    <div class="col-2">
-	                                        <label for="justification" class="float-end">Justification For Single Vendor<span class="text-danger"> *</span></label>
+	                                        <label for="justification" class="float-end">Justification<span class="text-danger"> *</span></label>
 	                                    </div>   
 	                                    <div class="col-6">
                                         <textarea class="form-control required_for_valid" name="justification" id="justification" required readonly error-msg="Justification field is required"><?php echo $po_creator['vendor_justification']; ?>
@@ -3430,17 +3421,6 @@ body {
                                     </div>
 
                                     <?php } ?> 
-
-                                    <br>
-									<div class="row justify-content-center"> 
-	                                    <div class="col-2">
-	                                        <label for="approver_remarks" class="float-end">Approver's Remarks<span class="text-danger"> *</span></label>
-	                                    </div>   
-	                                    <div class="col-6">
-	                                        <textarea class="form-control required_for_valid" name="approver_remarks" id="approver_remarks" required error-msg="Approver remarks field is required"></textarea>
-	                                        <span class="error_msg text-danger" style="display: none;"></span>
-                                    	</div>
-                                    </div>
 
 									<center style="padding: 35px 0px 0px 0px;">
 										<!-- Default -->

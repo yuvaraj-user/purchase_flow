@@ -237,8 +237,13 @@ if(!isset($_SESSION['EmpID']))
                                                             <tbody>
                                                                 <?php
                                                                     $i = 1;
-                                                                    $sql = "SELECT * FROM Tb_Request Inner Join (select DISTINCT Purchaser,Purchase_Type,Recommender from Tb_Master_Emp WHERE Tb_Master_Emp.Recommender='$Employee_Id') as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
-                                                                    WHERE Tb_Request.Recommender='$Employee_Id' and Tb_Request.is_sendbacked='1' and Tb_Request.Recommender_back_remark IS NULL ORDER BY Tb_Request.Id DESC";
+                                                                    $sql = "SELECT Id,Request_ID,Request_Type,Time_Log,Purchase_Type,Department,Approver_back_remark,is_sendbacked,Tb_Request.status as status  FROM Tb_Request 
+                                                                    Inner Join (select DISTINCT Purchaser,Purchase_Type,Recommender from Tb_Master_Emp WHERE Tb_Master_Emp.Recommender='$Employee_Id') as Tb_Master_Emp
+                                                                    On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
+                                                                    WHERE Tb_Request.Recommender='$Employee_Id' and Tb_Request.is_sendbacked='1' and Tb_Request.Recommender_back_remark IS NULL 
+                                                                    group by Id,Request_ID,Request_Type,Time_Log,Purchase_Type,Department,Approver_back_remark,is_sendbacked,Tb_Request.status
+                                                                    ORDER BY Tb_Request.Id 
+                                                                    DESC";
 
                                                                     $params = array();
                                                                     $options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
@@ -257,7 +262,7 @@ if(!isset($_SESSION['EmpID']))
                                                                         <?php echo $row['Time_Log']->format('d/m/Y') ?>
                                                                     </td>
                                                                     <td>
-                                                                        <?php echo $row['Request_Category'] ?>
+                                                                        <?php echo $row['Purchase_Type'] ?>
                                                                     </td>
                                                                     <td>
                                                                         <?php echo $row['Request_Type'] ?>
@@ -270,12 +275,12 @@ if(!isset($_SESSION['EmpID']))
                                                                     </td>
                                                                     <td>
                                                                         <?php
-                                                                            if($row['status'] == 'Approver Send Back'){ 
-                                                                                echo'<span class="badge badge-soft-warning">Retern</span>';    
-                                                                            }else{
-                                                                                
-                                                                            }
-                                                                        ?>
+                                                                            if($row['is_sendbacked'] == '1'){ 
+                                                                                    echo'  <span class="badge badge-soft-warning">Send Back</span>';    
+                                                                                }else{
+                                                                                    
+                                                                                }
+                                                                            ?>
                                                                     </td>
                                                                     <td>
                                                                         <div class="action-btns">

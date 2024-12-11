@@ -75,6 +75,13 @@ $purchase_is = $_GET['purchase_id'];
         #involved .th,.td {
         border: 2px solid;
         }
+
+        @media only screen and (max-width: 600px) {
+            .footer {
+                left: 0 !important;
+                text-align: center;
+             }      
+        }           
         </style>
     </head>
 
@@ -148,6 +155,8 @@ $purchase_is = $_GET['purchase_id'];
                                                 $PERSION =  $updated_query['Persion_In_Workflow'];
                                             ?>
                                             <form  method="POST" enctype="multipart/form-data">
+                                                 <input type="hidden" id="po_creator_id" value="<?php echo $updated_query['EMP_ID']; ?>">
+
                                                 <div class="row">
                                                     <div class="col-md-2" > 
                                                         <div class="mb-3">
@@ -173,16 +182,24 @@ $purchase_is = $_GET['purchase_id'];
                                                     </div>
                                                     <div class="col-md-2">
                                                         <div class="mb-3">
+                                                            <?php 
+                                                            $sql = sqlsrv_query($conn, "SELECT DISTINCT Plant_Name from Plant_Master_PO where Plant_Code = '".$updated_query['Plant']."'");
+                                                            $plant_name = sqlsrv_fetch_array($sql)['Plant_Name'];
+                                                            ?>
                                                             <label for="app" class="form-label">Plant</label>
                                                             <input type="text" class="form-control" name="department" id="plant" readonly
-                                                                value="<?php echo $updated_query['Plant'] ?>" >
+                                                                value="<?php echo $updated_query['Plant'].'-'.$plant_name ?>" >
                                                         </div>
                                                     </div>
                                                     <div class="col-md-2" style="<?php if($updated_query['Request_Type'] == 'Services'){ ?> display: none; <?php } ?>">
                                                         <div class="mb-3">
+                                                            <?php 
+                                                            $sql = sqlsrv_query($conn, "SELECT DISTINCT Storage_description from MaterialMaster where StorageLocation = '".$updated_query['Storage_Location']."'");
+                                                            $storage_desc = sqlsrv_fetch_array($sql)['Storage_description'];
+                                                            ?>
                                                             <label for="department" class="form-label">Storage Location</label>
                                                              <input type="text" class="form-control"  readonly
-                                                                value="<?php echo $updated_query['Storage_Location'] ?>" >
+                                                                value="<?php echo trim($updated_query['Plant']).'-'.trim($updated_query['Storage_Location']).'-'.trim($storage_desc) ?>" >
                                                         </div>
                                                     </div>
                                                     <div class="col-md-2">
@@ -192,6 +209,33 @@ $purchase_is = $_GET['purchase_id'];
                                                                 value="<?php echo $updated_query['MaterialGroup'] ?>" >
                                                         </div>
                                                     </div>
+
+                                                    <?php if($department == 'Sales & Marketing') { ?>
+
+                                                    <div class="col-md-2 season-div">
+                                                        <div class="mb-3">
+                                                            <label for="season" class="form-label season_label" >Season</label>
+                                                             <input type="text" class="form-control"  id="season" readonly value="<?php echo $updated_query['Season'] ?>"> 
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-2 activity-div">
+                                                        <div class="mb-3">
+                                                            <label for="activity" class="form-label activity_label" >Activity</label>
+                                                             <input type="text" class="form-control"  id="activity" readonly value="<?php echo $updated_query['Activity'] ?>"> 
+
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-2 crop-year-div">
+                                                        <div class="mb-3">
+                                                            <label for="crop_year" class="form-label crop_year_label" >Year</label>
+                                                             <input type="text" class="form-control"  id="crop_year" readonly value="<?php echo $updated_query['Crop_Year'] ?>"> 
+
+                                                        </div>
+                                                    </div>
+
+                                                    <?php } ?>
                                                 </div>
                                                 <div class="row" style="padding: 0px 0px 20px 0px;">
                                                     <div class="table-responsive">
@@ -248,7 +292,7 @@ $purchase_is = $_GET['purchase_id'];
                                                                     </td>
                                                                     <td>
                                                                     <input type="text" class="form-control" readonly
-                                                                            value="<?php echo $row['Item_Code'] ?>" >
+                                                                            value="<?php echo substr(trim($row['Item_Code']),-10); ?>" >
                                                                     </td>
                                                                     <td>
                                                                     <input type="text" class="form-control" readonly
@@ -381,19 +425,22 @@ $purchase_is = $_GET['purchase_id'];
                                                 <div class="row" id="involved_persons_div" style="display:none;">
                                                     <div class="col-md-5">
                                                         <h4>Involved Persons</h4>
-                                                        <table class="table table-striped table-bordered table-hover" >
-                                                          <thead>
-                                                            <tr>
-                                                              <th>Purchaser</th>
-                                                              <!-- <th>Finance</th> -->
-                                                              <th>Recommender</th>
-                                                              <th>Approver</th>
-                                                            </tr>
-                                                          </thead>
-                                                          <tbody id="involved_persons_tbody">
+                                                        <div class="table-responsive">
+                                                            <table class="table table-striped table-bordered table-hover" >
+                                                              <thead>
+                                                                <tr>
+                                                                  <th>Purchaser</th>
+                                                                  <!-- <th>Finance</th> -->
+                                                                  <th>Recommender</th>
+                                                                  <th>Approver</th>
+                                                                  <th style="display:none;" class="inv_fin_appr">Final Approver</th>
+                                                                </tr>
+                                                              </thead>
+                                                              <tbody id="involved_persons_tbody">
 
-                                                          </tbody>
-                                                        </table>
+                                                              </tbody>
+                                                            </table>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -459,13 +506,16 @@ $purchase_is = $_GET['purchase_id'];
 
             function get_involved_persons(Plant,MaterialGroup)
             {
+                var po_creator_id = $('#po_creator_id').val();
+
                 $.ajax({
                     url: "common_ajax.php",
                     type: "POST",
                     data: {
                         Plant : Plant,
                         MaterialGroup : MaterialGroup,
-                        Action : 'get_involved_persons'
+                        Action : 'get_involved_persons',
+                        po_creator_id : po_creator_id
                     },
                     cache: false,
                     dataType: 'json',                        
@@ -476,11 +526,19 @@ $purchase_is = $_GET['purchase_id'];
                         var table_data = '';
                         if(result.length > 0) {
                             // <td>${ result[0].verifier_name }</td>
+                            $('.inv_fin_appr').hide();
+
                             table_data = `<tr>
                             <td>${ (result[0].purchaser_name != '' && result[0].purchaser_name != null) ? result[0].purchaser_name : '-' }</td>
                             <td>${ (result[0].recommendor_name != '' && result[0].recommendor_name != null) ? result[0].recommendor_name : '-' }</td>
-                            <td>${ (result[0].approver_name != '' && result[0].approver_name != null) ? result[0].approver_name : '-' }</td>
-                            </tr>`; 
+                            <td>${ (result[0].approver_name != '' && result[0].approver_name != null) ? result[0].approver_name : '-' }</td>`; 
+
+                            if(result[0].approver2_name != null) {
+                                table_data += `<td>${ (result[0].approver2_name != null) ? result[0].approver2_name : '-' }</td>`;
+                                $('.inv_fin_appr').show();
+                            }
+                            table_data += `</tr>`; 
+
 
                         }
                         $('#involved_persons_tbody').html(table_data);  

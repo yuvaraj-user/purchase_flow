@@ -8,32 +8,6 @@ use PHPMailer\PHPMailer\Exception;
 require 'PHPMailer/Exception.php';
 require 'PHPMailer/PHPMailer.php';
 require 'PHPMailer/SMTP.php';
-
-function auto_increment_request_id($conn)
-{
-    $previous_request_id_sql = "SELECT TOP 1 Request_ID from Tb_Request order by Id desc";
-    $previous_request_id_sql_exec = sqlsrv_query($conn, $previous_request_id_sql);
-    $previous_request_id = sqlsrv_fetch_array($previous_request_id_sql_exec)['Request_ID'];
-    $previous_request_id_number = filter_var($previous_request_id, FILTER_SANITIZE_NUMBER_INT);
-
-    $total_request_id_no_count = strlen($previous_request_id_number);
-    $number_request_id = ltrim($previous_request_id_number,'0');
-
-    $leading_zero_count = $total_request_id_no_count - strlen($number_request_id);
-    $number_request_id++;
-
-    $incremented_request_id = $number_request_id;
-    if($leading_zero_count > 0) {
-        $leading_zeros = '';
-        for ($i=0; $i < $leading_zero_count; $i++) { 
-            $leading_zeros = $leading_zeros.'0';
-        }
-
-        $incremented_request_id = "PV".$leading_zeros.$number_request_id;
-    }
-    return $incremented_request_id; 
-}
-
 if(!isset($_SESSION['EmpID']))
 {
     ?>
@@ -43,6 +17,7 @@ if(!isset($_SESSION['EmpID']))
     <?php
 }
 // global query
+$req_id = $_GET['request_id'];
 $Employee_Id = $_SESSION['EmpID'];
 $selector = sqlsrv_query($conn, "SELECT  * FROM HR_Master_Table
 WHERE Employee_Code = '$Employee_Id' ");
@@ -112,35 +87,6 @@ $Plant = $selector_arr1['Plant'];
             width: 209px !important;
         }
 
-        .error_msg {
-            display: none;
-            font-size: 13px;
-        }
-
-      /*  .replacement_feature {
-            display: none !important;
-        }*/
-
-
-        @media only screen and (max-width: 600px) {
-            .footer {
-                left: 0 !important;
-                text-align: center;
-             }      
-        }
-
-        .swal-footer {
-            text-align: center !important;
-        }
-
-        .excel_upload_div {
-            display: none;
-        }
-
-        .excel_request_upload_sample{
-            cursor: pointer;
-        }
-
         </style>
     </head>
 
@@ -203,18 +149,28 @@ $Plant = $selector_arr1['Plant'];
                         
 
                             <div class="row">
-                                <input type="hidden" id="trow_no" value="1">
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-body">
-    
+                                            <?php
+                                                $update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Request WHERE Request_ID = '$req_id'");
+                                                $updated_query = sqlsrv_fetch_array($update_qry);
+                                                $pl = $updated_query['Plant'];
+                                                $sl = $updated_query['Storage_Location'];
+                                                // echo $updated_query['Storage_Location'];exit;
+
+                                                $mat_group_query =  sqlsrv_query($conn, "SELECT TOP 1 * from Tb_Request_Items WHERE Request_ID = '".$updated_query['Request_ID']."'");
+
+                                                $mat_group_query_exec = sqlsrv_fetch_array($mat_group_query);
+
+                                            ?>
                                             <form  method="POST" id="request_form" enctype="multipart/form-data">
                                                 <div class="row">
                                                     <div class="col-md-2" > 
                                                         <div class="mb-3">
                                                             <label for="validationCustom01" class="form-label">RequestID</label>
                                                             <input type="text" class="form-control" id="validationCustom01" name="request_id"
-                                                                value="<?php echo auto_increment_request_id($conn) ?>" readonly>
+                                                                value="<?php echo $updated_query['Request_ID'] ?>" readonly>
                                                         </div>
                                                     </div>
                                                     <div class="col-md-2" >
@@ -222,7 +178,7 @@ $Plant = $selector_arr1['Plant'];
                                                             <label for="hasta" class="form-label">Department</label>
                                                             <input type="hidden" class="form-control" id="request" name="request_type1" value="Purchase & Vendor selection (R&VS)">
                                                             <input type="text" class="form-control" name="department" id="Department3" readonly
-                                                                value="<?php echo $department ?>" >
+                                                                value="<?php echo $updated_query['Department'] ?>" >
                                                         </div>
                                                     </div>
                                                     <div class="col-md-2" >
@@ -230,84 +186,94 @@ $Plant = $selector_arr1['Plant'];
                                                             <label for="Requester" class="form-label">Request Category</label>
                                                             <select class="select2 form-select " id="request_category" name="request_type">
                                                                 <option value="">Select Category</option>
-                                                                <option value="Asset purchases">Asset purchases</option>
-                                                                <option value="Material purchases">Material purchases</option>
-                                                                <option value="Services">Services</option>
+                                                                <option  <?php if ($updated_query['Request_Type'] == "Asset purchases") { ?> selected="selected" <?php } ?> value="Asset purchases">Asset purchases</option>
+                                                                <option  <?php if ($updated_query['Request_Type'] == "Material purchases") { ?> selected="selected" <?php } ?> value="Material purchases">Material purchases</option>
+                                                                <option  <?php if ($updated_query['Request_Type'] == "Services") { ?> selected="selected" <?php } ?> value="Services">Services</option>
                                                             </select>                                                        
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-2 plant_div" style="display:none;">
+                                                    <div class="col-md-2 plant_div">
                                                         <div class="mb-3">
-                                                            <label for="app" class="form-label plant-dropdown-label">Plant</label><br>
+                                                            <label for="app" class="form-label plant-dropdown-label">Plant</label>
                                                             <select class="form-select plant-dropdowns" name="plant_id" id="plant-dropdown">
+                                                                <option value="">Select Plant</option>
+                                                                <?php
+                                                                    $request_type = ($updated_query['Request_Type'] == 'Asset purchases') ? 'ZCAP' : (($updated_query['Request_Type'] == 'Material purchases') ? 'ZNB' : 'ZSER');
+
+                                                                    $plant = sqlsrv_query($conn, "SELECT DISTINCT Plant,Plant_Master_PO.Plant_Name from Tb_Master_Emp 
+                                                                        left join Plant_Master_PO on Plant_Master_PO.Plant_Code = Tb_Master_Emp.Plant
+                                                                        where Document_type = '".$request_type."' AND PO_creator_Release_Codes = '".$_SESSION['EmpID']."'");
+                                                                    while ($c = sqlsrv_fetch_array($plant)) {
+                                                                ?>
+                                                                <option <?php if (trim($updated_query['Plant']) == trim($c['Plant'])) { ?> selected="selected" <?php } ?> value="<?php echo $c['Plant'] ?>">
+                                                                    <?php echo $c['Plant'] ?> - <?php echo $c['Plant_Name'] ?> 
+                                                                </option>
+                                                                <?php
+                                                                }
+                                                                ?>
                                                             </select>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-2 storage_div" style="display:none;">
+
+                                                    <div class="col-md-2 storage_div" style="<?php if($updated_query['Request_Type'] == 'Services') { ?> display: none; <?php } ?>">
                                                         <div class="mb-3">
                                                             <label for="department" class="form-label storage-dropdown-label">Storage Location</label>
                                                             <select class="storage-dropdowns form-select" name="storage_location" id="storage-dropdown">
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-2 mat_group_div" style="display:none;">
-                                                        <div class="mb-3">
-                                                            <label for="mat_group" class="form-label mat_group_label" >Material Group</label>
-                                                           <select class="mat_group form-select add" name="mat_group" id="mat_group">
-                                                            </select>
-                                                        </div>
-                                                    </div>
-
-                                                <?php if($department == 'Sales & Marketing') { ?>
-
-                                                    <div class="col-md-2 season-div" style="display:none;">
-                                                        <div class="mb-3">
-                                                            <label for="season" class="form-label season_label" >Season</label>
-                                                           <select class="season form-select w-100" name="season" id="season" style="width:100%;">
-                                                                <option value="">Select Season</option>
-                                                                <?php 
-                                                                    $season_sql = "SELECT DISTINCT Season_Code from Master_Season where Default_Season = '1'";
-                                                                    $season_exec = sqlsrv_query($conn,$season_sql);
-                                                                    while($season_res  = sqlsrv_fetch_array($season_exec)) {
+                                                                <option value="">Select Storage Location</option>
+                                                                <?php
+                                                                    $storage = sqlsrv_query($conn, "SELECT DISTINCT StorageLocation,Plant,Storage_description from MaterialMaster Where Plant = '".$updated_query['Plant']."'");
+                                                                    while ($row = sqlsrv_fetch_array($storage)) {
                                                                 ?>
-                                                                <option value="<?php echo $season_res['Season_Code']; ?>"><?php echo $season_res['Season_Code']; ?></option>
+
+                                                                <option <?php if (trim($updated_query['Storage_Location']) == trim($row['StorageLocation'])) { ?> selected="selected" <?php } ?> value="<?php echo $row["StorageLocation"]; ?>">
+                                                                    <?php echo $row["Plant"]; ?>-
+                                                                    <?php echo $row["StorageLocation"] ?>-
+                                                                    <?php echo $row["Storage_description"]; ?>
+                                                                </option>
                                                                 <?php } ?>
                                                             </select>
                                                         </div>
                                                     </div>
-
-                                                    <div class="col-md-2 activity-div" style="display:none;">
+                                                    <div class="col-md-2 mat_group_div">
                                                         <div class="mb-3">
-                                                            <label for="activity" class="form-label activity_label" >Activity</label>
-                                                           <select class="activity form-select w-100" name="activity" id="activity" style="width:100%;">
-                                                                <option value="">Select Activty</option>
-                                                                <option value="PSA">PSA</option>
-                                                                <option value="PDA">PDA</option>
+                                                            <label for="mat_group" class="form-label mat_group_label" >Material Group</label>
+                                                           <select class="mat_group form-select add" name="mat_group" id="mat_group">
+                                                                <option value="">Select Material Group</option>
+                                                                <?php
+
+
+                                                                if($updated_query['Request_Type'] == 'Services') {
+
+                                                                    $material  = sqlsrv_query($conn, "SELECT DISTINCT Material_Group as MaterialGroup from Tb_Master_Emp where Document_type = 'ZSER' and Plant = '".$updated_query['Plant']."' and PO_creator_Release_Codes = '".$_SESSION['EmpID']."'");
+                                                                } else {
+                                                                    $material = sqlsrv_query($conn, "SELECT MaterialMaster.MaterialGroup FROM MaterialMaster 
+                                                                    INNER JOIN (SELECT DISTINCT Material_Group,PO_creator_Release_Codes FROM Tb_Master_Emp) as Tb_Master_Emp ON MaterialMaster.MaterialGroup = Tb_Master_Emp.Material_Group 
+                                                                    AND Tb_Master_Emp.PO_creator_Release_Codes = '".$_SESSION['EmpID']."' 
+                                                                    WHERE MaterialMaster.StorageLocation = '".$updated_query['Storage_Location']."' AND MaterialMaster.Plant = '".$updated_query['Plant']."'  
+                                                                    GROUP BY MaterialMaster.MaterialGroup");
+                                                                }
+
+
+                                                                    while ($row = sqlsrv_fetch_array($material)) {
+                                                                ?>
+
+                                                                <option <?php if (trim($mat_group_query_exec['MaterialGroup']) == trim($row['MaterialGroup'])) { ?> selected="selected" <?php } ?> value="<?php echo $row["MaterialGroup"]; ?>">
+                                                                    <?php echo $row["MaterialGroup"]; ?>
+                                                                </option>
+                                                                <?php } ?>
+                                                            
                                                             </select>
                                                         </div>
                                                     </div>
-
-                                                    <div class="col-md-2 crop-year-div" style="display:none;">
-                                                        <div class="mb-3">
-                                                            <label for="crop_year" class="form-label crop_year_label" >Year</label>
-                                                            <?php
-                                                             $year_sql = "SELECT * from ANP_Config_Business_Year WHERE CAST(GETDATE() AS DATE) BETWEEN from_date AND to_date";
-                                                             $year_exec = sqlsrv_query($conn,$year_sql);
-                                                             $year_res  = sqlsrv_fetch_array($year_exec);
-
-                                                            ?>
-                                                           <select class="crop_year form-select" name="crop_year" id="crop_year" style="width:100%;">
-                                                                <option value="">Select Year</option>
-                                                                <option value="<?php echo $year_res['Business_Year']; ?>"><?php echo $year_res['Business_Year']; ?></option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-
-                                                    <?php } ?>
                                                 </div>
 
                                                 <div class="row" style="padding: 0px 0px 20px 0px;">
                                                     <div class="table-responsive">
+                                                        <?php
+                                                             
+                                                            $replacement_style = ($updated_query['Request_Type'] != 'Asset purchases') ? 'display:none !important;' : '';   
+
+                                                        ?>
                                                         <table id="table_id" class="table dt-table-hover" style="width:100%">
                                                             <thead>
                                                                 <tr>
@@ -317,7 +283,7 @@ $Plant = $selector_arr1['Plant'];
                                                                     <th>UOM</th>
                                                                     <th>Material Group</th>
                                                                     <th>Quantity</th>
-                                                                    <th class="replacement_feature">Replacement</th>
+                                                                    <th class="replacement_feature" style="<?php echo $replacement_style; ?>">Replacement</th>
                                                                     <th>Expected Date</th>
                                                                     <th>Specification </th>
                                                                     <th>Attachment</th>
@@ -325,8 +291,171 @@ $Plant = $selector_arr1['Plant'];
                                                                     <th>Action</th>
                                                                 </tr>
                                                             </thead>
+                                                            <?php                                                  
+                                                                $sql = "SELECT * FROM Tb_Request INNER JOIN Tb_Request_Items
+                                                                ON Tb_Request.Request_ID = Tb_Request_Items.Request_ID WHERE Tb_Request.Request_ID = '$req_id'";
+                                                                $stmt = sqlsrv_query($conn, $sql,array(), array("Scrollable" => 'static'));
+                                                                $row_count = sqlsrv_num_rows($stmt);
+                                                            ?>
+                                                            <input type="hidden" id="trow_no" value="<?php echo $row_count; ?>">
                                                             <tbody class="tbody material_section_body">
+                                                                <?php
 
+
+                                                                    $row_no = 1;
+                                                                    while ($row = sqlsrv_fetch_array($stmt)) {
+                                                                        $MatrialGroup = $row['MaterialGroup'];
+                                                                        $storage = $row['Storage_Location'];
+                                                                ?>
+
+                                                                <tr data-rowno="<?php echo $row_no; ?>">
+                                                                        <td class="sr_no">
+                                                                            <input type="hidden" class="form-control"name="id[]" value="<?php echo $row['ID'] ?>">
+                                                                            <?php echo $row_no; ?>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="col-md-12" >
+                                                                                <select class="select2 form-control items-dropdown" id="item-dropdown<?php echo $row_no; ?>" style="width: 175px;" data-id="<?php echo $row_no; ?>" name="item_code[]" placeholder="Select Name." >
+                                                                                    <option value="">Select Item Code</option>
+                                                                                    <option <?php if ($row['Item_Code'] == 'New_Item') { ?> selected="selected" <?php } ?> value="New_Item">New Item</option>
+                                                                                    <?php
+                                                                                    if($row['Request_Type'] == 'Services') {
+                                                                                        $result1 = sqlsrv_query($conn, "SELECT DISTINCT ASNUM as ItemCode,ASKTX as ItemDescription from SERVICE_MATERIAL_MASTER"); 
+                                                                                    } else {    
+                                                                                        $result1 = sqlsrv_query($conn, "SELECT MaterialMaster.Plant,MaterialMaster.ItemCode,MaterialMaster.ItemDescription,MaterialMaster.MaterialGroup,Tb_Master_Emp.Material_Group,Tb_Master_Emp.Plant FROM MaterialMaster INNER JOIN Tb_Master_Emp
+                                                                                        ON MaterialMaster.MaterialGroup = Tb_Master_Emp.Material_Group 
+                                                                                         AND Tb_Master_Emp.Plant = MaterialMaster.Plant 
+                                                                                        WHERE MaterialMaster.Plant = '".$updated_query['Plant']."' AND MaterialMaster.StorageLocation = '".$updated_query['Storage_Location']."' AND Material_Group = '".$mat_group_query_exec['MaterialGroup']."' AND Tb_Master_Emp.PO_creator_Release_Codes = '$Employee_Id'
+                                                                                        GROUP BY MaterialMaster.Plant,MaterialMaster.ItemCode,MaterialMaster.ItemDescription,MaterialMaster.MaterialGroup,Tb_Master_Emp.Material_Group,Tb_Master_Emp.Plant");
+                                                                                    }
+                                                                                    while ($row1 = sqlsrv_fetch_array($result1)) {
+                                                                                    ?>
+                                                                                    <option <?php if (trim($row['Item_Code']) == trim($row1['ItemCode'])) { ?> selected="selected" <?php } ?> value="<?php echo $row1["ItemCode"]; ?>"><?php echo $row1["ItemDescription"]; ?>&nbsp;-&nbsp;
+                                                                                        <?php echo $row1["ItemCode"]; ?></option>
+                                                                                    <?php } ?>
+
+                                                                                </select>
+                                                                            </div>
+                                                                            <span class="badge bg-info text-white text-center p-1 mt-2 item_code_info" style="font-size: 13px;"><?php echo $row["Item_Code"]; ?></span>
+                                                                        </td>
+                                                                        <td id="divn">
+                                                                            <div class="col-md-12">
+                                                                            <textarea id="description<?php echo $row_no; ?>" style="width: 210px;" class="form-control disabled description" name="description[]"   row="2" placeholder="Enter Description" required=""><?php echo $row['Description']; ?></textarea>
+
+                                                                            </div>
+                                                                        </td>
+                                                                        <td id="divb">
+                                                                            <div class="col-md-12" >
+                                                                                <input type="text" class="form-control disabled uom" id="uom<?php echo $row_no; ?>" style="width: 110px;"  name="uom[]" readonly placeholder="Enter UOM" value="<?php echo $row['UOM']; ?>">
+                                                                            </div>
+                                                                        </td>
+                                                                        <td id="divb">
+                                                                            <div class="col-md-12" id="existing_material_div">
+                                                                                <input type="text" class="form-control  disabled MaterialGroup" style="width: 100px;" id="MaterialGroup<?php echo $row_no; ?>"  readonly name="MaterialGroup[]" placeholder="Enter MaterialGroup" value="<?php echo $row['MaterialGroup']; ?>">
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="col-md-12">
+                                                                                <input type="number" min="0" class="form-control uqty" id="quantity<?php echo $row_no; ?>" style="width: 125px;" name="quantity[]"  placeholder="Enter Quantity" data-id="<?php echo $row_no; ?>" required="" value="<?php echo $row['Quantity']; ?>">
+                                                                            </div>
+                                                                        </td>
+
+                                                                        <td class="replacement_feature" style="<?php echo $replacement_style; ?>">
+                                                                            <div class="col-md-12">
+                                                                                <select class="select2 form-control replacement-dropdown" id="replace<?php echo $row_no; ?>"  data-id="<?php echo $row_no; ?>" name="replace[]" style="width: 145px;" disabled>
+                                                                                    <option value="">Select</option>
+                                                                                    <option value="new" <?php if ($row['Replace_Type'] == 'new') { ?> selected="selected" <?php } ?>>New</option>
+                                                                                    <option value="replacement" <?php if ($row['Replace_Type'] == 'replacement') { ?> selected="selected" <?php } ?>>Replacement</option>
+                                                                                </select>
+                                                                                <?php if($row['Replace_Type'] == 'replacement')
+                                                                                {?>
+                                                                                    <button type="button" class="btn btn-primary editModalBtn mt-1" data-bs-toggle="modal" id="editModalBtn<?php echo $row_no; ?>" data-bs-target="#editModal" data-btn="<?php echo $row_no; ?>">
+                                                                                        Edit Replacement
+                                                                                  </button>
+
+                                                                                   <div class="modal editModal" id="editModal" tabindex="-1">
+                                                                                        <div class="modal-dialog">
+                                                                                            <div class="modal-content">
+                                                                                                <div class="modal-header">
+                                                                                                    <h5 class="modal-title">Edit Replacement Details</h5>
+                                                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                                                </div>
+                                                                                                <div class="modal-body">
+                                                                                                    <!-- Inputs for the modal -->
+                                                                                                    <div class="form-group">
+                                                                                                        <label for="modal_dateofpurchase">Date of Purchase</label>
+                                                                                                        <input type="date" class="form-control emodal_dateofpurchase" id="emodal_dateofpurchase" required>
+                                                                                                    </div>
+                                                                                                    <div class="form-group">
+                                                                                                        <label for="modal_qty">Quantity</label>
+                                                                                                        <input type="number" class="form-control emodal_qty" id="emodal_qty" required>
+                                                                                                    </div>
+                                                                                                    <div class="form-group">
+                                                                                                        <label for="modal_remarks">Remarks</label>
+                                                                                                        <textarea class="form-control emodal_remarks" id="emodal_remarks" required></textarea>
+                                                                                                    </div>
+                                                                                                    <div class="form-group">
+                                                                                                        <label for="modal_cost">Cost</label>
+                                                                                                        <input type="text" class="form-control emodal_cost" id="emodal_cost" required>
+                                                                                                    </div>
+                                                                                                    <!-- Hidden input to store the row ID -->
+                                                                                                    <input type="hidden" class="erow_id" id="erow_id">
+                                                                                                </div>
+                                                                                                <div class="modal-footer">
+                                                                                                    <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> -->
+                                                                                                    <button type="button" class="btn btn-primary updateReplacement" id="updateReplacement">Save changes</button>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                              <?php }
+                                                                              //else{ ?>
+
+                                                                                <!-- <input type="hidden" class="select2 form-control replacement-dropdown" id="replace<?php //echo $row_no; ?>"  data-id="<?php //echo $row_no; ?>" name="replace[]"> -->
+
+                                                                              <?php //} ?>
+                                                                                <input type="hidden" id="rdateofpurchase<?php echo $row_no; ?>" name="rdateofpurchase[]" value="<?php echo $row['Date_of_Purchase']; ?>">
+                                                                                <input type="hidden" id="rqty<?php echo $row_no; ?>" value="<?php echo $row['Replace_Qty']; ?>" name="rqty[]">
+                                                                                <input type="hidden" id="rremarks<?php echo $row_no; ?>" name="rremarks[]" value="<?php echo $row['Replace_Remarks']; ?>">
+                                                                                <input type="hidden" id="rcost<?php echo $row_no; ?>" name="rcost[]" value="<?php echo $row['Replace_Cost']; ?>">
+
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="col-md-12">
+                                                                                <input type="date" class="form-control" id="Expected_Date<?php echo $row_no; ?>" style="width: 155px;" min="<?php echo date("Y-m-d"); ?>" value="<?php echo date('Y-m-d'); ?>" name="Expected_Date[]"  placeholder="Enter Date" required="" value="<?php echo $row['Expected_Date']; ?>">
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="col-md-12">
+                                                                                <textarea id="Specification<?php echo $row_no; ?>" class="form-control" name="Specification[]" style="width: 155px;height: 36px;"  row="2" placeholder="Enter Specification" required=""><?php echo $row['Specification']; ?></textarea>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="col-md-12">
+                                                                                <input class="form-control file-upload-input" type="file"  id="Attachment<?php echo $row_no; ?>" style="width: 170px;" name="Attachment[]"  placeholder="Enter Quantity" >
+                                                                                <input type="hidden" name="Saved_Attachment[]" value="<?php echo $row['Attachment']; ?>">
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="col-md-12">
+                                                                            
+                                                                                <select class="select2 form-control" id="type_val" data-id="<?php echo $row_no; ?>"  name="budget[]" style="width: 145px;"  onchange="openPopup(this);" >
+                                                                                    <option <?php if ($row['Budget'] == "Yes") { ?> selected="selected" <?php } ?> value="Yes">Yes</option>
+                                                                                    <option <?php if ($row['Budget'] == "No") { ?> selected="selected" <?php } ?> value="No">No</option>
+                                                                                </select>
+                                                                            </div>
+                                                                        </td>
+
+                                                                        <?php  if($row_no != 1) { ?> 
+                                                                        <td>
+                                                                            <i class="fa fa-times remove text-danger"  ></i>
+                                                                        </td>
+                                                                        <?php } ?>
+
+                                                                </tr>
+                                                                <?php $row_no++; } ?>
                                                             </tbody>
                                                         </table>
                                                     </div>
@@ -335,25 +464,8 @@ $Plant = $selector_arr1['Plant'];
                                                     </div>
                                                     <!-- END MODEL -->
                                                 </div>
-                                                <div class="row justify-content-end mt-3 mb-3">
-                                                    <div class="col-md-4 excel_upload_div">
-                                                        <div class="row">
-                                                            <div class="col-md-9">
-                                                                <a href="assets/purchase_request_sample/sample_purchase_request.xlsx" download class="excel_request_upload_sample text-danger"><i class="fa fa-download"></i>  Click here to download sample file</a>
-                                                                <input type="file" id="material_upload_file" class="form-control" name="material_upload_file">
-                                                            </div>
-                                                            <div class="col-md-3 mt-4">
-
-                                                                <button type="button" class="btn btn-sm btn-info text-white request_upload">
-                                                                <span class="btn-label">
-                                                                    <i class="fa fa-upload" aria-hidden="true"></i>
-                                                                </span> Upload 
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="col-md-1 text-end pb-3 mt-4">
+                                                 <div class="row">
+                                                    <div class="text-end pb-3">
                                                         <button type="button" class="btn btn-primary btn-sm" id="add">
                                                         <span class="btn-label">
                                                             <i class="fa fa-plus"></i>
@@ -381,12 +493,13 @@ $Plant = $selector_arr1['Plant'];
                                                 <div class="row mb-3">
                                                     <label for="example-datetime-local-input" class="col-md-2 col-sm-2 col-form-label">Informer Details</label>
                                                     <div class="col-md-10 col-sm-10 informer-div">
-                                                        <select class="select2 form-control select2-multiple" name="persionp"  implode multiple data-placeholder="Choose ...">
+                                                        <select class="select2 form-control select2-multiple" name="persion[]"  implode multiple data-placeholder="Choose ...">
                                                             <?php
                                                                 $HR_Master_Table = sqlsrv_query($conn, "Select * from HR_Master_Table ");
                                                                 while ($HR = sqlsrv_fetch_array($HR_Master_Table)) {
+                                                                    $res = explode(',',$updated_query['Persion_In_Workflow']);
                                                                 ?>
-                                                                <option value="<?php echo $HR['Employee_Code'] ?>">
+                                                                 <option <?= (in_array($HR['Employee_Code'],$res)) ? 'selected' : ''?> value="<?php echo $HR['Employee_Code'] ?>">
                                                                     <?php echo $HR['Employee_Name'] ?>&nbsp;-&nbsp;<?php echo $HR['Employee_Code'] ?>
                                                                 </option>
                                                             <?php } ?>
@@ -404,8 +517,6 @@ $Plant = $selector_arr1['Plant'];
                                                               <!-- <th>Finance</th> -->
                                                               <th>Recommender</th>
                                                               <th>Approver</th>
-                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
-                                                              
                                                             </tr>
                                                           </thead>
                                                           <tbody id="involved_persons_tbody">
@@ -418,7 +529,7 @@ $Plant = $selector_arr1['Plant'];
                                                   <div class="row mb-3 refer1">
                                                     <label for="example-datetime-local-input" class="col-sm-2 col-form-label">Reference</label>
                                                     <div class="col-sm-5">
-                                                        <input type="text" class="CD_Supplr form-control" name="reference" >
+                                                        <input type="text" class="CD_Supplr form-control" name="reference" value="<?php echo $updated_query['Reference']; ?>">
                                                     </div>
                                                     <div class="col-sm-5">
                                                         <tr>
@@ -514,13 +625,10 @@ $Plant = $selector_arr1['Plant'];
                                                                                                 </select>
                                                                                             </div>
                                                                                         </div>
-
                                                                                     </div>
                                                                                     <br>
-                                                                                    <center>
-                                                                                        <button type="button" id="filter" name="filter" class="btn btn-primary">Apply</button>
-                                                                                         <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-                                                                                    </center>
+                                                                                    <center><button type="button" id="filter" name="filter" class="btn btn-primary">Apply</button>
+                                                                                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button></center>
                                                                                 <!-- </form> -->
                                                                                 <div class="table-responsive">  
                                                                                 <table id="datatable" class="items table table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
@@ -586,7 +694,7 @@ $Plant = $selector_arr1['Plant'];
 
                         </div>
 
-                       <div class="modal replacementModal" id="replacementModal" tabindex="-1">
+                        <div class="modal replacementModal" id="replacementModal" tabindex="-1">
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header">
@@ -621,8 +729,6 @@ $Plant = $selector_arr1['Plant'];
                                 </div>
                             </div>
                         </div>
-
-
         
                         
                     </div> <!-- container-fluid -->
@@ -672,21 +778,27 @@ $Plant = $selector_arr1['Plant'];
         <script>
             var i = 1;
             var sno = 1;
-            var appendQty = '';
+            var appendQty='';
+            var appendQty1='';
 
             // ON CHANGE DROPDOWN 
-            $(document).ready(function () {
-                $('.plant_div').hide();
-                $('.storage_div').hide();
-                $('.mat_group_div').hide();     
+            $(document).ready(function () {     
+                $('#plant-dropdown').select2();
+                $("#storage-dropdown").select2();
+                $('#mat_group').select2();
 
-                $('#save').attr('disabled', true);
-                $('#add').attr('disabled', true);
+                var Plant         = $('#plant-dropdown').val();
+                var MaterialGroup = $('#mat_group').val();
+
+                get_involved_persons(Plant,MaterialGroup); 
 
 
-                $('.season').select2();
-                $('.activity').select2();
-                $('.crop_year').select2();
+                //update the items row no start
+                var row_no = $('#trow_no').val();                         
+                row_no++;
+
+                $('#trow_no').val(row_no);
+                //update the items row no end 
             });
 
             $(document).on('input', '.quantity', function () {
@@ -694,6 +806,72 @@ $Plant = $selector_arr1['Plant'];
                 var id = $(this).data('id');
                 appendQty = $('#quantity'+id).val();
             });
+
+            $(document).on('input', '.uqty', function () {
+                var id = $(this).data('id');
+
+                appendQty1 = $('#quantity'+id).val();
+
+                // console.log(id)
+                // console.log(appendQty1)
+
+
+                $('#rqty'+id).val(appendQty1);
+                
+            });
+
+            $(document).on('click', '.editModalBtn', function (e) {
+                e.preventDefault();
+
+                var rowId = $(this).data('btn');
+                var addQty = $('#quantity'+rowId).val();
+                console.log(rowId)
+                var newDateInputId = 'emodal_dateofpurchase' + rowId;
+                $('.emodal_dateofpurchase').attr('id', newDateInputId);
+
+                var newQtyInputId = 'emodal_qty' + rowId;
+                $('.emodal_qty').attr('id', newQtyInputId);
+
+                var newRemarkInputId = 'emodal_remarks' + rowId;
+                $('.emodal_remarks').attr('id', newRemarkInputId);
+
+                var newCostInputId = 'emodal_cost' + rowId;
+                $('.emodal_cost').attr('id', newCostInputId);
+
+                var newRowInputId = 'erow_id' + rowId;
+                $('.erow_id').attr('id', newRowInputId);
+
+                 // var newBtnInputId = 'erow_id' + rowId;
+                 $('.updateReplacement').attr('data-btnupdate', rowId);
+
+
+                var rdateofpurchase = $('#rdateofpurchase'+ rowId).val();
+                var rqty = $('#rqty'+ rowId).val();
+
+
+                var rremarks = $('#rremarks'+ rowId).val();
+                var rcost = $('#rcost'+ rowId).val();
+
+
+                $('#erow_id'+ rowId).val(rowId);
+                $('#emodal_dateofpurchase'+ rowId).val(rdateofpurchase);
+                $('#emodal_remarks'+ rowId).val(rremarks);
+                // $('#emodal_qty' + rowId).val(appendQty1);
+                $('#emodal_cost'+ rowId).val(rcost);
+
+                if(appendQty1!='')
+                {
+                    $('#emodal_qty' + rowId).val(appendQty1);
+                }
+                else
+                {
+                    $('#emodal_qty' + rowId).val(rqty);
+                }
+
+
+                $('#editModal').modal('show');
+            });
+
 
 
 
@@ -703,17 +881,10 @@ $Plant = $selector_arr1['Plant'];
                 $(".storage_div").hide();
                 $(".mat_group_div").hide();
 
-                $('.season-div').hide();
-                $('.activity-div').hide();
-                $('.crop-year-div').hide();  
-                $('.excel_upload_div').hide();
-
                 $('.material_section_body').empty();
-
 
                 // request type document no set 
                 var request_type_code = (request_type == 'Asset purchases') ? 'ZCAP' : ((request_type == 'Material purchases') ? 'ZNB' : 'ZSER');
-
 
                 $('#trow_no').val(1);
 
@@ -728,7 +899,7 @@ $Plant = $selector_arr1['Plant'];
                     success: function(response) {
                         var option = '<option value"">Choose Plant</option>';
                         for(i in response) {
-                            option += `<option value="${ response[i].Plant }">${ response[i].Plant } - ${ response[i].Plant_Name}</option>`;
+                            option += `<option value="${ response[i].Plant }">${ response[i].Plant } - ${ response[i].Plant_Name }</option>`;
                         }
 
                         $('#plant-dropdown').html(option);
@@ -742,7 +913,6 @@ $Plant = $selector_arr1['Plant'];
                     }
                 });
 
-
                 // replacement option show only for asset purchases category
                 $('.replacement_feature').show();
                 if(request_type != 'Asset purchases') {
@@ -755,70 +925,30 @@ $Plant = $selector_arr1['Plant'];
 
             $('#plant-dropdown').on('change', function () {
                 var Plant_Code = this.value;
-                var request_type = $('#request_category').val();
-                var request_type_code = (request_type == 'Asset purchases') ? 'ZCAP' : ((request_type == 'Material purchases') ? 'ZNB' : 'ZSER');
-
                 $(".storage_div").hide();
                 $(".mat_group_div").hide();
-                $('.season-div').hide();
-                $('.activity-div').hide();
-                $('.crop-year-div').hide();  
-                $('.excel_upload_div').hide();
-
                 $('.material_section_body').empty();
                 $('#trow_no').val(1);
 
-                if(request_type_code == 'ZSER') {
-                    $.ajax({
-                        url: "common_ajax.php",
-                        type: "POST",
-                        data: {
-                            Action : 'get_material_group',
-                            Plant : Plant_Code,
-                            request_type : request_type_code
-                        },
-                        cache: false,
-                        dataType: 'json',
-                        beforeSend:function(){
-                            $('#ajax-preloader').show();
-                        },
-                        success: function (result) {
-                            var option = '<option value="">Select Material Group</option>'
-                            for(i in result) {
-                                option += `<option value="${ result[i].MaterialGroup }">${ result[i].MaterialGroup }</option>`;
-                            }
-                            $('#mat_group').html(option);
-                            $('#mat_group').select2();
-                            $('.mat_group_div').show();
-                        },
-                        complete:function(){
-                            $('#ajax-preloader').hide();
-                        }
-                    });
-                } else {
-                    $.ajax({
-                        url: "fetch-storage.php",
-                        type: "POST",
-                        data: {
-                            Plant_Code: Plant_Code
-                        },
-                        cache: false,
-                        beforeSend:function(){
-                            $('#ajax-preloader').show();
-                        },
-                        success: function (result) {
-                            $("#storage-dropdown").html(result);
-                            $("#storage-dropdown").select2();
-                            $(".storage_div").show();
-                            if(request_type_code == 'ZSER') {
-                                $(".storage_div").hide();
-                            } 
-                        },
-                        complete:function(){
-                            $('#ajax-preloader').hide();
-                        }
-                    });
-                }
+                $.ajax({
+                    url: "fetch-storage.php",
+                    type: "POST",
+                    data: {
+                        Plant_Code: Plant_Code
+                    },
+                    cache: false,
+                    beforeSend:function(){
+                        $('#ajax-preloader').show();
+                    },
+                    success: function (result) {
+                        $("#storage-dropdown").html(result);
+                        $("#storage-dropdown").select2();
+                        $(".storage_div").show();
+                    },
+                    complete:function(){
+                        $('#ajax-preloader').hide();
+                    }
+                });
             });
 
 
@@ -828,11 +958,6 @@ $Plant = $selector_arr1['Plant'];
                 var Plant  = $('#plant-dropdown').val();
 
                 var request_type = $('#request_category').val();
-
-                $('.season-div').hide();
-                $('.activity-div').hide();
-                $('.crop-year-div').hide();  
-                $('.excel_upload_div').hide();
 
               // request type document no set 
                 var request_type_code = (request_type == 'Asset purchases') ? 'ZCAP' : ((request_type == 'Material purchases') ? 'ZNB' : 'ZSER');
@@ -879,23 +1004,13 @@ $Plant = $selector_arr1['Plant'];
                 $('.material_section_body').empty();
                 $('#trow_no').val(1);
 
-                var request_type = $('#request_category').val();
-
-              // request type document no set 
-                var request_type_code = (request_type == 'Asset purchases') ? 'ZCAP' : ((request_type == 'Material purchases') ? 'ZNB' : 'ZSER');
-
-                $('.season-div').show();
-                $('.activity-div').show();
-                $('.crop-year-div').show();     
-
                 $.ajax({
                     url: "fetch-item-code.php?employe=<?php echo $Employee_Id ?>",
                     type: "POST",
                     data: {
                         Storage_Location: Storage_Location,
                         Plant : Plant,
-                        MaterialGroup : MaterialGroup,
-                        request_type_code : request_type_code
+                        MaterialGroup : MaterialGroup
                     },
                     cache: false,                        
                     beforeSend:function(){
@@ -904,9 +1019,6 @@ $Plant = $selector_arr1['Plant'];
                     success: function (result) {
                         $(".items-dropdown").html(result);
                         $(".items-dropdown").select2();
-
-                        $(".replacement-dropdown").select2();
-
                         $('#MaterialGroup1').val(MaterialGroup);
                         $('#add').prop('disabled',false);  
                         get_involved_persons(Plant,MaterialGroup);                          
@@ -936,21 +1048,12 @@ $Plant = $selector_arr1['Plant'];
                         var table_data = '';
                         if(result.length > 0) {
                             // <td>${ result[0].verifier_name }</td>
-                            $('.inv_fin_appr').hide();
-
                             table_data = `<tr>
                             <td>${ (result[0].purchaser_name != '' && result[0].purchaser_name != null) ? result[0].purchaser_name : '-' }</td>
                             <td>${ (result[0].recommendor_name != '' && result[0].recommendor_name != null) ? result[0].recommendor_name : '-' }</td>
-                            <td>${ (result[0].approver_name != '' && result[0].approver_name != null) ? result[0].approver_name : '-' }</td>`; 
+                            <td>${ (result[0].approver_name != '' && result[0].approver_name != null) ? result[0].approver_name : '-' }</td>
+                            </tr>`; 
 
-                            if(result[0].approver2_name != null) {
-                                table_data += `<td>${ (result[0].approver2_name != null) ? result[0].approver2_name : '-' }</td>`;
-                                $('.inv_fin_appr').show();
-                            }
-                            table_data += `</tr>`; 
-
-                        } else {
-                            $('#save').attr('disabled','disabled');
                         }
                         $('#involved_persons_tbody').html(table_data);  
                         $('#involved_persons_div').show();                                  
@@ -962,21 +1065,13 @@ $Plant = $selector_arr1['Plant'];
             }
 
 
-            $(document).on('change', '.add', function () {
-                add_row();
-                $('#save').attr('disabled',false);
-                
-                // Material purchase request type only enable excel upload
-                var request_type = $('#request_category').val();
-                if(request_type == 'Material purchases') {
-                    $('.excel_upload_div').show();
-                }
-            });
-
             $(document).on('change', '.items-dropdown', function () {
                 var ItemCode = $(this).val();
                 var ItemCode_closet = $(this);
+
                 var id = $(this).data('id');
+
+                console.log(id)
                 $('#replace'+id).prop('disabled',false);
 
                 if(ItemCode=='New_Item')
@@ -986,6 +1081,13 @@ $Plant = $selector_arr1['Plant'];
                     $('#uom'+id).removeClass('disabled');
                     $('#uom'+id).val('');
                     $('#description'+id).val('');
+
+                    $('#editModalBtn'+id).css('display','none');
+
+                    $('#rdateofpurchase' + id).val('');
+                    $('#rqty' + id).val('');
+                    $('#rremarks' + id).val('');
+                    $('#rcost' + id).val('');
                 }
                 else
                 {
@@ -994,73 +1096,50 @@ $Plant = $selector_arr1['Plant'];
                     $('#uom'+id).addClass('disabled');
                     $(this).closest('td').find('.item_code_info').text(ItemCode);
                     $(this).closest('td').find('.item_code_info').show();
-
                 }
-
-
-
-                var request_type = $('#request_category').val();
-
-              // request type document no set 
-                var request_type_code = (request_type == 'Asset purchases') ? 'ZCAP' : ((request_type == 'Material purchases') ? 'ZNB' : 'ZSER');
 
                 $.ajax({
                     url: "getUser.php",
                     dataType: 'json',
                     type: 'POST',
                     async: true,
-                    data: { ItemCode: ItemCode,request_type_code : request_type_code },
+                    data: { ItemCode: ItemCode },
                     success: function (data) {
                         ItemCode_closet.closest('tr').find('.uom').val(data.UOM);
                         ItemCode_closet.closest('tr').find('.description').val(data.ItemDescription);
                     }
                 });
-                // $.ajax({
-                //     url: "fetch-new.php?employe=<?php echo $Employee_Id ?>",
-                //     type: "POST",
-                //     data: {
-                //         ItemCode: ItemCode
-                //     },
-                //     cache: false,
-                //     success: function (result) {
-                //         $(".MaterialGroupda").html(result);
-                //         $(".MaterialGroupda").select2();
-                //     }
-                // });
+
 
                 $.ajax({
                     url: "fetch-item-metrial.php?employe=<?php echo $Employee_Id ?>",
                     type: "POST",
                     data: {
-                        ItemCode: ItemCode,
-                        request_type_code : request_type_code
+                        ItemCode: ItemCode
                     },
                     cache: false,
                     success: function (result) {
-                        if(request_type_code == 'ZSER') {
-                            var mat_group = $('#mat_group').val();
-                            ItemCode_closet.closest('tr').find('.MaterialGroup').val(mat_group);
-                        } else {
-                            ItemCode_closet.closest('tr').find('.MaterialGroup').val(result.MaterialGroup);
-                        }
+                        ItemCode_closet.closest('tr').find('.MaterialGroup').val(result.MaterialGroup);
                     }
                 });
 
             });
 
             $(document).on('change', '.replacement-dropdown', function () {
-                $('#modal_dateofpurchase').val('');
-                $('#modal_qty').val('');
-                $('#modal_remarks').val('');
-                $('#modal_cost').val('');
+
+             $('#modal_dateofpurchase').val('');
+             $('#modal_qty').val('');
+             $('#modal_remarks').val('');
+             $('#modal_cost').val(''); 
 
                 var id = $(this).data('id');
-                var type = $('#replace' + id).val();
-                var quantity = $('#quantity' + id).val(); // Get the quantity value
+                var type = $('#replace'+id).val();
 
-                    if (type == 'replacement') {
+                var newQty = $('#quantity'+id).val();
 
-                        if (quantity === '' || quantity === null) {
+                if(type == 'replacement')
+                {
+                    if (newQty === '' || newQty === null) {
                             // Throw an alert if quantity is empty
                             
                                 alert('Please enter a quantity before selecting replacement type.');
@@ -1074,39 +1153,40 @@ $Plant = $selector_arr1['Plant'];
                                 keyboard: false
                             });
 
+
+                        // console.log(id)
+                        // console.log(appendQty1)
+
+
+                        $('#rqty'+id).val(appendQty1);
+
                             $('#row_id').val(id);
-                            $('#modal_qty').val(quantity); // Set quantity value in modal
-                            $('#modal_qty').attr('readonly', true);
+                            $('#modal_qty').val(newQty);
+                            $('#modal_qty').attr('readonly',true);
                             $('#replacementModal').modal('show');
                         }
                 }
             });
 
+            // Save modal data and update the hidden fields in the corresponding row
+            // $(document).on('click', '#saveReplacement', function () {
+            //     var row_id = $('#row_id').val();  // Retrieve the stored row ID from the modal
 
-            // $(document).on('change', '.replacement-dropdown', function () {
+            //     // Extract values from modal inputs
+            //     var dateOfPurchase = $('#modal_dateofpurchase').val();
+            //     var qty = $('#modal_qty').val();
+            //     var remarks = $('#modal_remarks').val();
+            //     var cost = $('#modal_cost').val();
 
-            //  $('#modal_dateofpurchase').val('');
-            //  $('#modal_qty').val('');
-            //  $('#modal_remarks').val('');
-            //  $('#modal_cost').val(''); 
+            //     // Update the hidden fields in the corresponding row
+            //     // $('#replace' + row_id).val('replacement');  // Set replacement dropdown value
+            //     $('#rdateofpurchase' + row_id).val(dateOfPurchase);  // Update hidden field
+            //     $('#rqty' + row_id).val(qty);  // Update hidden field
+            //     $('#rremarks' + row_id).val(remarks);  // Update hidden field
+            //     $('#rcost' + row_id).val(cost);  // Update hidden field
 
-            //     var id = $(this).data('id');
-            //     var type = $('#replace'+id).val();
-
-            //     var quantity = $('#quantity'+id).val();
-
-            //     if(type == 'replacement')
-            //     {
-            //         $('#replacementModal').modal({
-            //             backdrop: 'static',
-            //             keyboard: false
-            //         });
-
-            //         $('#row_id').val(id);
-            //         $('#modal_qty').val(appendQty);
-            //         $('#modal_qty').attr('readonly',true);
-            //         $('#replacementModal').modal('show');
-            //     }
+            //     // Close the modal after saving
+            //     $('#replacementModal').modal('hide');
             // });
 
             // Save modal data and update the hidden fields in the corresponding row
@@ -1153,25 +1233,58 @@ $Plant = $selector_arr1['Plant'];
 
 
             // Save modal data and update the hidden fields in the corresponding row
-            // $(document).on('click', '#saveReplacement', function () {
-            //     var row_id = $('#row_id').val();  // Retrieve the stored row ID from the modal
+            $(document).on('click', '#updateReplacement', function (e) {
+                e.preventDefault();
 
-            //     // Extract values from modal inputs
-            //     var dateOfPurchase = $('#modal_dateofpurchase').val();
-            //     var qty = $('#modal_qty').val();
-            //     var remarks = $('#modal_remarks').val();
-            //     var cost = $('#modal_cost').val();
+                
+                var row_id = $(this).data('btnupdate');
 
-            //     // Update the hidden fields in the corresponding row
-            //     // $('#replace' + row_id).val('replacement');  // Set replacement dropdown value
-            //     $('#rdateofpurchase' + row_id).val(dateOfPurchase);  // Update hidden field
-            //     $('#rqty' + row_id).val(qty);  // Update hidden field
-            //     $('#rremarks' + row_id).val(remarks);  // Update hidden field
-            //     $('#rcost' + row_id).val(cost);  // Update hidden field
+                console.log(row_id)
+                var Row = $('#erow_id'+row_id).val();  // Retrieve the stored row ID from the modal
 
-            //     // Close the modal after saving
-            //     $('#replacementModal').modal('hide');
-            // });
+                // Extract values from modal inputs
+                var dateOfPurchase = $('#emodal_dateofpurchase'+row_id).val();
+                var qty = $('#emodal_qty'+row_id).val();
+                var remarks = $('#emodal_remarks'+row_id).val();
+                var cost = $('#emodal_cost'+row_id).val();
+
+                 // Check for empty fields and show alert for each individually
+                if (row_id === '' || row_id === null) {
+                    alert('Row ID is missing. Please try again.');
+                    return;
+                }
+                if (dateOfPurchase === '' || dateOfPurchase === null) {
+                    alert('Please enter the date of purchase.');
+                    return;
+                }
+                if (qty === '' || qty === null) {
+                    alert('Please enter the quantity.');
+                    return;
+                }
+                if (remarks === '' || remarks === null) {
+                    alert('Please enter remarks.');
+                    return;
+                }
+                if (cost === '' || cost === null) {
+                    alert('Please enter the cost.');
+                    return;
+                }
+
+                // Update the hidden fields in the corresponding row
+                // $('#replace' + row_id).val('replacement');  // Set replacement dropdown value
+                $('#rdateofpurchase' + row_id).val('');
+                $('#rqty' + row_id).val('');
+                $('#rremarks' + row_id).val('');
+                $('#rcost' + row_id).val('');
+
+                // Update the hidden fields with the new values
+                $('#rdateofpurchase' + row_id).val(dateOfPurchase); 
+                $('#rqty' + row_id).val(qty);
+                $('#rremarks' + row_id).val(remarks);
+                $('#rcost' + row_id).val(cost); 
+                // Close the modal after saving
+                $('#editModal').modal('hide');
+            });
 
 
             
@@ -1198,11 +1311,8 @@ $Plant = $selector_arr1['Plant'];
                 var Plant  = $('#plant-dropdown').val();
                 var MaterialGroup = $('#mat_group').val();
 
-                var request_type = $('#request_category').val();
                 $('#MaterialGroup'+row_no).val(MaterialGroup);
 
-              // request type document no set 
-                var request_type_code = (request_type == 'Asset purchases') ? 'ZCAP' : ((request_type == 'Material purchases') ? 'ZNB' : 'ZSER');
 
                 $.ajax({
                     url: "fetch-item-code.php?employe=<?php echo $Employee_Id ?>",
@@ -1210,8 +1320,7 @@ $Plant = $selector_arr1['Plant'];
                     data: {
                         Storage_Location: Storage_Location,
                         Plant : Plant,
-                        MaterialGroup : MaterialGroup,
-                        request_type_code : request_type_code
+                        MaterialGroup : MaterialGroup
                     },
                     cache: false,
                     beforeSend:function(){
@@ -1231,11 +1340,12 @@ $Plant = $selector_arr1['Plant'];
 
             function add_row(action = '')
             {
-                var row_no = $('#trow_no').val();
-                if(row_no == 0) {
+                if($('#trow_no').val() == 0) {
                     $('#trow_no').val(1);
                     $('#save').attr('disabled',false);
-                }
+                }   
+                var row_no = $('#trow_no').val();
+
 
                 var request_type = $('#request_category').val();
                 let style = (request_type != 'Asset purchases') ? 'display:none !important;' : '';   
@@ -1249,17 +1359,17 @@ $Plant = $selector_arr1['Plant'];
                                     <div class="modal-content">
                                         <div class="modal-header" id="inputFormModalLabel">
                                             <h5 class="modal-title">Remarks For <b>SendBack</b></h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                                         </div>
                                         <div class="modal-body">
                                                 <div class="form-group">
                                                     <div class="input-group mb-3">
-                                                        <textarea class="form-control" name="budget_remark" aria-label="With textarea"></textarea>
+                                                        <textarea class="form-control" name="budget_remark[]" aria-label="With textarea"></textarea>
                                                     </div>
                                                 </div>
                                         </div>
                                         <div class="modal-footer">
-                                            <button type="submit" class="btn btn-danger mt-2 mb-2 btn-no-effect" data-bs-dismiss="modal">Close</button>
+                                            <button type="submit" class="btn btn-light-danger mt-2 mb-2 btn-no-effect" data-bs-dismiss="modal">Close</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1275,84 +1385,82 @@ $Plant = $selector_arr1['Plant'];
                             </td>
                             <td>
                                 <div class="col-md-12" >
-                                    <select class="select2 form-control items-dropdown required_for_valid" id="item-dropdown${row_no}" style="width: 175px;" name="item_code" placeholder="Select Name." data-id="${row_no}" error-msg='Item code is mandatory.'>
+                                    <select class="select2 form-control items-dropdown" data-id="${row_no}" id="item-dropdown${row_no}" style="width: 175px;" name="item_code[]" placeholder="Select Name." >
                                     </select>
                                 </div>
-                                <span class="error_msg text-danger"></span>
                                 <span class="badge bg-info text-white text-center p-1 mt-2 item_code_info" style="display:none;    font-size: 13px;"></span>
                             </td>
                             <td id="divn">
                                 <div class="col-md-12">
-                                <textarea id="description${row_no}" style="width: 210px;" class="form-control disabled description" name="description"   row="2" placeholder="Enter Description" required=""></textarea>
+                                <textarea id="description${row_no}" style="width: 210px;" data-id="${row_no}" class="form-control disabled description" name="description[]"   row="2" placeholder="Enter Description" required=""></textarea>
 
                                 </div>
                             </td>
                             <td id="divb">
                                 <div class="col-md-12" >
-                                    <input type="text" class="form-control disabled uom" id="uom${row_no}" style="width: 110px;"  name="uom" readonly placeholder="Enter UOM" >
+                                    <input type="text" class="form-control disabled uom" data-id="${row_no}" id="uom${row_no}" style="width: 110px;"  name="uom[]" readonly placeholder="Enter UOM" >
                                 </div>
                             </td>
                             <td id="divb">
                                 <div class="col-md-12" id="existing_material_div">
-                                    <input type="text" class="form-control  disabled MaterialGroup" style="width: 100px;" id="MaterialGroup${row_no}"  readonly name="MaterialGroup" placeholder="Enter MaterialGroup">
+                                    <input type="text" class="form-control  disabled MaterialGroup" data-id="${row_no}" style="width: 100px;" id="MaterialGroup${row_no}"  readonly name="MaterialGroup[]" placeholder="Enter MaterialGroup">
                                 </div>
                             </td>
                             <td>
                                 <div class="col-md-12">
-                                    <input type="number" min="0" class="form-control required_for_valid quantity" id="quantity${row_no}" style="width: 125px;" name="quantity"  placeholder="Enter Quantity" required="" data-id="${row_no}" error-msg='Quantity is mandatory.'>
+                                    <input type="number" min="0" class="form-control quantity" data-id="${row_no}" id="quantity${row_no}" style="width: 125px;" name="quantity[]"  placeholder="Enter Quantity" required="">
                                 </div>
-                                <span class="error_msg text-danger"></span>
                             </td>
 
-                            <td class="replacement_feature" style="${style}">
+                             <td class="replacement_feature" style="${style}">
                                 <div class="col-md-12">
                                 
-                                    <select class="select2 form-control ${required_class} replacement-dropdown" id="replace${row_no}" data-id="${row_no}"  name="replace" style="width: 145px;" disabled>
+                                    <select class="select2 form-control ${required_class} replacement-dropdown" id="replace${row_no}" data-id="${row_no}"  name="replace[]" style="width: 145px;" disabled>
                                         <option value="">Select</option>
                                         <option value="new">New</option>
                                         <option value="replacement">Replacement</option>
                                     </select>
 
-                                    <input type="hidden" id="rdateofpurchase${row_no}" name="rdateofpurchase">
-                                    <input type="hidden" id="rqty${row_no}" name="rqty">
-                                    <input type="hidden" id="rremarks${row_no}" name="rremarks">
-                                    <input type="hidden" id="rcost${row_no}" name="rcost">
+                                    <input type="hidden" id="rdateofpurchase${row_no}" name="rdateofpurchase[]">
+                                    <input type="hidden" id="rqty${row_no}" name="rqty[]">
+                                    <input type="hidden" id="rremarks${row_no}" name="rremarks[]">
+                                    <input type="hidden" id="rcost${row_no}" name="rcost[]">
                                 </div>
                                 <span class="error_msg text-danger"></span>
                             </td>
 
                             <td>
                                 <div class="col-md-12">
-                                    <input type="date" class="form-control" id="Expected_Date${row_no}"style="width: 155px;" min="<?php echo date("Y-m-d"); ?>" value="<?php echo date('Y-m-d'); ?>" name="Expected_Date"  placeholder="Enter Quantity" required="">
+                                    <input type="date" class="form-control" data-id="${row_no}" id="Expected_Date${row_no}"style="width: 155px;" min="<?php echo date("Y-m-d"); ?>" value="<?php echo date('Y-m-d'); ?>" name="Expected_Date[]"  placeholder="Enter Quantity" required="">
                                 </div>
                             </td>
                             <td>
                                 <div class="col-md-12">
-                                    <textarea id="Specification${row_no}" class="form-control" name="Specification" style="width: 155px;height: 36px;"  row="2" placeholder="Enter Specification" required=""></textarea>
+                                    <textarea id="Specification${row_no}" data-id="${row_no}" class="form-control" name="Specification[]" style="width: 155px;height: 36px;"  row="2" placeholder="Enter Specification" required=""></textarea>
                                 </div>
                             </td>
                             <td>
                                 <div class="col-md-12">
-                                    <input class="form-control file-upload-input" type="file"  id="Attachment${row_no}" style="width: 170px;" name="Attachment"  placeholder="Enter Quantity" >
+                                    <input class="form-control file-upload-input" type="file"  data-id="${row_no}" id="Attachment${row_no}" style="width: 170px;" name="Attachment[]"  placeholder="Enter Quantity" >
                                 </div>
                             </td>
                             <td>
                                 <div class="col-md-12">
                                 
-                                    <select class="select2 form-control" id="type_val${row_no}" data-id="${row_no}"  name="budget" style="width: 145px;"  onchange="openPopup(this);" >
+                                    <select class="select2 form-control" id="type_val${row_no}" data-id="${row_no}"  name="budget[]" style="width: 145px;"  onchange="openPopup(this);" >
                                         <option value="Yes">Yes</option>
                                         <option value="No">No</option>
                                     </select>
                                 </div>
                             </td>`;
 
-                            if(row_no != 1) {
-                                output += `<td>
+                        if(row_no != 1) {
+                            output +=  `<td>
                                     <i class="fa fa-times remove text-danger"  ></i>
                                 </td>`;
-                            } 
+                        }    
 
-                output += `</tr>`;
+                    output += `</tr>`;
 
 
                 $(".tbody").append(output);
@@ -1369,18 +1477,17 @@ $Plant = $selector_arr1['Plant'];
             $(document).on('click', '.remove', function () {
                 $($(this).closest("tr")).remove();
                 var row_no = $('#trow_no').val();
-                row_no--;
 
+                row_no--;
                 $('#trow_no').val(row_no);
 
-                if(row_no == 0) {
+                if($('#trow_no').val() == 0) {
                     $('#save').attr('disabled',true);
                 }
 
                 serial_no();
 
             });
-
 
             function serial_no()
             {
@@ -1392,55 +1499,7 @@ $Plant = $selector_arr1['Plant'];
                   });
             }
 
-            // Function to read file as Base64
-            function readFileAsBase64(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result); // Resolve with Base64 string
-                    reader.onerror = reject; // Reject on error
-                    reader.readAsDataURL(file); // Read file as Base64
-                });
-            }
-
-            async function json_data_conversion(form)
-            {
-                const jsonData = {};
-
-                for (let [key, value] of form.entries()) {
-                    // If the value is a File, convert it to Base64
-                    if (value instanceof File) {
-                        const fileContent = await readFileAsBase64(value);
-                        // Use an array for files if multiple are uploaded
-                        if (!Array.isArray(jsonData[key])) {
-                            jsonData[key] = []; // Initialize as an array if not already
-                        }
-                        jsonData[key].push(fileContent); // Add the Base64 string to the array
-                    } else if (Array.isArray(jsonData[key])) {
-                        jsonData[key].push(value); // If it's already an array, push the value
-                    } else if (jsonData[key]) {
-                          jsonData[key] = [jsonData[key], value]; // Convert to array if it has a value
-                    } else {
-                          jsonData[key] = value; // Normal form field
-                    }
-                }
-                return jsonData;
-            }
-
-            $(document).on('change','.file-upload-input',function(){
-                 // console.log(this.files[0]);
-                 let file = this.files[0];
-                    // Maximum file size: 1 MB (1,048,576 bytes)
-                    const MAX_FILE_SIZE = 1 * 1024 * 1024;
-
-                    // Validate the file size
-                    if (file.size > MAX_FILE_SIZE) {
-                        $(this).val('');
-                        alert("The file is too large. Please select a file that is less than 1 MB.");
-                        return false;
-                    }
-            });
-
-            $(document).on('click','#save',async function(){
+            $(document).on('click','#save',function(){
 
                   // duplicate items validation functionality Start
                   var items_arr = [];
@@ -1453,14 +1512,13 @@ $Plant = $selector_arr1['Plant'];
                             return false;
                         } 
 
-                        if((items_arr.length == 0 && $(this).val() != '') || (!items_arr.includes($(this).val()) && $(this).val() != '') ) {
+                        if(items_arr.length == 0 || !items_arr.includes($(this).val()) ) {
                             items_arr.push($(this).val());
                         }   
                   });  
 
                   // duplicate items validation functionality End
 
-                  var error_count = validation();
 
                   if(item_validation_error != '') {
                         swal({
@@ -1468,24 +1526,24 @@ $Plant = $selector_arr1['Plant'];
                           text: item_validation_error,
                           icon: "warning",
                         });
-                  } else if(error_count == 0) {
+                  } else {
+
+                    $('.replacement-dropdown').removeAttr('disabled');
                       var formdata = document.querySelector('#request_form');
                       var form = new FormData(formdata);    
-                      form.append('Action', 'save_purchase_request_div');
+                      form.append('Action', 'update_purchase_request_div');
 
                       $('.file-upload-input').each(function(index){
                         index++;
-                        form.append('Attachment'+index , $('#Attachment'+index)[0].files[0]);
+                        form.append('Attachment'+index , $(this)[0].files[0]);
                       });
 
-                     var jsonData = await json_data_conversion(form);
-
                       $.ajax({
-                          url: 'common_json_ajax.php',
+                          url: 'common_ajax.php',
                           type: 'POST',
-                          data: JSON.stringify(jsonData),
-                          processData: false,
-                          contentType: false,
+                          data: form,
+                          processData: false,  // Prevent jQuery from automatically transforming the data into a query string
+                          contentType: false,  // Prevent jQuery from setting the content type
                           dataType: 'json',
                           beforeSend: function(){
                               $('#ajax-preloader').show();
@@ -1548,190 +1606,12 @@ $Plant = $selector_arr1['Plant'];
                     });
                 });
 
-                function validation(){
-                    var error_count=0;
-                    $(".required_for_valid").each(function(){
-                      var current_val=$(this).val();
-
-                    var error_msg=$(this).attr("error-msg");
-                    // var error_msg= "Field is mandatory.";
-                    if(current_val == ''){
-                      error_count++;
-                      $(this).closest('td').find(".error_msg").html(error_msg).show();
-
-                      // $(".error_msg").html(error_msg).show();
-
-                    }else{
-                      $(this).closest('td').find(".error_msg").html('').hide();
-
-                      // $(".error_msg").html('').hide();
-                    }
-                    });
-                    return error_count;
-                }
+            $(document).on('change', '.add', function () {
+                add_row();
+                $('#save').attr('disabled',false)
+            });
 
             // END MORE 
-                function Alert_Msg(title,message,icon) {
-                    swal({
-                      title: title,
-                      text: message,
-                      icon: icon,
-                    });
-                }
-
-                $(document).on('click','.request_upload',function(){
-                    var file_data    = $('#material_upload_file').prop('files')[0];
-                    var request_type = $('#request_category').val();
-                    var request_category = (request_type == 'Asset purchases') ? 'ZCAP' : ((request_type == 'Material purchases') ? 'ZNB' : 'ZSER');
-                    var plant = $('#plant-dropdown').val();
-                    
-                    if(file_data == '' || file_data == undefined) {
-                        Alert_Msg("Warning","Please choose file for import data.","warning");  
-                    } else {
-                        var form_data  = new FormData();
-                        form_data.append("Action","read_request_excel");
-                        form_data.append("file",file_data);
-                        form_data.append("request_category",request_category);
-                        form_data.append("plant",plant);
-
-                        $.ajax({
-                            type: "POST",
-                            url: "common_ajax.php",
-                            data: form_data,
-                            dataType:"json",
-                            cache: false,
-                            contentType: false,
-                            processData: false,
-                            beforeSend:function(){
-                                $('#ajax-preloader').show();
-                            },
-                            success: function(result) {
-                                if(result.status == 200) {
-                                    $('#trow_no').val(1)
-                                    var row_no = $('#trow_no').val();
-                                    
-                                    if(row_no == 0) {
-                                        $('#trow_no').val(1);
-                                        $('#save').attr('disabled',false);
-                                    }
-
-                                    var html = '';
-                                    if(result.data.length > 0) {
-                                        let style = (request_type != 'Asset purchases') ? 'display:none !important;' : '';   
-                                        let required_class = (request_type == 'Asset purchases') ? 'required_for_valid' : '';
-                                        var output = '';
-                                        for(i in result.data) {
-                                            output += `
-                                            <tr data-rowno="${row_no}">
-                                                <td class="sr_no">
-                                                    `+ (row_no) + `
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12" >
-                                                        <select class="select2 form-control items-dropdown required_for_valid" id="item-dropdown${row_no}" style="width: 175px;" name="item_code" placeholder="Select Name." data-id="${row_no}" error-msg='Item code is mandatory.'>
-                                                            ${result.data[i].items}
-                                                        </select>
-                                                    </div>
-                                                    <span class="error_msg text-danger"></span>
-                                                    <span class="badge bg-info text-white text-center p-1 mt-2 item_code_info" style="font-size: 13px;">${result.data[i].item_code}</span>
-                                                </td>
-                                                <td id="divn">
-                                                    <div class="col-md-12">
-                                                    <textarea id="description${row_no}" style="width: 210px;" class="form-control disabled description" name="description"   row="2" placeholder="Enter Description" required="">${result.data[i].item_description}</textarea>
-
-                                                    </div>
-                                                </td>
-                                                <td id="divb">
-                                                    <div class="col-md-12" >
-                                                        <input type="text" class="form-control disabled uom" id="uom${row_no}" style="width: 110px;"  name="uom" readonly placeholder="Enter UOM" value="${result.data[i].UOM}">
-                                                    </div>
-                                                </td>
-                                                <td id="divb">
-                                                    <div class="col-md-12" id="existing_material_div">
-                                                        <input type="text" class="form-control  disabled MaterialGroup" style="width: 100px;" id="MaterialGroup${row_no}"  readonly name="MaterialGroup" placeholder="Enter MaterialGroup" value="${result.data[i].material_group}">
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12">
-                                                        <input type="number" min="0" class="form-control required_for_valid quantity" id="quantity${row_no}" style="width: 125px;" name="quantity"  placeholder="Enter Quantity" required="" data-id="${row_no}" error-msg='Quantity is mandatory.' value="${result.data[i].quantity}">
-                                                    </div>
-                                                    <span class="error_msg text-danger"></span>
-                                                </td>
-
-                                                <td class="replacement_feature" style="${style}">
-                                                    <div class="col-md-12">
-                                                    
-                                                        <select class="select2 form-control ${required_class} replacement-dropdown" id="replace${row_no}" data-id="${row_no}"  name="replace" style="width: 145px;">
-                                                            ${result.data[i].replacement}
-                                                        </select>
-
-                                                        <input type="hidden" id="rdateofpurchase${row_no}" name="rdateofpurchase">
-                                                        <input type="hidden" id="rqty${row_no}" name="rqty">
-                                                        <input type="hidden" id="rremarks${row_no}" name="rremarks">
-                                                        <input type="hidden" id="rcost${row_no}" name="rcost">
-                                                    </div>
-                                                    <span class="error_msg text-danger"></span>
-                                                </td>
-
-                                                <td>
-                                                    <div class="col-md-12">
-                                                        <input type="date" class="form-control" id="Expected_Date${row_no}"style="width: 155px;" min="<?php echo date("Y-m-d"); ?>" value="<?php echo date("Y-m-d"); ?>" name="Expected_Date"  placeholder="Enter Quantity" required="">
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12">
-                                                        <textarea id="Specification${row_no}" class="form-control" name="Specification" style="width: 155px;height: 36px;"  row="2" placeholder="Enter Specification" required="">${result.data[i].specification}</textarea>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12">
-                                                        <input class="form-control file-upload-input" type="file"  id="Attachment${row_no}" style="width: 170px;" name="Attachment"  placeholder="Enter Quantity" >
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="col-md-12">
-                                                    
-                                                        <select class="select2 form-control whether_budgeted" id="type_val${row_no}" data-id="${row_no}"  name="budget" style="width: 145px;"  onchange="openPopup(this);" >
-                                                            ${result.data[i].whether_budgeted}
-                                                        </select>
-                                                    </div>
-                                                </td>`;
-
-                                                if(row_no != 1) {
-                                                    output += `<td>
-                                                        <i class="fa fa-times remove text-danger"  ></i>
-                                                    </td>`;
-                                                } 
-
-                                            output += `</tr>`;
-
-
-                                            row_no++;
-                                            $('#trow_no').val(row_no);
-                                        }
-                                            $(".tbody").html(output);
-                                            $('.items-dropdown').select2();
-                                            $('.whether_budgeted').select2();
-                                            $('.replacement-dropdown').select2();
-
-                                    } else {
-                                        $('#material_upload_file').val('');
-                                        Alert_Msg("wanring","No data found","warning");   
-                                    }
-                                } else {
-                                    $("#material_upload_file").val('');
-                                    Alert_Msg("Failed",result.message,"error");  
-                                }
-                            },
-                            complete:function(){
-                                $('#ajax-preloader').hide();
-                            }
-                        });
-            
-                    }
-
-                });
-
         </script>
         <!-- CUSTOM JS END -->
     </body>

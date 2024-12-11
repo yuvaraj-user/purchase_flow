@@ -123,17 +123,24 @@ $Employee_Id = $_SESSION['EmpID'];
                                                             style="border-collapse: collapse; border-spacing: 0; width: 100%;">
                                                             <thead>
                                                                 <tr>
-                                                                <th>S.No</th>
+                                                                <th>S/No</th>
                                                                 <th>Request ID</th>
                                                                 <th>Date Of request</th>
                                                                 <th>Request Type</th>
-                                                                <th>Vendor Details</th>
+                                                                <th>Category</th>
                                                                 <th>Department</th>
-                                                                <th>Plant</th>
+                                                                <th>Vendor Code</th>
+                                                                <th>Vendor Name</th>
+                                                                <th>Vendor City</th>
+                                                                <th>Material Code</th>
+                                                                <th>Material Name</th>
+                                                                <th>Material Price</th>
+                                                                <th>Material Discount</th>
+                                                                <th>GST Value</th>
+                                                                <th>Net Amount</th>
                                                                 <th>Status</th>
-                                                                <th>PO Number</th>
-                                                                <th>Approved Date</th>
-                                                               <th>Action</th>
+
+                                                               <!-- <th>Action</th> -->
                                                             </tr>
                                                             </thead>
                                                            
@@ -199,68 +206,72 @@ $Employee_Id = $_SESSION['EmpID'];
 
 
         $(document).ready(function(){
-
-            var user_input = {};
-
-            Server_Side_Datatable("no",user_input);
-
-        });
+    
 
 
-        function Server_Side_Datatable(destroy_status,user_input)
-        {
 
-            jQuery.fn.DataTable.Api.register( 'buttons.exportData()', function ( options ) {
+     var user_input = {};
+   
+  
+
+  
+   Server_Side_Datatable("no",user_input);
+   
+
+
+  });
+
+
+ function Server_Side_Datatable(destroy_status,user_input)
+{
+
+jQuery.fn.DataTable.Api.register( 'buttons.exportData()', function ( options ) {
                  if ( this.context.length ) {
                      var jsonResult = $.ajax({
 
                         "url": "Ajax_report.php", 
                          type:'POST',
                          dataType:'json',
-                         "data": {Action:"Purchase_report_dev",length:"All",user_input : user_input,function : 'export'},
+                         "data": {Action:"Purchase_report",length:"All",user_input : user_input},
                          async: false,
                      });
-
+      
                   
-                     let headers=['S.No','Request Id','Date Of Request','Request Type','Vendor Name','Department','Plant','Approval Status','PO Number'];
+                     let headers=['S.No','Request Id','Date Of Request','Employee Name','Request Type','Request Category','Department','Vendor Code','Vendor Name','Vendor City','Material Code','Material Name','Price','Discount','GST','Net Amount','Approval Status'];
 
-
+      
                      
                      return {
                        body: jsonResult.responseJSON.data, 
                        header: headers};
                  }
-             });
+             } );
+   var data_table='Purchase_report'
+   if(destroy_status == "yes")
+  {
+    $('#'+data_table).DataTable().destroy();
+  }
+ $('#' + data_table).DataTable({
 
-            var data_table='Purchase_report'
-            
-            if(destroy_status == "yes")
-            {
-                $('#'+data_table).DataTable().destroy();
-            }
+    "dom": 'Bfrtip',
 
-            $('#' + data_table).DataTable({
+    
+ 
+    "scrollX": true,
+    "buttons": ['copy', 'csv', 'excel', 'pdf', 'print'],
+    "bprocessing": true,
+    "serverSide": true,
+    "pageLength": 10,
+    "ajax": 
+    {
+      "url": "Ajax_report.php", 
+      "type": "POST",
+      "data": {Action:"Purchase_report",user_input : user_input}
+    },
 
-                "dom": 'Bfrtip',
-                "scrollX": true,
-                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print'],
-                "bprocessing": true,
-                "serverSide": true,
-                "pageLength": 10,
-                'preDrawCallback': function(settings) {
-                    $('#ajax-preloader').show();
-                },
-                'drawCallback': function(settings) {
-                    $('#ajax-preloader').hide();
-                },
-                "ajax": 
-                {
-                  "url": "Ajax_report.php", 
-                  "type": "POST",
-                  "data": {Action:"Purchase_report_dev",user_input : user_input,function : 'list'}
-                },
-            });
-        }
+  
+  });
+}
 
 
 

@@ -136,7 +136,7 @@ if(!isset($_SESSION['EmpID']))
                                             <div class="tab-content p-3 text-muted">
                                                 <div class="tab-pane active" id="home" role="tabpanel">
                                                     <div class="table-responsive">
-                                                        <table id="datatable" class="table table-striped table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                                        <table id="datatable" class="table table-striped table-bordered  nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
                                                             <thead>
                                                                 <tr>
                                                                     <th>S/No</th>
@@ -213,6 +213,9 @@ if(!isset($_SESSION['EmpID']))
 
                                                                                 }
                                                                                 ?>
+                                                                            <a class="print_btn" style="cursor: pointer;" data-id="<?php echo $row['Request_ID']; ?>">
+                                                                                    <i class="mdi mdi-printer"></i>
+                                                                            </a> 
                                                                             </div>
                                                                         </td>
                                                                     </tr>
@@ -386,6 +389,7 @@ if(!isset($_SESSION['EmpID']))
                     </div> <!-- container-fluid -->
                 </div>
                 <!-- End Page-content -->
+            <iframe id="printFrame" style="display: none;"></iframe>
 
                 <?php include('footer.php') ?>
             </div>
@@ -431,6 +435,53 @@ if(!isset($_SESSION['EmpID']))
             $('#datatable2').DataTable();
             $('#datatable3').DataTable();
             } );
+
+
+            $(document).on('click','.print_btn',function(){
+                var request_id = $(this).data('id');
+
+                $.ajax({
+                    type: "POST",
+                    url: "PR_print.php",
+                    data: { "request_id" : request_id },
+                    beforeSend:function(){
+                        $('#ajax-preloader').show();
+                    },
+                    dataType:"html",
+                    success: function(result) {
+                        var printFrame = document.getElementById('printFrame');
+
+                        // Check if the iframe is available
+                        if (printFrame) {
+                            // Open the iframe document for writing
+                            var iframeDoc = printFrame.contentWindow.document;
+                            iframeDoc.open();
+
+                            // Write the content to the iframe
+                            iframeDoc.write(result);
+
+                            // Close the iframe document
+                            iframeDoc.close();
+
+                            // Ensure styles are applied and the content is rendered
+                            // Trigger a reflow by forcing the body to calculate its layout
+                            iframeDoc.body.offsetHeight; // Trigger reflow
+
+                            // Use a setTimeout to delay the print dialog slightly to ensure everything is rendered
+                            setTimeout(function () {
+                                $('#ajax-preloader').hide();
+
+                                // Focus on the iframe and trigger print dialog
+                                printFrame.contentWindow.focus();
+                                printFrame.contentWindow.print();
+                            }, 1000); // Delay can be adjusted (e.g., 100 ms)
+                        }
+                    },
+                    complete: function() {
+                        // $('#ajax-preloader').hide();
+                    }
+                });
+            });
         </script>
 
         <script src="assets/js/app.js"></script>

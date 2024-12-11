@@ -167,13 +167,18 @@ if(!isset($_SESSION['EmpID']))
     min-height: 72px;
     line-height: 1;
 
-    font-size: 24px;
+    font-size: 17px;
   }
   .ag-courses-item_link {
     padding: 22px 40px;
   }
   .ag-courses-item_date-box {
-    font-size: 16px;
+    font-size: 14px;
+  }
+
+  .footer {
+    left: 0 !important;
+    text-align: center;
   }
 }
     </style>
@@ -236,7 +241,9 @@ if(!isset($_SESSION['EmpID']))
                     <div class="page-content-wrapper">
 
                         <div class="row">
-                        <?php  if($_SESSION['Dcode']=='ADMIN' || $_SESSION['Dcode']=='SUPERADMIN') {
+                        <?php  //if($_SESSION['Dcode']=='ADMIN' || $_SESSION['Dcode']=='SUPERADMIN') {
+                                if($_SESSION['EmpID']=='RS3015' || $_SESSION['EmpID']=='RS4310' || $_SESSION['EmpID']=='RS7361') {
+
                                 ?>
                                 <div class="col-xl-3 col-md-3">
                                 <div class="ag-format-container">
@@ -245,7 +252,7 @@ if(!isset($_SESSION['EmpID']))
                                         <a href="show_master.php" class="ag-courses-item_link">
                                             <div class="ag-courses-item_bg" style="background-color: #952aff;"></div>
                                             <div class="ag-courses-item_title">
-                                            Mater Role Mapping
+                                            Master Role Mapping
                                             </div>
                                             <div class="ag-courses-item_date-box">
                                             &nbsp;
@@ -260,6 +267,158 @@ if(!isset($_SESSION['EmpID']))
                                 </div>
                             </div>
                             <?php } ?>
+
+
+                            <?php 
+                            $sql4 = "SELECT * FROM Tb_Master_Emp WHERE Recommender = '".$_SESSION['EmpID']."' AND Purchase_Type = 'Purchase & Vendor selection (R&VS)' AND Status = 'Active' ";
+                            $params4 = array();
+                            $options4 =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+                            $stmt4 = sqlsrv_query( $conn, $sql4 , $params4, $options4 );
+                            $row_count4 = sqlsrv_num_rows( $stmt4 );
+                            $recommender = false;
+                            if ($row_count4 > 0) {
+                                $recommender = true;
+                            }
+                            if($recommender) {?>
+                            <div class="col-xl-3 col-md-3">
+                                <div class="ag-format-container">
+                                    <div class="ag-courses_box">
+                                        <div class="ag-courses_item">
+                                        <a href="show_recommender.php" class="ag-courses-item_link">
+                                            <div class="ag-courses-item_bg" style="background-color: #952aff;"></div>
+                                            <div class="ag-courses-item_title">
+                                            Purchase Recommendation (R&VS)
+                                            </div>
+                                            <div class="ag-courses-item_date-box">
+                                            Pending:
+                                            <span class="ag-courses-item_date">
+                                            <?php 
+                                            
+                                                // $sql12 = "SELECT * FROM Tb_Request Inner Join Tb_Master_Emp On Tb_Master_Emp.PO_creator_Release_Codes=Tb_Request.EMP_ID 
+                                                // WHERE Tb_Master_Emp.Recommender='".$_SESSION['EmpID']."' and Tb_Request.status='Added'";
+
+                                                $sql12 = "SELECT * FROM Tb_Request
+                                                INNER JOIN(select DISTINCT id,Purchaser,Purchase_Type,Recommender from Tb_Master_Emp WHERE Tb_Master_Emp.Recommender = '".$_SESSION['EmpID']."') as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category and Tb_Master_Emp.id = Tb_Request.approval_mapping_id
+                                                WHERE Tb_Master_Emp.Recommender='".$_SESSION['EmpID']."' AND Tb_Request.Recommender = '".$_SESSION['EmpID']."' and Tb_Request.status='Added' and (Tb_Request.is_sendbacked IS NULL OR Tb_Request.is_sendbacked = 0)";
+
+                                                $params12 = array();
+                                                $options12 =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+                                                $stmt12 = sqlsrv_query( $conn, $sql12 , $params12, $options12 );
+                                                $row_count12= sqlsrv_num_rows( $stmt12 );
+                                                ?>
+                                                <?php echo $row_count12 ?>
+                                            </span>
+                                            </div>
+                                        </a>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <?php } ?>
+
+                            <?php 
+                            $sql5 = "SELECT * FROM Tb_Master_Emp WHERE Approver = '".$_SESSION['EmpID']."' AND Purchase_Type = 'Purchase & Vendor selection (R&VS)' AND Status = 'Active' ";
+                            $params5 = array();
+                            $options5 =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+                            $stmt5 = sqlsrv_query( $conn, $sql5 , $params5, $options5 );
+                            $row_count5 = sqlsrv_num_rows( $stmt5 );
+                            $approver = false;
+                            if ($row_count5 > 0) {
+                                $approver = true;
+                            }
+                            if($approver) {?>
+                            <div class="col-xl-3 col-md-3">
+                                <div class="ag-format-container">
+                                    <div class="ag-courses_box">
+                                        <div class="ag-courses_item">
+                                        <a href="show_approver.php" class="ag-courses-item_link">
+                                            <div class="ag-courses-item_bg" style="background-color: #3ecd5e;"></div>
+                                            <div class="ag-courses-item_title">
+                                            Purchase Approval (R&VS)
+                                            </div>
+                                            <div class="ag-courses-item_date-box">
+                                            Pending:
+                                            <span class="ag-courses-item_date">
+                                            <?php 
+                                                // $sql12 = "SELECT * FROM Tb_Request Inner Join Tb_Master_Emp On Tb_Master_Emp.PO_creator_Release_Codes=Tb_Request.EMP_ID  
+                                                // WHERE Tb_Master_Emp.Approver='".$_SESSION['EmpID']."' and Tb_Request.status='Recommended'";
+
+                                                $sql12 = "SELECT DISTINCT(Tb_Request.Request_id) FROM Tb_Request
+                                                Inner Join (select DISTINCT Purchaser,Purchase_Type,Approver,Document_type,Material_Group from Tb_Master_Emp) as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
+                                                --INNER JOIN MaterialMaster ON MaterialMaster.Plant = Tb_Request.Plant AND MaterialMaster.MaterialGroup = Tb_Master_Emp.Material_Group AND
+                                                -- MaterialMaster.StorageLocation = Tb_Request.Storage_Location
+                                                INNER JOIN Tb_Recommender ON Tb_Recommender.Requested_to = Tb_Master_Emp.Approver
+                                                WHERE Tb_Master_Emp.Approver='".$_SESSION['EmpID']."' AND Tb_Request.Approver = '".$_SESSION['EmpID']."' and Tb_Request.status='Recommended' and (Tb_Request.is_sendbacked IS NULL OR Tb_Request.is_sendbacked = 0)";
+
+                                                $params12 = array();
+                                                $options12 =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+                                                $stmt12 = sqlsrv_query( $conn, $sql12 , $params12, $options12 );
+                                                $row_count12= sqlsrv_num_rows( $stmt12 );
+                                                ?>
+                                               <?php echo $row_count12 ?>
+                                            </span>
+                                            </div>
+                                        </a>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <?php } ?>
+
+
+
+                            <?php 
+                            $sql5 = "SELECT * FROM Tb_Master_Emp WHERE Approver_2 = '".$_SESSION['EmpID']."' AND Purchase_Type = 'Purchase & Vendor selection (R&VS)' AND Status = 'Active' ";
+                            $params5 = array();
+                            $options5 =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+                            $stmt5 = sqlsrv_query( $conn, $sql5 , $params5, $options5 );
+                            $row_count5 = sqlsrv_num_rows( $stmt5 );
+                            $approver_2 = false;
+                            if ($row_count5 > 0) {
+                                $approver_2 = true;
+                            }
+                            if($approver_2) {?>
+                            <div class="col-xl-3 col-md-3">
+                                <div class="ag-format-container">
+                                    <div class="ag-courses_box">
+                                        <div class="ag-courses_item">
+                                        <a href="show_exceed_approver.php" class="ag-courses-item_link">
+                                            <div class="ag-courses-item_bg" style="background-color: #3ecd5e;"></div>
+                                            <div class="ag-courses-item_title">
+                                            Purchase Limit Exceed Approval (R&VS)
+                                            </div>
+                                            <div class="ag-courses-item_date-box">
+                                            Pending:
+                                            <span class="ag-courses-item_date">
+                                            <?php 
+                                                // $sql12 = "SELECT * FROM Tb_Request Inner Join Tb_Master_Emp On Tb_Master_Emp.PO_creator_Release_Codes=Tb_Request.EMP_ID  
+                                                // WHERE Tb_Master_Emp.Approver='".$_SESSION['EmpID']."' and Tb_Request.status='Recommended'";
+
+                                                $sql12 = "SELECT DISTINCT(Tb_Request.Request_id) FROM Tb_Request
+                                                Inner Join (select DISTINCT Purchaser,Purchase_Type,Approver_2,Document_type,Material_Group from Tb_Master_Emp) as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
+                                                INNER JOIN MaterialMaster ON MaterialMaster.Plant = Tb_Request.Plant AND MaterialMaster.MaterialGroup = Tb_Master_Emp.Material_Group AND
+                                                MaterialMaster.StorageLocation = Tb_Request.Storage_Location
+                                                INNER JOIN Tb_Approver ON Tb_Approver.Requested_to = Tb_Master_Emp.Approver_2
+                                                WHERE Tb_Master_Emp.Approver_2='".$Employee_Id."' and Tb_Request.status='Waiting_for_approval2' and (Tb_Request.is_sendbacked IS NULL OR Tb_Request.is_sendbacked = 0) AND Tb_Master_Emp.Document_type IS NOT NULL AND Tb_Master_Emp.Document_type != ''";
+
+                                                $params12 = array();
+                                                $options12 =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+                                                $stmt12 = sqlsrv_query( $conn, $sql12 , $params12, $options12 );
+                                                $row_count12= sqlsrv_num_rows( $stmt12 );
+                                                ?>
+                                               <?php echo $row_count12 ?>
+                                            </span>
+                                            </div>
+                                        </a>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <?php } ?>
+
                             <?php 
                             $sql1 = "SELECT * FROM Tb_Master_Emp WHERE PO_creator_Release_Codes = '".$_SESSION['EmpID']."' AND Purchase_Type = 'Financial - Payment requests (FP)' AND Status = 'Active' ";
                             $params1 = array();
@@ -421,7 +580,7 @@ if(!isset($_SESSION['EmpID']))
                                                 // WHERE Tb_Master_Emp.Purchaser='".$_SESSION['EmpID']."' and Tb_Request.status='Requested'";
 
                                                 $sql11 = "SELECT * FROM Tb_Request Inner Join (select DISTINCT Purchaser,Purchase_Type from Tb_Master_Emp) as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
-                                                WHERE Tb_Master_Emp.Purchaser='".$_SESSION['EmpID']."' and Tb_Request.Requested_to ='".$_SESSION['EmpID']."' and Tb_Request.status='Requested' ORDER BY Tb_Request.Request_ID DESC";
+                                                WHERE Tb_Master_Emp.Purchaser='".$_SESSION['EmpID']."' and Tb_Request.Requested_to ='".$_SESSION['EmpID']."' and Tb_Request.status='Requested' and (Tb_Request.is_sendbacked IS NULL OR Tb_Request.is_sendbacked = 0) ORDER BY Tb_Request.Request_ID DESC";
 
                                                 $params11 = array();
                                                 $options11 =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
@@ -607,53 +766,6 @@ if(!isset($_SESSION['EmpID']))
                             </div>
                             <?php } ?>
 
-                            <?php 
-                            $sql4 = "SELECT * FROM Tb_Master_Emp WHERE Recommender = '".$_SESSION['EmpID']."' AND Purchase_Type = 'Purchase & Vendor selection (R&VS)' AND Status = 'Active' ";
-                            $params4 = array();
-                            $options4 =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
-                            $stmt4 = sqlsrv_query( $conn, $sql4 , $params4, $options4 );
-                            $row_count4 = sqlsrv_num_rows( $stmt4 );
-                            $recommender = false;
-                            if ($row_count4 > 0) {
-                                $recommender = true;
-                            }
-                            if($recommender) {?>
-                            <div class="col-xl-3 col-md-3">
-                                <div class="ag-format-container">
-                                    <div class="ag-courses_box">
-                                        <div class="ag-courses_item">
-                                        <a href="show_recommender.php" class="ag-courses-item_link">
-                                            <div class="ag-courses-item_bg" style="background-color: #952aff;"></div>
-                                            <div class="ag-courses-item_title">
-                                            Purchase Recommendation (R&VS)
-                                            </div>
-                                            <div class="ag-courses-item_date-box">
-                                            Pending:
-                                            <span class="ag-courses-item_date">
-                                            <?php 
-                                            
-                                                // $sql12 = "SELECT * FROM Tb_Request Inner Join Tb_Master_Emp On Tb_Master_Emp.PO_creator_Release_Codes=Tb_Request.EMP_ID 
-                                                // WHERE Tb_Master_Emp.Recommender='".$_SESSION['EmpID']."' and Tb_Request.status='Added'";
-
-                                                $sql12 = "SELECT * FROM Tb_Request
-                                                INNER JOIN(select DISTINCT id,Purchaser,Purchase_Type,Recommender from Tb_Master_Emp WHERE Tb_Master_Emp.Recommender = '".$_SESSION['EmpID']."') as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category and Tb_Master_Emp.id = Tb_Request.approval_mapping_id
-                                                WHERE Tb_Master_Emp.Recommender='".$_SESSION['EmpID']."' AND Tb_Request.Recommender = '".$_SESSION['EmpID']."' and Tb_Request.status='Added'";
-
-                                                $params12 = array();
-                                                $options12 =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
-                                                $stmt12 = sqlsrv_query( $conn, $sql12 , $params12, $options12 );
-                                                $row_count12= sqlsrv_num_rows( $stmt12 );
-                                                ?>
-                                                <?php echo $row_count12 ?>
-                                            </span>
-                                            </div>
-                                        </a>
-                                        </div>
-
-                                    </div>
-                                </div>
-                            </div>
-                            <?php } ?>
 
                             <?php 
                             $sql5 = "SELECT * FROM Tb_Master_Emp WHERE Approver = '".$_SESSION['EmpID']."' AND Purchase_Type = 'Financial - Payment requests (FP)' AND Status = 'Active' ";
@@ -673,7 +785,7 @@ if(!isset($_SESSION['EmpID']))
                                         <a href="show_payment_approver.php" class="ag-courses-item_link">
                                             <div class="ag-courses-item_bg" style="background-color: #3ecd5e;"></div>
                                             <div class="ag-courses-item_title">
-                                            Payment Approvel (FP)
+                                            Payment Approval (FP)
                                             </div>
                                             <div class="ag-courses-item_date-box">
                                             Pending:
@@ -716,7 +828,7 @@ if(!isset($_SESSION['EmpID']))
                                         <a href="show_rateterms_approver.php" class="ag-courses-item_link">
                                             <div class="ag-courses-item_bg" style="background-color: #3ecd5e;"></div>
                                             <div class="ag-courses-item_title">
-                                            Rate Approvel (FR)
+                                            Rate Approval (FR)
                                             </div>
                                             <div class="ag-courses-item_date-box">
                                             Pending:
@@ -758,7 +870,7 @@ if(!isset($_SESSION['EmpID']))
                                         <a href="show_operational_approver.php" class="ag-courses-item_link">
                                             <div class="ag-courses-item_bg" style="background-color: #3ecd5e;"></div>
                                             <div class="ag-courses-item_title">
-                                            Operational Approvel (OP)
+                                            Operational Approval (OP)
                                             </div>
                                             <div class="ag-courses-item_date-box">
                                             Pending:
@@ -782,55 +894,7 @@ if(!isset($_SESSION['EmpID']))
                             </div>
                             <?php } ?>
 
-                            <?php 
-                            $sql5 = "SELECT * FROM Tb_Master_Emp WHERE Approver = '".$_SESSION['EmpID']."' AND Purchase_Type = 'Purchase & Vendor selection (R&VS)' AND Status = 'Active' ";
-                            $params5 = array();
-                            $options5 =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
-                            $stmt5 = sqlsrv_query( $conn, $sql5 , $params5, $options5 );
-                            $row_count5 = sqlsrv_num_rows( $stmt5 );
-                            $approver = false;
-                            if ($row_count5 > 0) {
-                                $approver = true;
-                            }
-                            if($approver) {?>
-                            <div class="col-xl-3 col-md-3">
-                                <div class="ag-format-container">
-                                    <div class="ag-courses_box">
-                                        <div class="ag-courses_item">
-                                        <a href="show_approver.php" class="ag-courses-item_link">
-                                            <div class="ag-courses-item_bg" style="background-color: #3ecd5e;"></div>
-                                            <div class="ag-courses-item_title">
-                                            Purchase Approvel (R&VS)
-                                            </div>
-                                            <div class="ag-courses-item_date-box">
-                                            Pending:
-                                            <span class="ag-courses-item_date">
-                                            <?php 
-                                                // $sql12 = "SELECT * FROM Tb_Request Inner Join Tb_Master_Emp On Tb_Master_Emp.PO_creator_Release_Codes=Tb_Request.EMP_ID  
-                                                // WHERE Tb_Master_Emp.Approver='".$_SESSION['EmpID']."' and Tb_Request.status='Recommended'";
 
-                                                $sql12 = "SELECT DISTINCT(Tb_Request.Request_id) FROM Tb_Request
-                                                Inner Join (select DISTINCT Purchaser,Purchase_Type,Approver,Document_type,Material_Group from Tb_Master_Emp) as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
-                                                --INNER JOIN MaterialMaster ON MaterialMaster.Plant = Tb_Request.Plant AND MaterialMaster.MaterialGroup = Tb_Master_Emp.Material_Group AND
-                                                -- MaterialMaster.StorageLocation = Tb_Request.Storage_Location
-                                                INNER JOIN Tb_Recommender ON Tb_Recommender.Requested_to = Tb_Master_Emp.Approver
-                                                WHERE Tb_Master_Emp.Approver='".$_SESSION['EmpID']."' AND Tb_Request.Approver = '".$_SESSION['EmpID']."' and Tb_Request.status='Recommended'";
-
-                                                $params12 = array();
-                                                $options12 =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
-                                                $stmt12 = sqlsrv_query( $conn, $sql12 , $params12, $options12 );
-                                                $row_count12= sqlsrv_num_rows( $stmt12 );
-                                                ?>
-                                               <?php echo $row_count12 ?>
-                                            </span>
-                                            </div>
-                                        </a>
-                                        </div>
-
-                                    </div>
-                                </div>
-                            </div>
-                            <?php } ?>
 
                         <!-- INFORMER SCREEN -->
 
@@ -1001,55 +1065,6 @@ if(!isset($_SESSION['EmpID']))
                             <?php } ?>
 
 
-                            <?php 
-                            $sql5 = "SELECT * FROM Tb_Master_Emp WHERE Approver_2 = '".$_SESSION['EmpID']."' AND Purchase_Type = 'Purchase & Vendor selection (R&VS)' AND Status = 'Active' ";
-                            $params5 = array();
-                            $options5 =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
-                            $stmt5 = sqlsrv_query( $conn, $sql5 , $params5, $options5 );
-                            $row_count5 = sqlsrv_num_rows( $stmt5 );
-                            $approver_2 = false;
-                            if ($row_count5 > 0) {
-                                $approver_2 = true;
-                            }
-                            if($approver_2) {?>
-                            <div class="col-xl-3 col-md-3">
-                                <div class="ag-format-container">
-                                    <div class="ag-courses_box">
-                                        <div class="ag-courses_item">
-                                        <a href="show_exceed_approver.php" class="ag-courses-item_link">
-                                            <div class="ag-courses-item_bg" style="background-color: #3ecd5e;"></div>
-                                            <div class="ag-courses-item_title">
-                                            Purchase Limit Exceed Approvel (R&VS)
-                                            </div>
-                                            <div class="ag-courses-item_date-box">
-                                            Pending:
-                                            <span class="ag-courses-item_date">
-                                            <?php 
-                                                // $sql12 = "SELECT * FROM Tb_Request Inner Join Tb_Master_Emp On Tb_Master_Emp.PO_creator_Release_Codes=Tb_Request.EMP_ID  
-                                                // WHERE Tb_Master_Emp.Approver='".$_SESSION['EmpID']."' and Tb_Request.status='Recommended'";
-
-                                                $sql12 = "SELECT DISTINCT(Tb_Request.Request_id) FROM Tb_Request
-                                                Inner Join (select DISTINCT Purchaser,Purchase_Type,Approver_2,Document_type,Material_Group from Tb_Master_Emp) as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
-                                                INNER JOIN MaterialMaster ON MaterialMaster.Plant = Tb_Request.Plant AND MaterialMaster.MaterialGroup = Tb_Master_Emp.Material_Group AND
-                                                MaterialMaster.StorageLocation = Tb_Request.Storage_Location
-                                                INNER JOIN Tb_Approver ON Tb_Approver.Requested_to = Tb_Master_Emp.Approver_2
-                                                WHERE Tb_Master_Emp.Approver_2='".$Employee_Id."' and Tb_Request.status='Waiting_for_approval2' AND Tb_Master_Emp.Document_type IS NOT NULL AND Tb_Master_Emp.Document_type != ''";
-
-                                                $params12 = array();
-                                                $options12 =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
-                                                $stmt12 = sqlsrv_query( $conn, $sql12 , $params12, $options12 );
-                                                $row_count12= sqlsrv_num_rows( $stmt12 );
-                                                ?>
-                                               <?php echo $row_count12 ?>
-                                            </span>
-                                            </div>
-                                        </a>
-                                        </div>
-
-                                    </div>
-                                </div>
-                            </div>
-                            <?php } ?>
                         </div>
                     </div>
 

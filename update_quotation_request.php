@@ -8,6 +8,9 @@ require 'PHPMailer/Exception.php';
 require 'PHPMailer/PHPMailer.php';
 require 'PHPMailer/SMTP.php';
 
+require 'Send_Mail.php';
+$mail = new Send_Mail();
+
 $request_id = $_GET['id'];
 $Employee_Id = $_SESSION['EmpID'];
 
@@ -260,73 +263,33 @@ if (isset($_POST["save"])) {
 
         $item_numRows = COUNT($updated_query);
 
-        // $updated_query = sqlsrv_fetch_array($update_qry);
         $PERSION =  $updated_query[0]['Persion_In_Workflow'];
-        // print_r($PERSION);exit;
+
         $HR_Master_Table = sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code IN (SELECT * FROM SPLIT_STRING('$PERSION',','))  ");
         $idss = array();
         while ($ids = sqlsrv_fetch_array($HR_Master_Table)){
             $idss[] = $ids['Office_Email_Address'];
         }
         $implode = implode(',', $idss);
-        // print_r($implode);exit;
 
-        $update_qry1 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '$recommender_to'");
+        $update_qry1 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '$Requested_to'");
         $updated_query1 = sqlsrv_fetch_array($update_qry1);
         $To =  $updated_query1['Office_Email_Address'];
-        // print_r($To);exit;
 
-        $update_qry12 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '$Purchaser_Code'");
-        $updated_query12 = sqlsrv_fetch_array($update_qry12);
-        $Cc =  $updated_query12['Office_Email_Address'];
-        //  print_r($Cc);exit;
+        // $update_qry12 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '$Purchaser_Code'");
+        // $updated_query12 = sqlsrv_fetch_array($update_qry12);
+        // $Cc =  $updated_query12['Office_Email_Address'];
 
-        $mail = new PHPMailer;
+        $to = explode(',', $To);
 
-        //$mail->SMTPDebug = 3;                               // Enable verbose debug output
+        // informer mail cc
+        $cc = ($implode != '') ? explode(',', $implode) : array();
 
-        $mail->isSMTP();                                      // Set mailer to use SMTP
+        $bcc = array('jr_developer4@mazenetsolution.com','sathish.r@rasiseeds.com');
+            
+        $subject = $emp_id.' - Purchase Request Vendor Selection';
 
-        $mail->Host = "rasiseeds-com.mail.protection.outlook.com";
-        $mail->SMTPAuth = false;
-        $mail->Port = 25;
-        $mail->From = "desk@rasiseeds.com";
-        $mail->FromName = "desk@rasiseeds.com";
-        //$mail->addAddress('joe@example.net', 'Joe User');     // Add a recipient
-        // $mail->addAddress($To_Address);               // Name is optional
-
-        // Add cc or bcc 
-
-        // $to = explode(',', $To);
-        $to = array('jr_developer4@mazenetsolution.com','sathish.r@rasiseeds.com');
-
-        foreach ($to as $address) {
-            // $mail->AddAddress($address);
-            $mail->AddAddress(trim($address));
-        }
-        // $array = "$Cc,$implode";
-
-        // $cc = explode(',', $array);
-        // // print_r($cc);exit;
-        // foreach ($cc as $ccc) {
-        //  // $mail->AddAddress($address);
-        //  $mail->addCC(trim($ccc));
-        // }
-        // $bcc = explode(',', $Bcc);
-
-        // foreach ($bcc as $bccc) {
-        //   // $mail->AddAddress($address);
-        //   $mail->addBCC(trim($bccc));
-        // }
-
-        // $mail->addAttachment($fil);         // Add attachments
-        // $mail->addAttachment($_FILES["attachements"]["tmp_name"], $fil);    // Optional name
-        $mail->isHTML(true);                                  // Set email format to HTML
-
-        $mail->Subject = $updated_query[0]['Request_Category'];
-                
-    $mail_template = '
-        <html>
+        $mail_template = '<html>
         <head>
             <style>
             table, td, th {
@@ -383,22 +346,6 @@ if (isset($_POST["save"])) {
                                             <p style="text-align:center;">'.$msno.'</p>
                                         </td>';
 
-                // if($msno == 1) {
-
-                //     $mail_template .=   '<td rowspan="'.$item_numRows.'">
-                //                                 <p style="text-align:center;">' . $request_id . '</p>
-                //                             </td>
-                //                            <td rowspan="'.$item_numRows.'">
-                //                                 <p style="text-align:center;">' . $value['Department'] . '</p>
-                //                             </td>
-                //                             <td rowspan="'.$item_numRows.'">
-                //                                 <p style="text-align:center;">' . $value['Request_Type'] . '</p>
-                //                             </td>
-                //                             <td rowspan="'.$item_numRows.'">
-                //                                 <p style="text-align:center;">' . $value['Plant'] . '</p>
-                //                             </td>';
-                // }
-
                 $mail_template .= '<td>
                                         <p style="text-align:center;"> ' . $value['Item_Code'] . ' </p>
                                     </td>
@@ -414,16 +361,14 @@ if (isset($_POST["save"])) {
                 $msno++;
         }                      
 
-    $mail_template .=  '</tbody>
+        $mail_template .=  '</tbody>
                     </table>
                 </body>
         </html>';
 
+        $process_mail = $mail->Send_Mail_Details($subject,'','',$mail_template,$to,$cc,$bcc);
 
-        $mail->Body = $mail_template;
-
-        $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';  
-        if (!$mail->send()) {
+        if (!$process_mail) {
             echo 'Message could not be sent.';
             echo 'Mailer Error: ' . $mail->ErrorInfo;
           }else{
@@ -520,6 +465,63 @@ input[type=number]::-webkit-outer-spin-button {
             left: 42%;
             font-size: 20px;
         }
+
+        .material-tr {
+            height: 83px;
+        }
+
+        .material-tr > td {
+            height: auto;
+            vertical-align: middle;
+        }
+
+        .modal-content {
+            cursor: move;
+        }
+
+        body {
+            /* STOP MOVING AROUND! */
+            overflow-x: hidden;
+            overflow-y: scroll !important;
+        }
+
+        .modal_css_load {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1055;
+            display: none;
+            width: 100%;
+            height: 100%;
+             -ms-overflow-style: none;  /* Internet Explorer 10+ */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        @media only screen and (max-width: 600px) {
+            .plant_top_detail {
+                font-size: 10px !important;
+            }
+            .form-control-plaintext {
+                font-size: 10px;
+            }
+            .material_tbl {
+                width: auto !important;
+            }
+
+            th:first-child {
+                position: unset;
+                left: unset;
+            }
+
+            .table-wrapper {
+                margin-left: unset;
+            }
+
+            .footer {
+                left: 0 !important;
+                text-align: center;
+             }              
+        }
         </style>
 
     </head>
@@ -604,7 +606,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                 $plant_detail = sqlsrv_fetch_array($plant_sql_exec);
 
                                             ?>
-                                            <h1 class="badge bg-success" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
+                                            <h1 class="badge bg-success plant_top_detail text-wrap" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
 
                                             <form method="POST" enctype="multipart/form-data" id="quotation_form">
                                                  <input type="hidden" id="mapping_id" name="mapping_id">
@@ -646,7 +648,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                             <th>Vendor SAP Code, if available</th>
                                                             <?php 
                                                                 $vendor_detail_array = array();
-                                                                $vendor_detail = sqlsrv_query($conn, "Select DISTINCT VendorCode,VendorName from vendor_master where VendorCode like 'ST%' ");
+                                                                $vendor_detail = sqlsrv_query($conn, "Select DISTINCT VendorCode,VendorName from vendor_master where 1=1 ");
                                                                 while ($c = sqlsrv_fetch_array($vendor_detail)) {
                                                                     $vendor_detail_array[] = $c; 
                                                                 }
@@ -736,6 +738,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                                         <?php
                                                                         $result = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '$request_id'",[],array( "Scrollable" => SQLSRV_CURSOR_KEYSET ));
                                                                         $item_count = sqlsrv_num_rows($result);
+                                                                        $mt_index = 1;
                                                                         while ($row = sqlsrv_fetch_array($result)) {
                                                                             $ID = $row['ID'];
                                                                             $ItemCode = $row['Item_Code'];
@@ -743,7 +746,14 @@ input[type=number]::-webkit-outer-spin-button {
                                                                             ?>
                                                                             <tr>
                                                                                 <input type="hidden" id="mat_count" name="mat_count" value="<?php echo $item_count; ?>">
-                                                                                <td><input type="text" class="form-control-plaintext" readonly value="<?php echo trim($row['Description']) ?>-<?php echo $row['UOM'] ?>"
+                                                                                <td>
+                                                                                    <div>
+                                                                                        <span class="badge badge-soft-primary"><?php echo substr(trim($ItemCode),-10); ?></span>
+                                                                                        <span class="badge badge-soft-danger ms-3"><?php echo trim($row['UOM']); ?></span>
+
+                                                                                    </div>
+
+                                                                                    <input type="text" class="form-control-plaintext" readonly value="<?php echo $mt_index.') '.trim($row['Description']) ?>"
                                                                                     data-bs-toggle="modal" data-bs-target=".bs-example-modal-center<?php echo $ID ?>">
                                                                                         <!-- Modal -->
                                                                                         <div class="modal fade bs-example-modal-center<?php echo $ID ?>" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
@@ -756,31 +766,33 @@ input[type=number]::-webkit-outer-spin-button {
                                                                                                         </button>
                                                                                                     </div>
                                                                                                     <div class="modal-body">
-                                                                                                        <table class="table table-bordered" >
-                                                                                                            <thead>
-                                                                                                                <tr>
-                                                                                                                    <td>Vendor Code</td>
-                                                                                                                    <th>Material Name</th>
-                                                                                                                    <th>Price</th>
-                                                                                                                    <th>Purchace Date</th>
-                                                                                                                </tr>
-                                                                                                            </thead>
-                                                                                                            <tbody>
-                                                                                                            <?php
-                                                                                                                $result1 = sqlsrv_query($conn, "SELECT TOP 3 * FROM MIGO_DET WHERE  MATNR = '$ItemCode' ORDER BY LINE_ID DESC ");
-                                                                                                                while ($row1 = sqlsrv_fetch_array($result1)) {
-                                                                                                            ?>
-                                                                                                                <tr>
-                                                                                                                    <td><?php echo $row1['LIFNR'] ?></td>
-                                                                                                                    <td><?php echo $row['Description'] ?></td>
-                                                                                                                    <td><?php echo $row1['MENGE'] ?></td>
-                                                                                                                    <td><?php echo $row1['BUDAT_MKPF']->format('Y-m-d') ?></td>
-                                                                                                                </tr>
+                                                                                                        <div class="table-responsive">
+                                                                                                            <table class="table table-bordered" >
+                                                                                                                <thead>
+                                                                                                                    <tr>
+                                                                                                                        <td>Vendor Code</td>
+                                                                                                                        <th>Material Name</th>
+                                                                                                                        <th>Price</th>
+                                                                                                                        <th>Purchace Date</th>
+                                                                                                                    </tr>
+                                                                                                                </thead>
+                                                                                                                <tbody>
                                                                                                                 <?php
-                                                                                                                        }
-                                                                                                                    ?>
-                                                                                                            </tbody>
-                                                                                                        </table>
+                                                                                                                    $result1 = sqlsrv_query($conn, "SELECT TOP 3 * FROM MIGO_DET WHERE  MATNR = '$ItemCode' ORDER BY LINE_ID DESC ");
+                                                                                                                    while ($row1 = sqlsrv_fetch_array($result1)) {
+                                                                                                                ?>
+                                                                                                                    <tr>
+                                                                                                                        <td><?php echo $row1['LIFNR'] ?></td>
+                                                                                                                        <td><?php echo $row['Description'] ?></td>
+                                                                                                                        <td><?php echo $row1['MENGE'] ?></td>
+                                                                                                                        <td><?php echo $row1['BUDAT_MKPF']->format('Y-m-d') ?></td>
+                                                                                                                    </tr>
+                                                                                                                    <?php
+                                                                                                                            }
+                                                                                                                        ?>
+                                                                                                                </tbody>
+                                                                                                            </table>
+                                                                                                        </div>
                                                                                                     </div>
                                                                                                     <div class="modal-footer">
                                                                                                         <button type="button" class="btn btn-danger waves-effect waves-light btn-sm" data-bs-dismiss="modal" aria-label="Close">Close</button>
@@ -791,7 +803,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                                                 </td>
                                                                             </tr>
                                                                         <?php
-                                                                        }
+                                                                        $mt_index++;}
                                                                         ?>
                                                                     </tbody>
                                                                 </table>
@@ -825,7 +837,7 @@ input[type=number]::-webkit-outer-spin-button {
 
                                                                             $array_ind = ($arr_index > 0) ? $arr_index : '';
                                                                             ?>
-                                                                            <tr>
+                                                                            <tr class="material-tr">
                                                                                 <td>
                                                                                     <input type="text"
                                                                                         class="form-control  qty<?php echo $array_ind; ?> vendor<?php echo $tbl_index; ?>_qty_material<?php echo $inner_index;?>" style="width: 75px; "
@@ -1081,7 +1093,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                             for ($i=0; $i < $saved_count; $i++) { ?>
                                                             <td>
                                                                 <div class="d-flex align-items-center">
-                                                                    <input class="form-control file-upload-input" type="file" name="Attachment[]" placeholder="" id="formFile" onchange="readURL(this)" data-id="<?php echo $rindex; ?>" accept="image/png, image/gif, image/jpeg,image/jpg,application/pdf" value="<?php echo $saved_data[$i]['Attachment']; ?>">
+                                                                    <input class="form-control file-upload-input" type="file" name="Attachment_1[]" placeholder="" id="formFile" multiple="multiple" onchange="readURL(this)" data-id="<?php echo $rindex; ?>" accept="image/png, image/gif, image/jpeg,image/jpg,application/pdf" value="<?php echo $saved_data[$i]['Attachment']; ?>">
                                                                     <!-- <span class="ms-2 file_view" data-id="<?php echo $rindex; ?>" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-eye text-primary"></i></span> -->
                                                                     <span class="ms-2 file_remove" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-window-close text-danger"></i></span>
                                                                 </div>
@@ -1091,7 +1103,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                                 ?>
 
                                                                 <!-- file preview modal -->
-                                                                <div class="modal fade" id="file_preview_modal_<?php echo $rindex; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                <div class="modal fade modal_css_load" id="file_preview_modal_<?php echo $rindex; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static">
                                                                   <div class="modal-dialog modal-lg">
                                                                     <div class="modal-content">
                                                                       <div class="modal-header">
@@ -1150,19 +1162,33 @@ input[type=number]::-webkit-outer-spin-button {
                                                 <div class="row" id="involved_persons_div" style="display:none;">
                                                     <div class="col-md-5">
                                                         <h4>Involved Persons</h4>
-                                                        <table class="table table-striped table-bordered table-hover" >
-                                                          <thead>
-                                                            <tr>
-                                                              <th>Purchaser</th>
-                                                              <th>Recommender</th>
-                                                              <th>Approver</th>
-                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
-                                                            </tr>
-                                                          </thead>
-                                                          <tbody id="involved_persons_tbody">
+                                                        <div class="table-responsive">
+                                                            <table class="table table-striped table-bordered table-hover" >
+                                                              <thead>
+                                                                <tr>
+                                                                  <th>Purchaser</th>
+                                                                  <th>Recommender</th>
+                                                                  <th>Approver</th>
+                                                                  <th style="display:none;" class="inv_fin_appr">Final Approver</th>
+                                                                </tr>
+                                                              </thead>
+                                                              <tbody id="involved_persons_tbody">
 
-                                                          </tbody>
-                                                        </table>
+                                                              </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <br>
+                                                <div class="row justification_div justify-content-center"> 
+                                                    <div class="col-2">
+                                                        <label for="justification" class="float-end">Justification For Single Vendor<span class="text-danger"> *</span></label>
+                                                    </div>   
+                                                    <div class="col-6">
+                                                        <textarea class="form-control required_for_valid" name="justification" id="justification" required error-msg="Justification field is required"><?php echo $request_details['vendor_justification']; ?>
+                                                        </textarea>
+                                                        <span class="error_msg text-danger" style="display: none;"></span>
                                                     </div>
                                                 </div>
 
@@ -1213,6 +1239,10 @@ input[type=number]::-webkit-outer-spin-button {
         <script src="assets/js/app.js"></script>
         <!-- CUSTOM SCRIPT -->
        <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+        <!-------Model Trag and Trap ---------->
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+        <!-----------End --------------->
         
         <script>
             var i = 1;
@@ -1230,9 +1260,11 @@ input[type=number]::-webkit-outer-spin-button {
                 var request_id = '<?php echo $request_id ?>';
                 var emp_id = '<?php echo $Employee_Id ?>';
 
+                var po_creator_id = $('#po_creator_id').val();
+
                 if(first_pref_quote_value != '') {
                     get_involved_persons(first_pref_quote_value);
-                    get_mapping_details(request_id,first_pref_quote_value,emp_id);
+                    get_mapping_details(request_id,first_pref_quote_value,po_creator_id);
                 }
 
             });
@@ -1814,7 +1846,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                                     $result = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '$request_id'");
                                                                     while ($row = sqlsrv_fetch_array($result)) {
                                                                         ?>
-                                                                            <tr>
+                                                                            <tr class="material-tr">
                                                                                 <td>
                                                                                     <input type="text" style="width: 75px; " class="form-control  qty3 vendor${i}_qty_material<?php echo $mat_index;?>"  readonly data-id="${i}" id='qty3${i}' name="Quantity_Details[]-<?php echo $row['ID'] ?>${i}" value="<?php echo $row['Quantity'] ?>" placeholder="Enter Quantity Details"> <input type="hidden" class="form-control" name="Meterial_Name[]" value="<?php echo $row['Item_Code'] ?>" >
                                                                                     <input type="hidden" class="form-control" name="V_id[]" value="Vendor ${i}" >
@@ -2142,6 +2174,22 @@ input[type=number]::-webkit-outer-spin-button {
                     var value = $(this).val();
                     var row_id = $(this).data('id');
 
+                    // justification remark for single vendor functionality part start
+                    var entered_vendor_count = 0;
+                    $('.vendors').each(function(){
+                        if($(this).val() != 'Select Vendor SAP') {
+                            entered_vendor_count++;
+                        }
+                    });
+
+                    $('#justification').addClass('required_for_valid');
+                    $('.justification_div').show();
+                    if(entered_vendor_count > 1) {
+                        $('#justification').removeClass('required_for_valid');
+                        $('.justification_div').hide();
+                    }
+                    // justification remark for single vendor functionality part end
+
                     if(value != '' && value != 'Select Vendor SAP') {
                         $('.vendor_price_'+row_id).removeAttr('readonly');
                         // $('.vendor_gst_percent_'+row_id).removeAttr('readonly');
@@ -2274,11 +2322,13 @@ input[type=number]::-webkit-outer-spin-button {
                     if(current_val == ''){
                       error_count++;
                       $(this).closest('td').find(".error_msg").html(error_msg).show();
+                      $(this).closest('div').find(".error_msg").html(error_msg).show();
 
                       // $(".error_msg").html(error_msg).show();
 
                     }else{
                       $(this).closest('td').find(".error_msg").html('').hide();
+                      $(this).closest('div').find(".error_msg").html('').hide();
 
                       // $(".error_msg").html('').hide();
                     }
@@ -2679,7 +2729,9 @@ input[type=number]::-webkit-outer-spin-button {
 
                      if(file_type == 'pdf') {
                         var src = $(this).closest('div').find('#pdf_input'+row_id).val();
-                        $('.preview_file_pdf_'+row_id).attr('src', src+'#toolbar=0');
+                        var src_url = 'https://docs.google.com/viewer?url=https://corporate.rasiseeds.com/corporate/final_request/'+src+'&embedded=true';
+
+                        $('.preview_file_pdf_'+row_id).attr('src', src_url+'#toolbar=0');
                         $('.preview_file_img_'+row_id).hide();
                         $('.preview_file_pdf_'+row_id).show();
                      } else {
@@ -2689,6 +2741,10 @@ input[type=number]::-webkit-outer-spin-button {
                      } 
                     $('#file_preview_modal_'+row_id).modal('show');
 
+                });
+
+                $(".modal").draggable({
+                    handle: ".modal-content"
                 });
                 
         </script>

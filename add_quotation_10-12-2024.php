@@ -1,5 +1,6 @@
 <?php
 include('../auto_load.php');
+include('adition.php');
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -11,35 +12,31 @@ require 'PHPMailer/SMTP.php';
 require 'Send_Mail.php';
 $mail = new Send_Mail();
 
+
+if(!isset($_SESSION['EmpID']))
+{
+    ?>
+<script type="text/javascript">
+	window.location = "../pages/indexAdmin.php";
+</script>
+<?php
+}
 $request_id = $_GET['request_id'];
+
 $Employee_Id = $_SESSION['EmpID'];
 
-$saved_quotation_sql = "SELECT * FROM Tb_Vendor_Selection WHERE Request_ID = '".$request_id."'";
-$saved_quotation_exec = sqlsrv_query($conn, $saved_quotation_sql, array(), array("Scrollable" => 'static'));
-$saved_count = sqlsrv_num_rows($saved_quotation_exec);
-$saved_data = array();
-while($saved_quotation_res = sqlsrv_fetch_array($saved_quotation_exec,SQLSRV_FETCH_ASSOC)) {
-	$saved_data[] = $saved_quotation_res;
-}
-// $aat = explode(',',$saved_data[1]['Attachment']);
-// echo "<pre>";print_r(explode('.',$aat[0]));exit;
+$selector1 = sqlsrv_query($conn, "SELECT  * FROM Tb_Master_Emp
+WHERE Purchaser = '$Employee_Id' ");
+$selector_arr1 = sqlsrv_fetch_array($selector1);
 
-$request_detail_sql = "SELECT * from Tb_Request WHERE Request_ID = '".$request_id."'";
-$request_detail_exec = sqlsrv_query($conn, $request_detail_sql);
-$request_details = sqlsrv_fetch_array($request_detail_exec,SQLSRV_FETCH_ASSOC);
-
-// echo "<pre>";print_r($saved_data);exit;
-// echo $saved_count;exit;
-$first_preference_quotation_value = '';
-foreach ($saved_data as $key => $value) {
-	if($value['Requester_Selection'] == 1) {
-		$first_preference_quotation_value = $value['Value_Of'];
-	}
-}
-
+$recommender_to = $selector_arr1['Recommender'];
+$approver_name = $selector_arr1['Approver'];
+$verifier_name = $selector_arr1['Finance_Verfier'];
+$Purchaser_Code = $selector_arr1['Purchaser'];
+$Recommender_Code = $selector_arr1['Recommender'];
+$Plant = $selector_arr1['Plant'];
 
 if (isset($_POST["save"])) {
-	// echo "<pre>";print_r($_FILES);exit;
 	$_POST = array_map(function($value) { 
          if(is_array($value)){
                  $mArr = array_map(function($value1) { 
@@ -50,6 +47,9 @@ if (isset($_POST["save"])) {
              return str_replace("'","''", $value); 
          }
   	}, $_POST);
+
+		// echo "<pre>";print_r($_POST);exit;
+
 
 	// vendor detail exist check
 	$vendor_exist_query ="SELECT * from Tb_Vendor_Selection where Request_Id = '".$request_id."'";
@@ -66,6 +66,7 @@ if (isset($_POST["save"])) {
 
 			$findex++;	
 	   	}
+
 		// delete already saved quotation vendor detail 
 		sqlsrv_query($conn, "DELETE FROM Tb_Vendor_Selection where Request_Id = '".$request_id."'");		
 	}
@@ -107,7 +108,6 @@ if (isset($_POST["save"])) {
 		}
 	}
 
-
 	//approval mapping id insertion
     $query1 = sqlsrv_query($conn, "UPDATE Tb_Request set approval_mapping_id = '".$_POST['mapping_id']."' WHERE Request_id = '$request_id' ");
 
@@ -129,18 +129,23 @@ if (isset($_POST["save"])) {
 		$Payment_Terms = $_POST['Payment_Terms'][$i];
 		$Requester_Selection = $_POST['Requester_Selection'][$i];
 		$Requester_Remarks = $_POST['Requester_Remarks'][$i];
-		// $fil = $_FILES["Attachment"]["name"][$i];
+		// // $fil = $_FILES["Attachment"]["name"][$i];
+		// $filename = basename($_FILES["Attachment"]["name"][$i]);
+		// $extension = pathinfo($filename, PATHINFO_EXTENSION);
+		// $fil = $filename.date('h:i:s').'.'.$extension;
 
 		$V_id = $_POST['V1_id'][$i];
 		$emp_id = $Employee_Id;
 		// $Requested_to = $Recommender_Code;
 		$Requested_to = $_POST['recommendor_id'];
 
+
 		$total_amount    = ($_POST['amt_tot'][$i] != '') ? $_POST['amt_tot'][$i] : 0;
 		$discount_amount = ($_POST['discount_amount'][$i] != '') ? $_POST['discount_amount'][$i] : 0;
 		$package_amount = ($_POST['package_amount'][$i] != '') ? $_POST['package_amount'][$i] : 0;
 		$package_percentage = ($_POST['package_percentage'][$i] != '') ? $_POST['package_percentage'][$i] : 0;
 		
+
 		$fil = '';
 		if($_FILES["Attachment_".$file_index]["name"][0] != '') {
 			$file_count = COUNT($_FILES["Attachment_".$file_index]["name"]);
@@ -166,11 +171,7 @@ if (isset($_POST["save"])) {
 						$separate_findex++;
 					}
 			}
-		} elseif(COUNT($saved_data) > 0) {
-			$fil = $saved_data[$i]['Attachment']; 
 		}
-
-
 
 		$vendor ="INSERT INTO Tb_Vendor_Selection(Request_Id, Vendor_SAP, Vendor_Name, Vendor_City,vendor_Active_SAP,
 			Last_Purchase, Delivery_Time, Value_Of, Fright_Charges, Insurance_Details, GST_Component, Warrenty,
@@ -179,7 +180,8 @@ if (isset($_POST["save"])) {
 			'$Delivery_Time','$Value_Of','$Fright_Charges','$Insurance_Details','$GST_Component','$Warrenty','$Payment_Terms','$Requester_Selection',
 			'$Requester_Remarks','$fil',GETDATE(),'Added','$V_id','$emp_id','$Requested_to','$total_amount','$discount_amount','$package_amount','$package_percentage')";
 
-        $rs_vendor = sqlsrv_query($conn, $vendor);
+
+	    $rs_vendor = sqlsrv_query($conn, $vendor);
 
 		$query1 = sqlsrv_query($conn, "UPDATE Tb_Request set status = 'Added',Recommender = '$Requested_to',is_saved = '0' WHERE Request_Id = '$request_id' ");
 		$query1 = sqlsrv_query($conn, "UPDATE Tb_Request_Items set status = 'Added',Recommender = '$Requested_to' WHERE Request_Id = '$request_id' ");
@@ -203,9 +205,7 @@ if (isset($_POST["save"])) {
 
 	        $rs = sqlsrv_query($conn, $query);
 		}
-
-		$file_index++;
-			
+		$file_index++;	
 	}
 
 
@@ -262,9 +262,7 @@ if (isset($_POST["save"])) {
 
         $item_numRows = COUNT($updated_query);
 
-		// $updated_query = sqlsrv_fetch_array($update_qry);
 		$PERSION =  $updated_query[0]['Persion_In_Workflow'];
-		// print_r($PERSION);exit;
 		$HR_Master_Table = sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code IN (SELECT * FROM SPLIT_STRING('$PERSION',','))  ");
 		$idss = array();
 		while ($ids = sqlsrv_fetch_array($HR_Master_Table)){
@@ -286,11 +284,10 @@ if (isset($_POST["save"])) {
 	    $cc = ($implode != '') ? explode(',', $implode) : array();
 
 	    $bcc = array('jr_developer4@mazenetsolution.com','sathish.r@rasiseeds.com');
-		    
+
 	    $subject = $emp_id.' - Purchase Request Vendor Selection';
 
-		$mail_template = '
-        <html>
+		$mail_template = '<html>
         <head>
             <style>
             table, td, th {
@@ -347,24 +344,8 @@ if (isset($_POST["save"])) {
                                             <p style="text-align:center;">'.$msno.'</p>
                                         </td>';
 
-                // if($msno == 1) {
-
-                //     $mail_template .=   '<td rowspan="'.$item_numRows.'">
-                //                                 <p style="text-align:center;">' . $request_id . '</p>
-                //                             </td>
-                //                            <td rowspan="'.$item_numRows.'">
-                //                                 <p style="text-align:center;">' . $value['Department'] . '</p>
-                //                             </td>
-                //                             <td rowspan="'.$item_numRows.'">
-                //                                 <p style="text-align:center;">' . $value['Request_Type'] . '</p>
-                //                             </td>
-                //                             <td rowspan="'.$item_numRows.'">
-                //                                 <p style="text-align:center;">' . $value['Plant'] . '</p>
-                //                             </td>';
-                // }
-
                 $mail_template .= '<td>
-                                        <p style="text-align:center;"> '. $value['Description'] . '('.$value['Item_Code'].') </p>
+                                        <p style="text-align:center;"> ' . $value['Description'] . '('.$value['Item_Code'].') </p>
                                     </td>
                                     <td>
                                         <p style="text-align:center;"> ' . $value['Quantity'] . ' </p>
@@ -378,13 +359,14 @@ if (isset($_POST["save"])) {
                 $msno++;
         }                      
 
-    $mail_template .=  '</tbody>
+        $mail_template .=  '</tbody>
                     </table>
                 </body>
         </html>';
 
 		$process_mail = $mail->Send_Mail_Details($subject,'','',$mail_template,$to,$cc,$bcc);
 				
+
 		if (!$process_mail) {
 			echo 'Message could not be sent.';
 			echo 'Mailer Error: ' . $mail->ErrorInfo;
@@ -398,8 +380,6 @@ if (isset($_POST["save"])) {
 		  }
 }
 ?>
-
-
 <!doctype html>
 <html lang="en">
 
@@ -456,6 +436,10 @@ input[type=number]::-webkit-outer-spin-button {
 			cursor: pointer;
 			display: none;
 		}
+		.add_more_file {
+			cursor: pointer;
+		}
+
 		.error_msg {
 			display: none;
 			font-size: 13px;
@@ -465,6 +449,9 @@ input[type=number]::-webkit-outer-spin-button {
 			display: none;
 		}
 
+		.spinner-border {
+			display: none;
+		}
 		.display_section {
 			cursor: pointer;
 		}
@@ -477,14 +464,67 @@ input[type=number]::-webkit-outer-spin-button {
 		    font-size: 20px;
 		}
 
+		/*.display_section>div:hover {
+			display: block;
+		}*/
+
 		.material-tr {
-			height: 83px;
+			height: 78px;
 		}
 
 		.material-tr > td {
 			height: auto;
     		vertical-align: middle;
 		}
+
+
+        .modal-content {
+    		cursor: move;
+		}
+
+		body {
+		    /* STOP MOVING AROUND! */
+		    overflow-x: hidden;
+		    overflow-y: scroll !important;
+		}
+
+		.modal_css_load {
+		    position: fixed;
+		    top: 0;
+		    left: 0;
+		    z-index: 1055;
+		    display: none;
+		    width: 100%;
+		    height: 100%;
+		     -ms-overflow-style: none;  /* Internet Explorer 10+ */
+		    scrollbar-width: none;  /* Firefox */
+		}
+
+		@media only screen and (max-width: 600px) {
+            .plant_top_detail {
+                font-size: 10px !important;
+            }
+            .form-control-plaintext {
+                font-size: 10px;
+            }
+            .material_tbl {
+                width: auto !important;
+            }
+
+            th:first-child {
+                position: unset;
+                left: unset;
+            }
+
+            .table-wrapper {
+                margin-left: unset;
+            }
+
+            .footer {
+                left: 0 !important;
+                text-align: center;
+             }              
+        }
         </style>
 
     </head>
@@ -519,7 +559,7 @@ input[type=number]::-webkit-outer-spin-button {
             <div class="main-content">
 
                 <div class="page-content">
-                	<input type="hidden" id="saved_vendor_count" value="<?php echo $saved_count;?>">
+
                     <!-- start page title -->
                     <div class="page-title-box">
                         <div class="container-fluid">
@@ -569,7 +609,7 @@ input[type=number]::-webkit-outer-spin-button {
                                         		$plant_detail = sqlsrv_fetch_array($plant_sql_exec);
 
                                         	?>
-                                        	<h1 class="badge bg-success" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
+                                        	<h1 class="badge bg-success plant_top_detail text-wrap" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
 
                                             <form method="POST" enctype="multipart/form-data" id="quotation_form">
 			                                     <input type="hidden" id="mapping_id" name="mapping_id">
@@ -582,109 +622,106 @@ input[type=number]::-webkit-outer-spin-button {
 			                                     <input type="hidden" id="po_plant" value="<?php echo $po_creator['Plant']; ?>">
 			                                     <input type="hidden" id="po_mat_group" value="<?php echo $po_creator['MaterialGroup']; ?>">
 
+
 											     <input type="hidden" id="req_id" name="req_id" value="<?php echo $request_id; ?>">
-
-											     <input type="hidden" id="first_pref_quote_value" value="<?php echo $first_preference_quotation_value; ?>">
-
-											     
-												<input type="hidden" id="material_request_count" value="<?php echo $saved_count; ?>">
 
                                                 <div class="table-wrapper">
                                                     <table id="busDataTable" class="data">
                                                         <tbody class="results" id="rone">
 														<tr id="head">
 															<th>Particulars</th>
-															<?php
-															for ($i=1; $i <= $saved_count; $i++) { ?>
-															<td>
-																Vendor <?php echo $i;?>
-															<input type="hidden" class="form-control"
-																	name="V1_id[]" value="Vendor <?php echo $i;?>"></td>
-															<?php } ?>
-															<!-- <td>Vendor 2<input type="hidden" class="form-control"
+															<td>Vendor 1<input type="hidden" class="form-control"
+																	name="V1_id[]" value="Vendor 1"></td>
+															<td>Vendor 2<input type="hidden" class="form-control"
 																	name="V1_id[]" value="Vendor 2"></td>
 															<td>Vendor 3<input type="hidden" class="form-control"
-																	name="V1_id[]" value="Vendor 3"></td> -->
+																	name="V1_id[]" value="Vendor 3"></td>
 														</tr>
-
 														<tr id="one">
 															<th>Vendor SAP Code, if available</th>
-															<?php 
-																$vendor_detail_array = array();
-																$vendor_detail = sqlsrv_query($conn, "Select DISTINCT VendorCode,VendorName from vendor_master where VendorCode like 'ST%' ");
-																while ($c = sqlsrv_fetch_array($vendor_detail)) {
-																	$vendor_detail_array[] = $c; 
-																}
-															?>
-															<?php
-															$vendor_index = 0;
-															for ($i=1; $i <= $saved_count; $i++) { ?>
+														
 															<td>
-																<select class="form-control s vendors" 
-																	name="Vendor_SAP[]" id="vendor-dropdown<?php echo ($vendor_index != 0) ? $vendor_index : '' ?>" data-id="<?php echo $i; ?>">
-																	<option selected>Select Vendor SAP</option>
-																	<option value="New">New Vendor</option>
-																	<?php
-																	foreach ($vendor_detail_array as $key => $value) {
-																	?>
-																		<option value="<?php echo $value['VendorCode'] ?>" <?php if($saved_data[$vendor_index]['Vendor_SAP'] == $value['VendorCode']) { ?> selected <?php } ?>>
-																		<?php echo $value['VendorName'] ?>&nbsp;-&nbsp;<?php echo $value['VendorCode'] ?>
-																		</option>
-																		<?php
-																	}
-																	?>
-																</select>
+																<div class="d-flex">
+																	<select class="form-control  s vendors" 
+																		name="Vendor_SAP[]" id="vendor-dropdown" data-id="1" style="width: 100%;">
+																
+																		
+																	</select>
+																	<div class="spinner-border text-primary ms-3 vendor_spinner_loader" role="status">
+																	  <span class="visually-hidden">Loading...</span>
+																	</div>
+																</div>
 															</td>
-															<?php $vendor_index++; } ?>
+															<td>
+																<div class="d-flex">
+																	<select class="form-control  s vendors"
+																		name="Vendor_SAP[]" id="vendor-dropdown1" data-id="2"  style="width: 100%;">
+																		
+																	</select>
+																	<div class="spinner-border text-primary ms-3 vendor_spinner_loader" role="status">
+																	  <span class="visually-hidden">Loading...</span>
+																	</div>
+																</div>
+															</td>
+															<td>
+																<div class="d-flex">
+																	<select class="form-control  s vendors"
+																		name="Vendor_SAP[]" id="vendor-dropdown2" data-id="3"  style="width: 100%;">
+																	
+																	</select>
+																	<div class="spinner-border text-primary ms-3 vendor_spinner_loader" role="status">
+																	  <span class="visually-hidden">Loading...</span>
+																	</div>
+																</div>
+															</td>
 														</tr>
-													
 														<tr id="two">
 															<th>Name of vendor</th>
-															<?php 
-															for ($i=0; $i < $saved_count; $i++) { ?>
-															<td>
-																<input type="text" class="form-control  disabled vendorname1" 
+															<td><input type="text" class="form-control  disabled vendorname1" 
 																	id="vendorname" name="Vendor_Name[]"
-																	placeholder="Enter Name of vendor" <?php if($saved_data[$i]['Vendor_SAP'] != 'New'){ ?> readonly <?php } ?> value="<?php echo $saved_data[$i]['Vendor_Name'] ?>">
-															</td>
-															<?php } ?>
+																	placeholder="Enter Name of vendor"></td>
+															<td><input type="text" class="form-control  disabled1 vendorname2" 
+																	id="vendorname1" name="Vendor_Name[]"
+																	placeholder="Enter Name of vendor"></td>
+															<td><input type="text" class="form-control  disabled2 vendorname3" 
+																	id="vendorname2" name="Vendor_Name[]"
+																	placeholder="Enter Name of vendor"></td>
 														</tr>
 														<tr id="three">
 															<th>City of vendor</th>
-															<?php 
-															for ($i=0; $i < $saved_count; $i++) { ?>
-															<td>
-																<input type="text" class="form-control  disabled city1"  
+															<td><input type="text" class="form-control  disabled city1"  
 																	id="city" name="Vendor_City[]"
-																	placeholder="Enter City of vendor" value="<?php echo $saved_data[$i]['Vendor_City'] ?>" <?php if($saved_data[$i]['Vendor_SAP'] != 'New'){ ?> readonly <?php } ?>>
-															</td>
-															<?php } ?>
+																	placeholder="Enter City of vendor"></td>
+															<td><input type="text" class="form-control  disabled1 city2" 
+																	id="city1" name="Vendor_City[]"
+																	placeholder="Enter City of vendor"></td>
+															<td><input type="text" class="form-control  disabled2 city3" 
+																	id="city2" name="Vendor_City[]"
+																	placeholder="Enter City of vendor"></td>
 														</tr>
 														<tr id="four">
 															<th>Whether vendor is active in SAP?</th>
-															
-															<?php 
-															for ($i=0; $i < $saved_count; $i++) { ?>
-															<td>
-																<input type="text" class="form-control  disabled dis Active1" id="Active"  
+															<td><input type="text" class="form-control  disabled dis Active1" id="Active"  
 																	name="vendor_Active_SAP[]"
-																	placeholder="Enter vendor is active in SAP"  value="<?php echo $saved_data[$i]['vendor_Active_SAP'] ?>" <?php if($saved_data[$i]['Vendor_SAP'] != 'New'){ ?> readonly <?php } ?>>
-															</td>
-															<?php } ?>
-														
+																	placeholder="Enter vendor is active in SAP"></td>
+															<td><input type="text" class="form-control  disabled1 dis1 Active2" id="Active1" 
+																	name="vendor_Active_SAP[]"
+																	placeholder="Enter vendor is active in SAP"></td>
+															<td><input type="text" class="form-control  disabled2 dis2 Active3" id="Active2" 
+																	name="vendor_Active_SAP[]"
+																	placeholder="Enter vendor is active in SAP"></td>
 														</tr>
 														<tr id="five">
 															<th>Last purchase made on</th>
-
-															<?php 
-															for ($i=0; $i < $saved_count; $i++) { ?>
-															<td>
-																<input type="text" class="form-control  disabled dis Last_purchase1" id="Last_purchase"  
+															<td><input type="text" class="form-control  disabled dis Last_purchase1" id="Last_purchase"  
 																	name="Last_Purchase[]"
-																	placeholder="Enter Last purchase" value="<?php echo $saved_data[$i]['Last_Purchase'] ?>" <?php if($saved_data[$i]['Vendor_SAP'] != 'New'){ ?> readonly <?php } ?>>
-																
-															</td>
-															<?php } ?>
+																	placeholder="Enter Last purchase"></td>
+															<td><input type="text" class="form-control  disabled1 dis1 Last_purchase2" id="Last_purchase1" 
+																	name="Last_Purchase[]"
+																	placeholder="Enter Last purchase"></td>
+															<td><input type="text" class="form-control  disabled2 dis2 Last_purchase3" id="Last_purchase2" 
+																	name="Last_Purchase[]"
+																	placeholder="Enter Last purchase"></td>
 														</tr>
 														<tr id="six">
 															<th>
@@ -694,13 +731,15 @@ input[type=number]::-webkit-outer-spin-button {
 																		<tr>
 																			<td>
 																				<b>Material Wise Quantity Details</b>
-                                                                			</td>
+                                                                </td>
 																		</tr>
 																	</thead>
 																	<tbody>
 																		<?php
-																		$result = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '$request_id'",[],array( "Scrollable" => SQLSRV_CURSOR_KEYSET ));
+																		$result = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '$request_id' ",[],array( "Scrollable" => SQLSRV_CURSOR_KEYSET ));
+
 																		$item_count = sqlsrv_num_rows($result);
+																		$mt_index = 1;
 																		while ($row = sqlsrv_fetch_array($result)) {
 																			$ID = $row['ID'];
 																			$ItemCode = $row['Item_Code'];
@@ -709,16 +748,16 @@ input[type=number]::-webkit-outer-spin-button {
 																			<tr>
 																				<input type="hidden" id="mat_count" name="mat_count" value="<?php echo $item_count; ?>">
 																				<td>
-																					<div>
+																					<div class="d-flex align-items-center">
 																						<span class="badge badge-soft-primary"><?php echo substr(trim($ItemCode),-10); ?></span>
 																						<span class="badge badge-soft-danger ms-3"><?php echo trim($row['UOM']); ?></span>
 
 																					</div>
-																					<input type="text" class="form-control-plaintext" readonly value="<?php echo trim($row['Description']) ?>"
+																					<input type="text" class="form-control-plaintext" readonly value="<?php echo $mt_index.') '.trim($row['Description']) ?>"
                                                                                     data-bs-toggle="modal" data-bs-target=".bs-example-modal-center<?php echo $ID ?>">
 																						<!-- Modal -->
 																						<div class="modal fade bs-example-modal-center<?php echo $ID ?>" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
-                                                                                            <div class="modal-dialog modal-dialog-centered">
+                                                                                            <div class="modal-dialog modal-dialog-centered modal-lg">
                                                                                                 <div class="modal-content">
                                                                                                     <div class="modal-header">
                                                                                                         <h5 class="modal-title mt-0">Last Purchace Date For Vendor</h5>
@@ -727,10 +766,12 @@ input[type=number]::-webkit-outer-spin-button {
                                                                                                         </button>
                                                                                                     </div>
                                                                                                     <div class="modal-body">
-                                                                                                        <table class="table table-bordered" >
+                                                                                                    	<div class="table-responsive">
+                                                                                                        	<table class="table table-bordered" >
                                                                                                             <thead>
                                                                                                                 <tr>
-                                                                                                                    <td>Vendor Code</td>
+                                                                                                                    <td>Sno</td>
+                                                                                                                    <td>Vendor Name</td>
                                                                                                                     <th>Material Name</th>
                                                                                                                     <th>Price</th>
                                                                                                                     <th>Purchace Date</th>
@@ -738,20 +779,26 @@ input[type=number]::-webkit-outer-spin-button {
                                                                                                             </thead>
                                                                                                             <tbody>
                                                                                                             <?php
-                                                                                                                $result1 = sqlsrv_query($conn, "SELECT TOP 3 * FROM MIGO_DET WHERE  MATNR = '$ItemCode' ORDER BY LINE_ID DESC ");
+                                                                                                            	$v_sn = 1;
+                                                                                                                $result1 = sqlsrv_query($conn, "SELECT TOP 3 MIGO_DET.*,vendor_master.VendorName  FROM MIGO_DET
+                                                                                                                	LEFT JOIN vendor_master ON vendor_master.VendorCode = MIGO_DET.LIFNR
+                                                                                                                	 WHERE  MATNR = '$ItemCode' ORDER BY LINE_ID DESC ");
                                                                                                                 while ($row1 = sqlsrv_fetch_array($result1)) {
                                                                                                             ?>
                                                                                                                 <tr>
-                                                                                                                    <td><?php echo $row1['LIFNR'] ?></td>
+                                                                                                                	 <td><?php echo $v_sn; ?></td>
+                                                                                                                    <td><?php echo $row1['VendorName'] ?></td>
                                                                                                                     <td><?php echo $row['Description'] ?></td>
                                                                                                                     <td><?php echo $row1['MENGE'] ?></td>
-                                                                                                                    <td><?php echo $row1['BUDAT_MKPF']->format('Y-m-d') ?></td>
+                                                                                                                    <td><?php echo ($row1['BUDAT_MKPF'] != null && $row1['BUDAT_MKPF'] != '') ? $row1['BUDAT_MKPF']->format('Y-m-d') : '' ?></td>
                                                                                                                 </tr>
                                                                                                                 <?php
-                                                                                                                        }
+                                                                                                                        $v_sn++; }
                                                                                                                     ?>
                                                                                                             </tbody>
-                                                                                                        </table>
+                                                                                                        	</table>
+                                                                                                    	</div>
+
                                                                                                     </div>
                                                                                                     <div class="modal-footer">
                                                                                                         <button type="button" class="btn btn-danger waves-effect waves-light btn-sm" data-bs-dismiss="modal" aria-label="Close">Close</button>
@@ -762,20 +809,16 @@ input[type=number]::-webkit-outer-spin-button {
 																				</td>
 																			</tr>
 																		<?php
-																		}
+																		$mt_index++;}
 																		?>
 																	</tbody>
 																</table>
 
 															</th>
 
-															<?php 
-															$tbl_index = 1;
-															$arr_index = 0;
-															for ($i=0; $i < $saved_count; $i++) { ?>
 															<td>
 
-																<table id="myTable<?php echo $tbl_index;?>" class="table table-bordered"
+																<table id="myTable1" class="table table-bordered"
 																	style="width: 345px !important;">
 																	<tr>
 																		<thead>
@@ -788,18 +831,14 @@ input[type=number]::-webkit-outer-spin-button {
 																	</tr>
 																	<tbody>
 																		<?php
-																		$inner_index = 1;
+																		$i = 1;
 																		$result = sqlsrv_query($conn, "SELECT * from Tb_Request_Items where Request_ID = '$request_id'");
-																		while ($row = sqlsrv_fetch_array($result,SQLSRV_FETCH_ASSOC)) {
-																			$quantity_sql = sqlsrv_query($conn, "SELECT * from Tb_Vendor_Quantity where Request_Id = '$request_id' AND Meterial_Name = '".$row['Item_Code']."' and V_id = '".$saved_data[$i]['V_id']."'");
-																			$quantity_sql_res = sqlsrv_fetch_array($quantity_sql,SQLSRV_FETCH_ASSOC);
-
-																			$array_ind = ($arr_index > 0) ? $arr_index : '';
+																		while ($row = sqlsrv_fetch_array($result)) {
 																			?>
 																			<tr class="material-tr">
 																				<td>
 																					<input type="text"
-																						class="form-control  qty<?php echo $array_ind; ?> vendor<?php echo $tbl_index; ?>_qty_material<?php echo $inner_index;?>" style="width: 75px; "
+																						class="form-control  qty vendor1_qty_material<?php echo $i;?>" style="width: 75px; "
 																						readonly name="Quantity_Details[]" 
 																						value="<?php echo $row['Quantity'] ?>"
 																						placeholder="Enter Quantity Details">
@@ -809,203 +848,356 @@ input[type=number]::-webkit-outer-spin-button {
 																						value="<?php echo $row['Item_Code'] ?>">
 																					<input type="hidden"
 																						class="form-control" name="V_id[]"
-																						value="Vendor <?php echo $tbl_index;?>">
+																						value="Vendor 1">
 																				</td>
 																				<td>
 																					<input type="number" min="0"
-																						class="form-control vendor_price_<?php echo $i;?> price<?php echo $array_ind; ?> required_for_valid material_price vendor<?php echo $tbl_index;?>_price_material<?php echo $inner_index;?>" style="width: 75px;"
-																						name="Price[]" value="<?php echo $quantity_sql_res['Price'] ?>"
-																						placeholder="Enter Price" step=".01"  required error-msg='Price is mandatory.' data-rowid="<?php echo $tbl_index;?>" data-materialindex="<?php echo $inner_index;?>">
+																						class="form-control vendor_price_1 price required_for_valid material_price vendor1_price_material<?php echo $i;?>" style="width: 75px;"
+																						name="Price[]" data-rowid="1" value=""
+																						placeholder="Enter Price" step=".01" readonly required error-msg='Price is mandatory.' data-materialindex="<?php echo $i;?>">
 																					<span class="error_msg text-danger"></span>
 																				</td>
 																				<td>
 																					<input type="number" min="0"
-																						class="form-control vendor_discount_percent_<?php echo $tbl_index;?> discount_percent" style="width: 75px;"
-																						name="discount_percent[]"
-																						placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="<?php echo $tbl_index;?>" id="vendor<?php echo $tbl_index;?>_discount_percentage_material<?php echo $inner_index;?>" value="<?php echo $quantity_sql_res['discount_percentage']; ?>" data-materialindex="<?php echo $inner_index;?>">
+																						class="form-control vendor_discount_percent_1 discount_percent" style="width: 75px;"
+																						name="discount_percent[]" 
+																						placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="1" readonly id="vendor1_discount_percentage_material<?php echo $i;?>" data-materialindex="<?php echo $i;?>">
 																					<span class="error_msg text-danger"></span>
 																				</td>
 																				<td>
 																					<input type="number" min="0"
-																						class="form-control vendor_gst_percent_<?php echo $tbl_index;?> gst_percent" style="width: 75px;"
+																						class="form-control vendor_gst_percent_1 gst_percent " style="width: 75px;"
 																						name="gst_percent[]" 
-																						placeholder="Enter GST" step=".01"  required error-msg='Price is mandatory.' data-rowid="<?php echo $tbl_index;?>" id="vendor<?php echo $tbl_index;?>_gst_percentage_material<?php echo $inner_index;?>" value="<?php echo $quantity_sql_res['gst_percentage']; ?>" data-materialindex="<?php echo $inner_index;?>">
+																						placeholder="Enter GST" step=".01"  required error-msg='GST is mandatory.' data-rowid="1" readonly id="vendor1_gst_percentage_material<?php echo $i;?>" data-materialindex="<?php echo $i;?>">
 																					<span class="error_msg text-danger"></span>
 																				</td>
-
 																				<td>
-																					<input type="hidden" class="vendor<?php echo $tbl_index;?>_discount_reduced_total_material<?php echo $inner_index;?>">
+																					<input type="hidden" class="vendor1_discount_reduced_total_material<?php echo $i;?> reduced_total">
 																					<input type="text"
-																						class="form-control  amount<?php echo $array_ind; ?> vendor<?php echo $tbl_index;?>_total_material<?php echo $inner_index;?>" style="width: 75px; " 
-																						readonly name="Total[]" value="<?php echo $quantity_sql_res['Total'] ?>">
+																						class="form-control  amount vendor1_total_material<?php echo $i;?>" style="width: 75px; " 
+																						readonly name="Total[]" value="">
 																				</td>
 																			</tr>
-																		<?php $inner_index++; }
+																		<?php
+																		$i++;}
 																		?>
 																	</tbody>
 																</table>
 															</td>
+															<td>
 
-															<?php 
-																$tbl_index++; 
-																$arr_index++;
-															} ?>
+																<table id="myTable2" class="table table-bordered"
+																	style="width: 345px !important;">
+																	<tr>
+																		<thead>
+																			<td>Quantity</td>
+																			<th>Price</th>
+																			<th>Discount(%)</th>
+																			<th>GST(%)</th>
+																			<th>Total</th>
+																		</thead>
+																	</tr>
+																	<tbody>
+																		<?php
+																		$i = 1;
+																		$material_count = 0;
+																		$result = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '$request_id'");
+																		while ($row = sqlsrv_fetch_array($result)) {
+																			?>
+																			<tr class="material-tr">
+																				<td>
+																					<input type="text"
+																						class="form-control  qty1 vendor2_qty_material<?php echo $i;?>" style="width: 75px; "
+																						readonly name="Quantity_Details[]"
+																						value="<?php echo $row['Quantity'] ?>"
+																						placeholder="Enter Quantity Details">
+																					<input type="hidden"
+																						class="form-control"
+																						name="Meterial_Name[]"
+																						value="<?php echo $row['Item_Code'] ?>">
+																					<input type="hidden"
+																						class="form-control" name="V_id[]"
+																						value="Vendor 2">
+																				</td>
+																				<td>
+																					<input type="number" min="0"
+																						class="form-control vendor_price_2 price1 material_price vendor2_price_material<?php echo $i;?>" style="width: 75px;"
+																						name="Price[]" data-rowid="2" value=""
+																						placeholder="Enter price" step=".01" readonly required error-msg='Price is mandatory.' data-materialindex="<?php echo $i;?>">
+																					<span class="text-danger"></span>
+																				</td>
 
+																				<td>
+																					<input type="number" min="0"
+																						class="form-control vendor_discount_percent_2 discount_percent" style="width: 75px;"
+																						name="discount_percent[]" 
+																						placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="2" readonly id="vendor2_discount_percentage_material<?php echo $i;?>" data-materialindex="<?php echo $i;?>">
+																					<span class="error_msg text-danger"></span>
+																				</td>
+																				<td>
+																					<input type="number" min="0"
+																						class="form-control vendor_gst_percent_2 gst_percent" style="width: 75px;"
+																						name="gst_percent[]" 
+																						placeholder="Enter GST" step=".01"  required error-msg='Price is mandatory.' data-rowid="2" readonly id="vendor2_gst_percentage_material<?php echo $i;?>" data-materialindex="<?php echo $i;?>">
+																					<span class="error_msg text-danger"></span>
+																				</td>
+																				<td>
+																					<input type="hidden" class="vendor2_discount_reduced_total_material<?php echo $i;?> reduced_total">
+																					<input type="text"
+																						class="form-control  amount1 vendor2_total_material<?php echo $i;?>" style="width: 75px; " 
+																						readonly name="Total[]" value="">
+																				</td>
+																			</tr>
+																		<?php
+																		$i++; $material_count++;}
+																		?>
+																	</tbody>
+																</table>
+															</td>
+															<input type="hidden" id="material_request_count" value="<?php echo $material_count; ?>">
+															<td>
+
+																<table id="myTable3" class="table table-bordered"
+																	style="width: 345px !important;">
+																	<tr>
+																		<thead>
+																			<td>Quantity</td>
+																			<th>Price</th>
+																			<th>Discount(%)</th>
+																			<th>GST(%)</th>
+																			<th>Total</th>
+																		</thead>
+																	</tr>
+																	<tbody>
+																		<?php
+																		$i = 1;
+																		$result = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '$request_id'");
+																		while ($row = sqlsrv_fetch_array($result)) {
+																			?>
+																			<tr class="material-tr">
+																				<td>
+																					<input type="text"
+																						class="form-control  qty2 vendor3_qty_material<?php echo $i;?>"
+																						readonly name="Quantity_Details[]" style="width: 75px; " 
+																						value="<?php echo $row['Quantity'] ?>"
+																						placeholder="Enter Quantity Details">
+																					<input type="hidden"
+																						class="form-control"
+																						name="Meterial_Name[]"
+																						value="<?php echo $row['Item_Code'] ?>">
+																					<input type="hidden"
+																						class="form-control" name="V_id[]"
+																						value="Vendor 3">
+																				</td>
+																				<td>
+																					<input type="number" min="0"
+																						class="form-control vendor_price_3 price2 material_price vendor3_price_material<?php echo $i;?>" style="width: 75px;"
+																						name="Price[]" data-rowid="3" data-materialindex="<?php echo $i;?>" value=""
+																						placeholder="Enter price" step=".01" readonly required error-msg='Price is mandatory.'>
+																					<span class="text-danger"></span>
+																				</td>
+																				<td>
+																					<input type="number" min="0"
+																						class="form-control vendor_discount_percent_3 discount_percent" style="width: 75px;"
+																						name="discount_percent[]"
+																						placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="3" readonly id="vendor3_discount_percentage_material<?php echo $i;?>" data-materialindex="<?php echo $i;?>">
+																					<span class="error_msg text-danger"></span>
+																				</td>
+																				<td>
+																					<input type="number" min="0"
+																						class="form-control vendor_gst_percent_3 gst_percent" style="width: 75px;"
+																						name="gst_percent[]" 
+																						placeholder="Enter GST" step=".01"  required error-msg='Price is mandatory.' data-rowid="3" readonly id="vendor3_gst_percentage_material<?php echo $i;?>" data-materialindex="<?php echo $i;?>">
+																					<span class="error_msg text-danger"></span>
+																				</td>
+
+																				<td>
+																					<input type="hidden" class="vendor3_discount_reduced_total_material<?php echo $i;?> reduced_total">
+																					<input type="text"
+																						class="form-control  amount2 vendor3_total_material<?php echo $i;?>" style="width: 75px; " 
+																						readonly name="Total[]" value="">
+																				</td>
+																			</tr>
+																		<?php
+																		$i++;}
+																		?>
+																	</tbody>
+																</table>
+															</td>
 														</tr>
 														<tr id="seven1">
-															<th>Total</th>
-															<?php
-															$total_index = 1; 
-															for ($i=0; $i < $saved_count; $i++) { ?>
+															<th>Total Price</th>
 															<td>
-																<input type="text" readonly class="form-control amt_tot<?php echo $total_index; ?>" 
-																	name="amt_tot[]" id="amt_tot<?php echo $total_index; ?>" title="Total" value="<?php echo $saved_data[$i]['total_amount']; ?>">
+																<input type="text" readonly class="form-control amt_tot1" 
+																	name="amt_tot[]" id="amt_tot1" title="Total" readonly>
 															</td>
-															<?php $total_index++; } ?>
+															<td>
+																<input type="text" readonly class="form-control amt_tot2" 
+																	name="amt_tot[]" id="amt_tot2" title="Total" readonly>
+															</td>
+															<td>
+																<input type="text" readonly class="form-control amt_tot3" 
+																	name="amt_tot[]" id="amt_tot3" title="Total" readonly>
+															</td>
 														</tr>
 														<tr id="nine">
 															<th>Freight Charges</th>
-															<?php 
-															$freight_index = 1;
-															for ($i=0; $i < $saved_count; $i++) { ?>
-															<td>
-																<input type="number" min="0" class="form-control  txtCal<?php echo ($i > 0) ? $i : '' ?> additonal_charges" name="Fright_Charges[]" placeholder="Enter Freight Charges" value="<?php echo $saved_data[$i]['Fright_Charges']; ?>" id="freight_charge_<?php echo $freight_index;?>" data-id="<?php echo $freight_index;?>">
-															</td>
-															<?php $freight_index++; } ?>
+															<td><input type="number" min="0" class="form-control  txtCal additonal_charges" 
+																	name="Fright_Charges[]"
+																	placeholder="Enter Freight Charges" id="freight_charge_1" data-id="1" readonly></td>
+															<td><input type="number" min="0" class="form-control  txtCal1 additonal_charges" 
+																	name="Fright_Charges[]"
+																	placeholder="Enter Freight Charges"  id="freight_charge_2" data-id="2" readonly></td>
+															<td><input type="number" min="0" class="form-control  txtCal2 additonal_charges"
+																	name="Fright_Charges[]"
+																	placeholder="Enter Freight Charges"  id="freight_charge_3" data-id="3" readonly></td>
 														</tr>
 														<tr id="ten">
 															<th>Insurance Details</th>
-															<?php 
-															$insurance_index = 1;
-															for ($i=0; $i < $saved_count; $i++) { ?>
-															<td>
-																<input type="number" min="0" class="form-control  txtCal<?php echo ($i > 0) ? $i : '' ?> additonal_charges" name="Insurance_Details[]" placeholder="Enter Insurance Details"  value="<?php echo $saved_data[$i]['Insurance_Details']; ?>" id="insurance_amount_<?php echo $insurance_index;?>" data-id="<?php echo $insurance_index;?>">
-															</td>
-															<?php $insurance_index++; } ?>
-													
+															<td><input type="number" min="0" class="form-control  txtCal additonal_charges" 
+																	name="Insurance_Details[]"
+																	placeholder="Enter Insurance Details" id="insurance_amount_1" data-id="1" readonly></td>
+															<td><input type="number" min="0" class="form-control  txtCal1 additonal_charges"
+																	name="Insurance_Details[]"
+																	placeholder="Enter Insurance Details" id="insurance_amount_2" data-id="2" readonly></td>
+															<td><input type="number" min="0" class="form-control  txtCal2 additonal_charges" 
+																	name="Insurance_Details[]"
+																	placeholder="Enter Insurance Details" id="insurance_amount_3" data-id="3" readonly></td>
 														</tr>
 														<tr id="ten2">
 															<th>Package Forwarding Percentage</th>
-															<?php 
-															$pack_index = 1;
-															for ($i=0; $i < $saved_count; $i++) { ?>
-															<td>
-																<input type="number" min="0" class="form-control package_calc" 
+															<td><input type="number" min="0" class="form-control package_calc" 
 																	name="package_percentage[]"
-																	placeholder="Enter Packaging percentage" id="package_percentage_<?php echo $pack_index; ?>" data-id="<?php echo $pack_index; ?>" data-type="percent" value="<?php echo $saved_data[$i]['package_percentage']; ?>">
-															</td>
-															<?php $pack_index++; } ?>
+																	placeholder="Enter Packaging percentage" id="package_percentage_1" data-id="1" data-type="percent" readonly></td>
+															<td><input type="number" min="0" class="form-control package_calc"
+																	name="package_percentage[]"
+																	placeholder="Enter Packaging percentage" id="package_percentage_2" data-id="2" data-type="percent" readonly></td>
+															<td><input type="number" min="0" class="form-control package_calc" 
+																	name="package_percentage[]"
+																	placeholder="Enter Packaging percentage" id="package_percentage_3" data-id="3" data-type="percent" readonly></td>
 														</tr>
 														<tr id="ten1">
 															<th>Package Forwarding Amount</th>
-															<?php 
-															$pack_amt_index = 1;
-															for ($i=0; $i < $saved_count; $i++) { ?>
 															<td><input type="number" min="0" class="form-control package_calc" 
 																	name="package_amount[]"
-																	placeholder="Enter Packaging Charges" id="package_amount_<?php echo $pack_amt_index; ?>" data-id="<?php echo $pack_amt_index; ?>" data-type="amount" value="<?php echo $saved_data[$i]['package_amount']; ?>">
-															</td>
-															<?php $pack_amt_index++; } ?>
+																	placeholder="Enter Packaging Charges" id="package_amount_1" data-id="1" data-type="amount" readonly></td>
+															<td><input type="number" min="0" class="form-control package_calc"
+																	name="package_amount[]"
+																	placeholder="Enter Packaging Charges" id="package_amount_2" data-id="2" data-type="amount" readonly></td>
+															<td><input type="number" min="0" class="form-control package_calc" 
+																	name="package_amount[]"
+																	placeholder="Enter Packaging Charges" id="package_amount_3" data-id="3" data-type="amount" readonly></td>
 														</tr>
 														<tr id="eleven">
 															<th>GST Component</th>
-															<?php 
-															$gst_index = 1;
-															for ($i=0; $i < $saved_count; $i++) { ?>
-															<td>
-																<input type="number" min="0" class="form-control  txtCal<?php echo ($i > 0) ? $i : '' ?>" name="GST_Component[]" placeholder="Enter GST Component" value="<?php echo $saved_data[$i]['GST_Component']; ?>" id="gst_amount_<?php echo $gst_index;?>" readonly>
-															</td>
-															<?php $gst_index++; } ?>
+															<td><input type="number" min="0" class="form-control  txtCal"
+																	name="GST_Component[]"
+																	placeholder="Enter GST Component" id="gst_amount_1" readonly></td>
+															<td><input type="number" min="0" class="form-control  txtCal1"
+																	name="GST_Component[]"
+																	placeholder="Enter GST Component" id="gst_amount_2" readonly></td>
+															<td><input type="number" min="0" class="form-control  txtCal2"
+																	name="GST_Component[]"
+																	placeholder="Enter GST Component" id="gst_amount_3" readonly></td>
 														</tr>
-
 														<tr id="eleven1">
 															<th>Discount Amount</th>
-															<?php
-															$discount_index = 1; 
-															for ($i=0; $i < $saved_count; $i++) { ?>
-															<td>
-																<input type="number" min="0" class="form-control discount_charges"
+															<td><input type="number" min="0" class="form-control discount_charges"
 																	name="discount_amount[]"
-																	placeholder="Enter Discount Amount" id="discount_amount_<?php echo $discount_index; ?>" readonly value="<?php echo $saved_data[$i]['discount_amount']; ?>" data-id="<?php echo $discount_index; ?>">
-															</td>
-															<?php $discount_index++; } ?>
+																	placeholder="Enter Discount Amount" id="discount_amount_1" readonly data-id="1"></td>
+															<td><input type="number" min="0" class="form-control discount_charges"
+																	name="discount_amount[]"
+																	placeholder="Enter Discount Amount" id="discount_amount_2" readonly data-id="2"></td>
+															<td><input type="number" min="0" class="form-control discount_charges"
+																	name="discount_amount[]"
+																	placeholder="Enter Discount Amount" id="discount_amount_3" readonly data-id="3"></td>
 														</tr>
 														<tr id="seven">
 															<th>Net Amount</th>
-															<?php 
-															$value_index = 1;
-															for ($i = 0; $i < $saved_count; $i++) {
-															if($i == 0) {
-															?>
-															<td>
-																<input type="hidden" id="totCal"   onBlur="reSum();">
+															<td><input type="hidden" id="totCal"   onBlur="reSum();">
 																<input type="hidden" id="old_totale2">
-																<input type="number" readonly class="form-control totale2 valueof1" 
+																<input type="text" readonly class="form-control  totale2 valueof1" 
 																	name="Value_Of[]" id="totale2" title="Total + AdditionalCharges"
-																	placeholder="Enter Value of" value="<?php echo $saved_data[$i]['Value_Of'] ?>">
+																	placeholder="Enter Value of">
 															</td>
-															<?php } elseif ($i == 1 || $i == 2) { ?> 
-															<td>
-																<input type="hidden" id="totCal<?php echo $i; ?>"   onBlur="reSum();">
-																<input type="hidden" id="old_total<?php echo $i; ?>">
-																<input type="number" readonly class="form-control  total<?php echo $i; ?> valueof<?php echo $value_index;?>" 
-																	name="Value_Of[]" id="total<?php echo $i; ?>" title="Total + AdditionalCharges"
-																	placeholder="Enter Value of" value="<?php echo $saved_data[$i]['Value_Of'] ?>">
+															<td><input type="hidden" id="totCal1"   onBlur="reSum();">
+																<input type="hidden" id="old_total1">
+																<input type="text" readonly class="form-control  total1 valueof2" 
+																	name="Value_Of[]" id="total1" title="Total + AdditionalCharges"
+																	placeholder="Enter Value of">
 															</td>
-															<?php } else { ?> 
-															<td>
-																<input type="hidden" id="totCal4<?php echo $value_index;?>" data-id="<?php echo $value_index;?>"  onBlur="reSum();">
-                                                                        <input type="hidden" id="old_total3<?php echo $value_index;?>" >
-                                                                        <input type='number' min='0'  readonly class='form-control  total3<?php echo $value_index;?> valueof<?php echo $value_index;?>' name='Value_Of[]' id='total3<?php echo $value_index;?>' data-id="<?php echo $value_index;?>" placeholder='Enter Value of' value="<?php echo $saved_data[$i]['Value_Of'] ?>">
-                                                            </td>
-															<?php } 
-															$value_index++; 
-															} ?>
-
+															<td><input type="hidden" id="totCal2"   onBlur="reSum();">
+																<input type="hidden" id="old_total2">
+																<input type="text" readonly class="form-control  total2 valueof3" 
+																	name="Value_Of[]" id="total2" title="Total + AdditionalCharges"
+																	placeholder="Enter Value of">
+															</td>
 														</tr>
 														<tr id="eight">
 															<th>Delivery Time</th>
-															<?php 
-															for ($i=0; $i < $saved_count; $i++) { ?>
-															<td>
-																<input type="date" class="form-control " min="<?php echo date("Y-m-d"); ?>"
-																	name="Delivery_Time[]" value="<?php echo $saved_data[$i]['Delivery_Time']; ?>"
-																	placeholder="Enter Delivery Time">
-															</td>
-															<?php } ?>
+															<td><input type="date" class="form-control " min="<?php echo date("Y-m-d"); ?>"
+																	name="Delivery_Time[]" value="<?php echo date('Y-m-d'); ?>"
+																	placeholder="Enter Delivery Time"></td>
+															<td><input type="date" class="form-control " min="<?php echo date("Y-m-d"); ?>"
+																	name="Delivery_Time[]" value="<?php echo date('Y-m-d'); ?>"
+																	placeholder="Enter Delivery Time"></td>
+															<td><input type="date" class="form-control " min="<?php echo date("Y-m-d"); ?>"
+																	name="Delivery_Time[]" value="<?php echo date('Y-m-d'); ?>"
+																	placeholder="Enter Delivery Time"></td>
 														</tr>
 
 														<tr id="twelve">
 															<th>Warrenty</th>
-															<?php 
-															for ($i=0; $i < $saved_count; $i++) { ?>
-															<td>
-																<input type="text" class="form-control" name="Warrenty[]" placeholder="Enter Warrenty" value="<?php echo $saved_data[$i]['Warrenty']; ?>">
-															</td>
-															<?php } ?>
+															<td><input type="text" class="form-control "
+																	name="Warrenty[]" placeholder="Enter Warrenty"></td>
+															<td><input type="text" class="form-control "
+																	name="Warrenty[]" placeholder="Enter Warrenty"></td>
+															<td><input type="text" class="form-control "
+																	name="Warrenty[]" placeholder="Enter Warrenty"></td>
 														</tr>
 														<tr id="thirteen">
 															<th>Payment Terms</th>
-															<?php 
-															for ($i=0; $i < $saved_count; $i++) { ?>
 															<td>
-																<select class="form-control pay_terms" 
-																	name="Payment_Terms[]">
-																	<option  value="">Select Payment Terms</option>
-																	<?php
-																	$payment_terms = sqlsrv_query($conn, "select * from Payment_master_PO");
-																	while ($payment_terms_row = sqlsrv_fetch_array($payment_terms)) {
-																		?>
-																		<option <?php if($saved_data[$i]['Payment_Terms'] == $payment_terms_row['Payment_Code']) { ?> selected <?php } ?> value="<?php echo $payment_terms_row['Payment_Code'] ?>">
-																		<?php echo $payment_terms_row['Payment_Code'] ?>&nbsp;-&nbsp;<?php echo $payment_terms_row['Payment_Name'] ?>
-																		</option>
-																		<?php
-																	}
-																	?>
-																</select>
+																<!-- <input type="text" class="form-control "
+																	name="Payment_Terms[]" placeholder="Enter Payment Terms"> -->
+																<div>
+																	<select class="form-control required_for_valid payment_terms_1 pay_terms" 
+																		name="Payment_Terms[]" data-id="1" error-msg='Payment terms is mandatory.'>
+																	</select>
+																	<span class="error_msg text-danger"></span>
+																	<div class="spinner-border text-primary ms-3 pay_term_loader" role="status">
+																	  <span class="visually-hidden">Loading...</span>
+																	</div>
+																</div>
 															</td>
-															<?php } ?>
-
+															<td>
+																<!-- <input type="text" class="form-control "
+																	name="Payment_Terms[]" placeholder="Enter Payment Terms"> -->
+																<div>
+																	<select class="form-control  payment_terms_2 pay_terms" 
+																		name="Payment_Terms[]" data-id="2" error-msg='Payment terms is mandatory.'>
+																	
+																	</select>
+																	<span class="text-danger"></span>
+																	<div class="spinner-border text-primary ms-3 pay_term_loader" role="status">
+																	  <span class="visually-hidden">Loading...</span>
+																	</div>
+																</div>
+															</td>
+															<td>
+																<div>
+																	<select class="form-control  payment_terms_3 pay_terms" 
+																		name="Payment_Terms[]" data-id="3" error-msg='Payment terms is mandatory.'>
+																		
+																	</select>
+																	<span class="text-danger"></span>
+																	<div class="spinner-border text-primary ms-3 pay_term_loader" role="status">
+																	  <span class="visually-hidden">Loading...</span>
+																	</div>
+																</div>
+																<!-- <input type="text" class="form-control "
+																	name="Payment_Terms[]" placeholder="Enter Payment Terms"> -->
+															</td>
 														</tr>
 													</tbody>
 													<div class="separator-solid"></div>
@@ -1013,56 +1205,71 @@ input[type=number]::-webkit-outer-spin-button {
 													<tbody id="eone">
 														<tr id="checkbox">
 															<th>Requester's selection<span style="color:red">*</span></th>
-															<?php 
-															$rindex = 1;
-															for ($i=0; $i < $saved_count; $i++) { ?>
 															<td>
-																<select class="form-control task request_selection required_for_valid request_selection_<?php echo $rindex;?>"
-																	name="Requester_Selection[]" required data-id="<?php echo $rindex;?>" error-msg='Selection is mandatory.'>
+																<select class="form-control task request_selection required_for_valid request_selection_1"
+																	name="Requester_Selection[]" required data-id="1" error-msg='Selection is mandatory.'>
 																	<option value="">Select Requester Selection</option>
-																	<?php for ($j=1; $j <= $saved_count; $j++) { ?>
-																		<option value="<?php echo $j; ?>" <?php if($saved_data[$i]['Requester_Selection'] == $j) { ?> selected <?php } ?>><?php echo $j; ?></option>
-																	<?php } ?>
+																	<option value="1">1</option>
+																	<option value="2">2</option>
+																	<option value="3">3</option>
 																</select>
 																<span class="error_msg text-danger"></span>
 															</td>
-															<?php $rindex++; } ?>
+															<td>
+															<select class="form-control task request_selection request_selection_2"
+																	name="Requester_Selection[]" required data-id="2" error-msg='Selection is mandatory.'>
+																	<option value="">Select Requester Selection</option>
+																	<option value="1">1</option>
+																	<option value="2">2</option>
+																	<option value="3">3</option>
+																</select>
+																<span class="text-danger"></span>
+															</td>
+															<td>
+															<select class="form-control task request_selection request_selection_3"
+																	name="Requester_Selection[]" id="diio" required data-id="3" error-msg='Selection is mandatory.'>
+																	<option value="">Select Requester Selection</option>
+																	<option value="1">1</option>
+																	<option value="2">2</option>
+																	<option value="3">3</option>
+																</select>
+																<span class="text-danger"></span>
+															</td>
 														</tr>
 														<tr id="text">
 														<?php 
 															$requester_name = sqlsrv_query($conn, "SELECT  * FROM HR_Master_Table 
-															WHERE Employee_Code = '".$request_details['Requested_to']."' ");
+															WHERE Employee_Code = '$Purchaser_Code' ");
 															$requester_names = sqlsrv_fetch_array($requester_name);
 															$name = $requester_names['Employee_Name'];
 															?>
                                                             <th>Requester's Remarks<span class="required-label">&nbsp;&nbsp;(<?php echo $name ?>)</span></th>
 															
-															<?php 
-															for ($i=0; $i < $saved_count; $i++) { ?>
-															<td>
-																<input type="text" class="form-control" name="Requester_Remarks[]" placeholder="Enter Remark" value="<?php echo $saved_data[$i]['Requester_Remarks']; ?>">
-															</td>
-															<?php } ?>															
+															<td><input type="text" class="form-control "
+																	name="Requester_Remarks[]"
+																	placeholder="Enter Remark"></td>
+															<td><input type="text" class="form-control "
+																	name="Requester_Remarks[]"
+																	placeholder="Enter Remark"></td>
+															<td><input type="text" class="form-control "
+																	name="Requester_Remarks[]"
+																	placeholder="Enter Remark"></td>
 														</tr>
 														<tr id="pdf">
 															<th>PDF / JPG attachment
 															</th>
-															<?php 
-															$rindex = 1;
-															for ($i=0; $i < $saved_count; $i++) { ?>
 															<td>
 																<div class="d-flex align-items-center">
-																	<input class="form-control file-upload-input" type="file" name="Attachment_<?php echo $rindex;?>[]" placeholder="" id="formFile" onchange="readURL(this)" data-id="<?php echo $rindex; ?>" accept="image/png, image/gif, image/jpeg,image/jpg,application/pdf" value="<?php echo $saved_data[$i]['Attachment']; ?>" multiple="multiple">
-																	<!-- <span class="ms-2 file_view" data-id="<?php echo $rindex; ?>" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-eye text-primary"></i></span> -->
-																	<span class="ms-2 file_remove" style="<?php if($saved_data[$i]['Attachment'] != ''){ ?> display: block; <?php } ?>"><i class="fa fa-window-close text-danger"></i></span>
+																	<input class="form-control file-upload-input" type="file" name="Attachment_1[]" placeholder="" id="formFile" onchange="readURL(this)" data-id="1" accept="image/png, image/gif, image/jpeg,image/jpg,application/pdf" multiple="multiple">
+																	<span class="ms-2 file_view" data-id="1"><i class="fa fa-eye text-primary"></i></span>
+																	<span class="ms-2 file_remove"><i class="fa fa-window-close text-danger"></i></span>
+																	<!-- <span class="ms-2 add_more_file"><i class="fa fa-plus-circle text-success"></i><span> -->
+
 																</div>
 
-																<?php
-																// $file_extension = explode('.', $saved_data[$i]['Attachment'])[1];
-																?>
 
 																<!-- file preview modal -->
-																<div class="modal fade" id="file_preview_modal_<?php echo $rindex; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+																<div class="modal fade modal_css_load" id="file_preview_modal_1" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static">
 																  <div class="modal-dialog modal-lg">
 																    <div class="modal-content">
 																      <div class="modal-header">
@@ -1070,13 +1277,12 @@ input[type=number]::-webkit-outer-spin-button {
 																        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 																      </div>
 																      <div class="modal-body">
-																				<img class="preview_file_img_<?php echo $rindex; ?> preview_image" src="" alt="your image" width="100%" style="display: block;">
-
-																			 <iframe class="preview_file_pdf_<?php echo $rindex; ?> preview_pdf" src=""
-                                                                                    style="width: 100%;height: 900px;display: block;"
+																			<img class="preview_file_img_1 preview_image" src="#" alt="your image" width="100%"/>
+																			 
+																			 <iframe class="preview_file_pdf_1 preview_pdf" src="#"
+                                                                                    style="width: 100%;height: 500px;"
                                                                                     frameborder="0">
                                                                               </iframe>
-
 																      </div>
 																      <div class="modal-footer">
 																        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -1086,30 +1292,85 @@ input[type=number]::-webkit-outer-spin-button {
 																</div>
 																<!-- file preview modal end -->
 
-																<div class="row mt-2 display_section p-3" id="file_display_section_<?php echo $rindex; ?>" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
-													                	<?php 
-													                	$multi_files = explode(',',$saved_data[$i]['Attachment']);
-
-													                	foreach ($multi_files as $key => $value) {
-																			$file_extension = explode('.', $value)[1];
-
-														                	if($file_extension == 'pdf') { ?>
-																				<div class="col-md-3 h-50 mt-2">
-																					<img src="https://play-lh.googleusercontent.com/IkcyuPcrQlDsv62dwGqteL_0K_Rt2BUTXfV3_vR4VmAGo-WSCfT2FgHdCBUsMw3TPGU"  class="multi_preview" style="width:100px;height: 100px;" data-filetype="pdf" data-id="<?php echo $rindex; ?>">
-																					<input type="hidden" id="pdf_input<?php echo $rindex; ?>" value="file/<?php echo $value; ?>">
-																				</div>	
-														                	<?php } else { ?>
-														                		<div class="col-md-3 h-50 mt-2">
-														                			<i class="fa fa-eye text-primary preview_icon"></i>
-																					<img src="file/<?php echo $value; ?>" class="multi_preview" data-filetype="img" style="width:100px;height: 100px;" data-id="<?php echo $rindex; ?>">
-																				</div>
-																			<?php }} ?>
-													                		
+																<div class="row mt-2 display_section p-3" id="file_display_section_1" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
                                                 				</div>
 
 															</td>
-															<?php $rindex++; } ?>
-															
+															<td>
+																<div class="d-flex align-items-center">
+																	<input class="form-control file-upload-input" type="file" name="Attachment_2[]" placeholder="" id="formFile"  data-id="2" onchange="readURL(this)" accept="image/png, image/gif, image/jpeg,image/jpg,application/pdf" multiple="multiple">
+																	<span class="ms-2 file_view" data-id="2"><i class="fa fa-eye text-primary"></i></span>
+																	<span class="ms-2 file_remove"><i class="fa fa-window-close text-danger"></i><span>
+																	<!-- <span class="ms-2"><i class="fa fa-plus text-success"></i><span> -->
+
+																</div>
+
+
+																<!-- file preview modal -->
+																<div class="modal fade modal_css_load" id="file_preview_modal_2" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static">
+																  <div class="modal-dialog modal-lg">
+																    <div class="modal-content">
+																      <div class="modal-header">
+																        <h1 class="modal-title fs-5" id="exampleModalLabel">File Preview</h1>
+																        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+																      </div>
+																      <div class="modal-body">
+																			<img class="preview_file_img_2 preview_image" src="#" alt="your image" width="100%"/>
+																			 
+																			 <iframe class="preview_file_pdf_2 preview_pdf" src="#"
+                                                                                    style="width: 100%;height: 500px;"
+                                                                                    frameborder="0">
+                                                                              </iframe>
+																      </div>
+																      <div class="modal-footer">
+																        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+																      </div>
+																    </div>
+																  </div>
+																</div>
+																<!-- file preview modal end -->
+
+																<div class="row mt-2 display_section p-3" id="file_display_section_2" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
+                                                				</div>
+															</td>
+															<td>
+																<div class="d-flex align-items-center">
+																	<input class="form-control file-upload-input" type="file" name="Attachment_3[]" placeholder="" id="formFile"  data-id="3" onchange="readURL(this)" accept="image/png, image/gif, image/jpeg,image/jpg,application/pdf" multiple="multiple">
+																	<span class="ms-2 file_view" data-id="3"><i class="fa fa-eye text-primary"></i></span>
+																	<span class="ms-2 file_remove"><i class="fa fa-window-close text-danger"></i><span>
+
+
+																	<!-- <span class="ms-2"><i class="fa fa-plus text-danger"></i><span> -->
+																</div>
+
+
+																<!-- file preview modal -->
+																<div class="modal fade modal_css_load" id="file_preview_modal_3" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static">
+																  <div class="modal-dialog modal-lg">
+																    <div class="modal-content">
+																      <div class="modal-header">
+																        <h1 class="modal-title fs-5" id="exampleModalLabel">File Preview</h1>
+																        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+																      </div>
+																      <div class="modal-body">
+																			<img class="preview_file_img_3 preview_image" src="#" alt="your image" width="100%"/>
+																			 
+																			 <iframe class="preview_file_pdf_3 preview_pdf" src="#"
+                                                                                    style="width: 100%;height: 500px;"
+                                                                                    frameborder="0">
+                                                                              </iframe>
+																      </div>
+																      <div class="modal-footer">
+																        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+																      </div>
+																    </div>
+																  </div>
+																</div>
+																<!-- file preview modal end -->
+
+																<div class="row mt-2 display_section p-3" id="file_display_section_3" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
+                                                				</div>
+															</td>
 														</tr>
 													</tbody>
                                             
@@ -1120,34 +1381,29 @@ input[type=number]::-webkit-outer-spin-button {
                                                 <div class="row" id="involved_persons_div" style="display:none;">
                                                     <div class="col-md-5">
                                                         <h4>Involved Persons</h4>
-                                                        <table class="table table-striped table-bordered table-hover" >
-                                                          <thead>
-                                                            <tr>
-                                                              <th>Purchaser</th>
-                                                              <th>Recommender</th>
-                                                              <th>Approver</th>
-                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
-                                                            </tr>
-                                                          </thead>
-                                                          <tbody id="involved_persons_tbody">
+                                                        <div class="table-responsive">
+	                                                        <table class="table table-striped table-bordered table-hover" >
+	                                                          <thead>
+	                                                            <tr>
+	                                                              <th>Purchaser</th>
+	                                                              <th>Recommender</th>
+	                                                              <th>Approver</th>
+	                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
+	                                                            </tr>
+	                                                          </thead>
+	                                                          <tbody id="involved_persons_tbody">
 
-                                                          </tbody>
-                                                        </table>
+	                                                          </tbody>
+	                                                        </table>
+                                                    	</div>
                                                     </div>
                                                 </div>
 
                                                 <br>
-                                                <div class="row justification_div justify-content-center"> 
-                                                    <div class="col-2">
-                                                        <label for="justification" class="float-end">Justification For Single Vendor<span class="text-danger"> *</span></label>
-                                                    </div>   
-                                                    <div class="col-6">
-	                                                    <textarea class="form-control required_for_valid" name="justification" id="justification" required error-msg="Justification field is required"><?php echo $request_details['vendor_justification']; ?>
-	                                                    </textarea>
-	                                                    <span class="error_msg text-danger" style="display: none;"></span>
-	                                                </div>
-                                                </div>
-
+                                                <!-- <div class="col-6 m-auto">
+                                                	<label for="justification">Justification<span class="text-danger"> *</span></label>
+                                                	<textarea class="form-control" name="justification" id="justification" required></textarea>
+                                                </div> -->
                                                 <div class="d-flex gap-2 col-2 mx-auto" style="padding: 35px 0px 0px 0px;">
                                                 	<input type="hidden" name="save">
                                                     <button class="btn btn-success mb-4 btn-sm" id="quotation_save" type="button" tabindex="-1" name="save_btn" >
@@ -1176,8 +1432,12 @@ input[type=number]::-webkit-outer-spin-button {
                 </div>
                 <!-- End Page-content -->
 
-              
-                
+              	<!-- add more vendor count start from the 4 -->
+                <input type="hidden" id="vendor_count" value="4">
+
+                <input type="hidden" id="pt_status" value="true">
+
+
                 <?php include('footer.php') ?>
             </div>
             <!-- end main content-->
@@ -1201,11 +1461,78 @@ input[type=number]::-webkit-outer-spin-button {
         <script src="assets/js/app.js"></script>
         <!-- CUSTOM SCRIPT -->
        <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+       	<!-------Model Trag and Trap ---------->
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+		<!-----------End --------------->
         
         <script>
+
+		    function get_vendors_list(pt_status) 
+		    {
+		    	if(pt_status == 'true') {
+
+		    	     $.ajax({
+		                  url: 'common_ajax.php',
+		                  type: 'POST',
+		                  data: { Action : 'get_vendors_list' },
+		                  dataType: 'json',
+	                  	  beforeSend: function(){
+	                          $('.vendor_spinner_loader').show();
+	                      },
+		                  success: function(response) {
+		                  	let option = `<option selected >Select Vendor SAP</option>
+										 <option value="New">New Vendor</option>`;
+		                  	if(response.status == 200) {
+		                      	for(i in response.data) {
+		                      		option += `<option value="${response.data[i].VendorCode}">${response.data[i].VendorName} - ${response.data[i].VendorCode}</option>`;
+		                      	}
+		                  	}
+		                  	$('.vendors').html(option);
+		                  	$('.s').select2()
+		                  },
+		                  complete:function(){
+	                          $('.vendor_spinner_loader').hide();
+	                          $('#pt_status').val('false')
+
+		                  }
+		              });	
+	    	 	}
+		    }
+
+		   	function get_payment_terms(pt_status) 
+		    {
+		    	if(pt_status == 'true') {
+		    	     $.ajax({
+		                  url: 'common_ajax.php',
+		                  type: 'POST',
+		                  data: { Action : 'get_payment_terms' },
+		                  dataType: 'json',
+	                  	  beforeSend: function(){
+	                          $('.pay_term_loader').show();
+	                      },
+		                  success: function(response) {
+		                  	let option = `<option selected >Select Payment Terms</option>`;
+		                  	if(response.status == 200) {
+		                      	for(i in response.data) {
+		                      		option += `<option value="${response.data[i].Payment_Code}">${response.data[i].Payment_Code} - ${response.data[i].Payment_Name}</option>`;
+		                      	}
+		                  	}
+		                  	$('.pay_terms').html(option);
+		                  	$('.pay_terms').select2()
+		                  },
+		                  complete:function(){
+	                          $('.pay_term_loader').hide();
+	                          $('#pt_status').val('false')
+		                  }
+		              });	
+
+		    	}
+		    } 
+
             var i = 1;
             //VENDOR
-            $(document).ready(function() {
+            $(document).ready(function() {            	
 				  $("input[type=number]").on("focus", function() {
 				    $(this).on("keydown", function(event) {
 				      if (event.keyCode === 38 || event.keyCode === 40) {
@@ -1214,33 +1541,21 @@ input[type=number]::-webkit-outer-spin-button {
 				    });
 				  });
 
-				var first_pref_quote_value = $('#first_pref_quote_value').val();
-				var request_id = '<?php echo $request_id ?>';
-				var emp_id = '<?php echo $Employee_Id ?>';
 
-				if(first_pref_quote_value != '') {
-					get_involved_persons(first_pref_quote_value);
-					get_mapping_details(request_id,first_pref_quote_value,emp_id);
-				}
+				$('.preview_file_pdf_1').on('load', function() {
+					var pt_status = $('#pt_status').val();  
+        			
+        			// vendor list load in select box
+        			get_vendors_list(pt_status);
 
+        			// payment terms load in select box
+        			get_payment_terms(pt_status);
+    			});  
 			});
+
             $(document).ready(function () {
                 $(".s").select2()
                 $(".pay_terms").select2()
-
-            	var allSelected = $(".s").map(function () {
-                    return $(this).val();
-                }).get();
-
-                // set all enabled
-                $(".s option").removeAttr("disabled");
-
-                // Disable selected options in other positions
-                $(".s option:not(:selected):not([value='New'])").each(function () {
-                    if ($.inArray($(this).val(), allSelected) != -1) {
-                        $(this).attr('disabled', true);
-                    }
-                });
 
                 $('#vendor-dropdown').on('change', function () {
                     var VendorCode = $(this).val();
@@ -1418,7 +1733,8 @@ input[type=number]::-webkit-outer-spin-button {
 		//disabled end//
 
         //SUM //
-             $(document).on('keyup','.additonal_charges',function(){
+
+        $(document).on('keyup','.additonal_charges',function(){
         	var rowid = $(this).data('id');        	
         	var total_amount =$('.amt_tot'+rowid).val();
         	var gst_amount = $('#gst_amount_'+rowid).val() ||  0;
@@ -1430,7 +1746,45 @@ input[type=number]::-webkit-outer-spin-button {
 
         	var net_amount = parseFloat(total_amount) + parseFloat(gst_amount) + parseFloat(freight_amount) + parseFloat(insurance_amount) + parseFloat(package_amount) - parseFloat(discount_amount);
 
+
 			$('.valueof'+rowid).val(net_amount.toFixed(2))
+
+		});
+
+		$(document).on('keyup','.discount_charges',function(){
+        	var rowid = $(this).data('id');        	
+        	var total_amount =$('.amt_tot'+rowid).val();
+        	var gst_amount = $('#gst_amount_'+rowid).val() ||  0;
+        	var freight_amount = $('#freight_charge_'+rowid).val() || 0;
+        	var insurance_amount = $('#insurance_amount_'+rowid).val() || 0;
+        	var package_amount = $('#package_amount_'+rowid).val() || 0;
+
+        	var discount_amount = $('#discount_amount_'+rowid).val() || 0;
+
+        	if(parseFloat(discount_amount) > parseFloat(total_amount)) {
+        		swal({
+		          title: "Warning!",
+		          text: "Dicount amount cannot be greater than total price amount.",
+		          icon: "warning",
+		        });	
+        		$('#discount_amount_'+rowid).val(0)
+
+        	} else if(parseFloat(discount_amount) > 0 && parseFloat(discount_amount) < parseFloat(total_amount)) {
+	        	var net_amount = parseFloat(total_amount) + parseFloat(gst_amount) + parseFloat(freight_amount) + parseFloat(insurance_amount) + parseFloat(package_amount) - parseFloat(discount_amount);
+
+				$('.valueof'+rowid).val(net_amount.toFixed(2));
+
+				$('.vendor_discount_percent_'+rowid).each(function(){
+					$(this).attr('readonly', true);
+				});	
+
+
+        	} else {
+        		var net_amount = parseFloat(total_amount) + parseFloat(gst_amount) + parseFloat(freight_amount) + parseFloat(insurance_amount) + parseFloat(package_amount) - parseFloat(discount_amount);
+
+				$('.valueof'+rowid).val(net_amount.toFixed(2));
+        	}
+
 
 		});
 
@@ -1448,6 +1802,7 @@ input[type=number]::-webkit-outer-spin-button {
         	if(package_type == 'percent') {
         		package_percent = $(this).val() || 0;
         		package_amount = (package_percent > 0 && total_amount > 0) ? total_amount * $(this).val()/100 : 0;
+        		package_amount = package_amount.toFixed(2);
         	} else if(package_type == 'amount') {
         		package_amount = $(this).val() || 0;
         		package_percent = (package_amount > 0 && total_amount > 0) ? (package_amount/total_amount) * 100 : 0;
@@ -1477,32 +1832,39 @@ input[type=number]::-webkit-outer-spin-button {
 	        	var net_amount = parseFloat(total_amount) + parseFloat(gst_amount) + parseFloat(freight_amount) + parseFloat(insurance_amount) + parseFloat(package_amount) - parseFloat(discount_amount);
 
 				$('.valueof'+rowid).val(net_amount.toFixed(2));
-
+				console.log(package_percent);
 				
 				package_amount = (package_amount > 0) ? parseFloat(package_amount) : ''; 
-				package_percent = (package_percent > 0) ? parseFloat(package_percent).toFixed(2) : ''; 	
+				package_percent = (package_percent > 0) ? package_percent : ''; 	
 
-				$('#package_amount_'+rowid).val(package_amount);
-				$('#package_percentage_'+rowid).val(package_percent);
+	        	if(package_type == 'percent') {
+					$('#package_amount_'+rowid).val(package_amount);
+				} else if(package_type == 'amount') {
+					$('#package_percentage_'+rowid).val(package_percent);
+				}
         	}
 
 		});
 
-        // $(document).on('focusout','.txtCal',function(){
-		// var  mat_count = $('#mat_count').val();
-		// var tot = 0;
-		// $(".txtCal").each(function () {
-		// 	if($(this).val() != '') {
-		// 		tot += parseFloat($(this).val()); 
-		// 	}
-		// });
-		// var avg_value = (tot > 0) ? tot : 0;
-		// $('#totCal').val(avg_value);
-		// var mat_tot_value = $('#old_totale2').val();
-		// var final_total = parseFloat(mat_tot_value) + parseFloat(avg_value); 
-		// $('#totale2').val(final_total.toFixed(2))
+        // $(document).on('keyup','.txtCal',function(){
+		// 	var  mat_count = $('#mat_count').val();
+		// 	var tot = 0;
+		// 	$(".txtCal").each(function () {
+		// 		if($(this).val() != '') {
+		// 			tot += parseFloat($(this).val()); 
+		// 		}
+		// 	});
+		// 	var avg_value = (tot > 0) ? tot : 0;
+		// 	$('#totCal').val(avg_value);
+		// 	var mat_tot_value = $('#old_totale2').val();
+
+
+
+		// 	var final_total = parseFloat(mat_tot_value) + parseFloat(avg_value); 
+
+		// 	$('#totale2').val(final_total.toFixed(2))
         // });
-        // $(document).on('focusout','.txtCal1',function(){
+        // $(document).on('keyup','.txtCal1',function(){
         //     var  mat_count = $('#mat_count').val();
         //     var tot = 0;
         //     $(".txtCal1").each(function () {
@@ -1516,7 +1878,7 @@ input[type=number]::-webkit-outer-spin-button {
         //     var final_total = parseFloat(mat_tot_value) + parseFloat(avg_value); 
         //     $('#total1').val(final_total.toFixed(2))
         // });
-        // $(document).on('focusout','.txtCal2',function(){
+        // $(document).on('keyup','.txtCal2',function(){
         //     var  mat_count = $('#mat_count').val();
         //     var tot = 0;
         //     $(".txtCal2").each(function () {
@@ -1532,7 +1894,7 @@ input[type=number]::-webkit-outer-spin-button {
         // });
 
 		$(document).ready(function () {
-			// update_amounts();
+			update_amounts();
 			$('.price').keyup(function () {
 				update_amounts();
 			});
@@ -1545,6 +1907,7 @@ input[type=number]::-webkit-outer-spin-button {
 					sum += amount;
 					$(this).find('.amount').val('' + amount);
 
+
 					// update total value if the discount or gst having that row  
 					var discount = $(this).find('.discount_percent').val();
 					var gst      = $(this).find('.gst_percent').val();
@@ -1555,16 +1918,17 @@ input[type=number]::-webkit-outer-spin-button {
 					if((discount != '' || discount != 0) || (gst != '' || gst != 0)) {
 						update_material_tot_amount(vendor_row_id,material_row_id,discount,gst);
 					}
+
 				});
 				$('input.totale2').val(sum);
 				$('#old_totale2').val(sum);
-				$('#amt_tot1').val(sum);
+				$('.amt_tot1').val(sum);
 			}
 		});
 
 
 		$(document).ready(function () {
-			// update_amounts();
+			update_amounts();
 			$('.price1').keyup(function () {
 				update_amounts();
 			});
@@ -1590,12 +1954,12 @@ input[type=number]::-webkit-outer-spin-button {
 				});
 				$('input.total1').val(sum);
 				$('#old_total1').val(sum);
-				$('#amt_tot2').val(sum);
+				$('.amt_tot2').val(sum);
 			}
 		});
 
 		$(document).ready(function () {
-			// update_amounts();
+			update_amounts();
 			$('.price2').keyup(function () {
 				update_amounts();
 			});
@@ -1607,6 +1971,7 @@ input[type=number]::-webkit-outer-spin-button {
 					var amount = (qty * price)
 					sum += amount;
 					$(this).find('.amount2').val('' + amount);
+
 
 					// update total value if the discount or gst having that row  
 					var discount = $(this).find('.discount_percent').val();
@@ -1621,7 +1986,7 @@ input[type=number]::-webkit-outer-spin-button {
 				});
 				$('input.total2').val(sum);
 				$('#old_total2').val(sum);
-				$('#amt_tot3').val(sum);
+				$('.amt_tot3').val(sum);
 			}
 		});
 
@@ -1636,21 +2001,20 @@ input[type=number]::-webkit-outer-spin-button {
                         allRows[i].deleteCell(4);
                     }
 
-                    var removed_column_count_update = parseInt($('#saved_vendor_count').val()) - parseInt(1);
-					$('#saved_vendor_count').val(removed_column_count_update);  
-                	var i = $('#saved_vendor_count').val();
-
+                    var old_vendor_count = $('#vendor_count').val();
+                    var new_vendor_count = parseInt(old_vendor_count) - parseInt(1);
+                    $('#vendor_count').val(new_vendor_count)
                 }
 
-                var i = parseInt($('#saved_vendor_count').val()) + parseInt(1);
+                var i = 4;
+                let vendor_count = $('#vendor_count').val();
 
                 // add column
                 $('#remove').attr('disabled', true);
 
                 $("#addColumn").click(function () {
-                	var added_column_count = parseInt($('#saved_vendor_count').val()) + parseInt(1);
-					$('#saved_vendor_count').val(added_column_count);                	
-	                var i = $('#saved_vendor_count').val();
+                	var added_column_count = parseInt($('#vendor_count').val()) + parseInt(1);
+					$('#vendor_count').val(added_column_count);
 
                     //SUM //
                     $(document).ready(function () {
@@ -1684,13 +2048,12 @@ input[type=number]::-webkit-outer-spin-button {
                                 });
                                 $('input#total3' + index).val(sum);
                                 $('#old_total3' + index).val(sum);
-								$('#amt_tot'+ index).val(sum);
-
+								$('.amt_tot'+ index).val(sum);
                             }
-                        });
+                        });                        
                     });
 
-                    // $("tbody").on('focusout', '.form-control', function () {
+                    // $("tbody").on('keyup', '.form-control', function () {
                         
                     //     var index = $(this).data('id');
                     //     var  mat_count = $('#mat_count').val();
@@ -1705,11 +2068,12 @@ input[type=number]::-webkit-outer-spin-button {
                     //     var mat_tot_value = $('#old_total3' + index ).val();
                     //     var final_total = parseInt(mat_tot_value) + parseInt(avg_value); 
                     //     $('#total3'+ index).val(final_total)
+
                     // });
                     //SUM end//
 	
-                    $('div').find('#head').append("<td>Vendor " + i + " <input type='hidden' class='form-control' value='Vendor " + i + " ' name='V1_id[]' > </td>");
-                    $('div').find('#one').append(`<td><select class="form-control vendors vendors-dropdown datas_3 s" name="Vendor_SAP[]" data-id="${i}"  id="vendors-dropdown${i}">
+                    $('div').find('#head').append("<td>Vendor " + vendor_count + " <input type='hidden' class='form-control' value='Vendor " + i + " ' name='V1_id[]' > </td>");
+                    $('div').find('#one').append(`<td><select class="form-control vendors vendors-dropdown datas_3 s" name="Vendor_SAP[]" data-id="${vendor_count}"  id="vendors-dropdown${vendor_count}">
                                 <option selected>Select Vendor SAP</option>
                                 <option value="New">New Vendor</option>
                                 <?php
@@ -1724,6 +2088,7 @@ input[type=number]::-webkit-outer-spin-button {
 
                     $(document).ready(function () {
                         $(".s").select2()
+
             
                         $('.vendors-dropdown').on('change', function () {
                             var VendorCode = $(this).val();
@@ -1786,17 +2151,17 @@ input[type=number]::-webkit-outer-spin-button {
 					  });
 					});
 
-  $('div').find('#two').append(`<td><input type='text' class='form-control  disabled${i} vendorname${i}'   name='Vendor_Name[]'  id='vendornames${i}'     placeholder='Enter Name of vendor'></td>`);
-                    $('div').find('#three').append(`<td><input type='text' class='form-control  disabled${i} city${i}'   name='Vendor_City[]'  id='citys${i}'      placeholder='Enter City of vendor'></td>`);
-                    $('div').find('#four').append(`<td><input type='text' class='form-control  disabled${i}  dis${i} Active${i}' id="Active${i}"  name='vendor_Active_SAP[]' placeholder='Enter vendor is active in SAP'></td>`);
-                    $('div').find('#five').append(`<td><input type='text' class='form-control  disabled${i}  dis${i} Last_purchase${i}' id='Last${i}' name='Last_Purchase[]' 	 placeholder='Enter Last Purchase'></td>`);
+                    $('div').find('#two').append(`<td><input type='text' class='form-control  disabled${vendor_count} vendorname${vendor_count}'   name='Vendor_Name[]'  id='vendornames${vendor_count}'     placeholder='Enter Name of vendor'></td>`);
+                    $('div').find('#three').append(`<td><input type='text' class='form-control  disabled${vendor_count} city${vendor_count}'   name='Vendor_City[]'  id='citys${vendor_count}'      placeholder='Enter City of vendor'></td>`);
+                    $('div').find('#four').append(`<td><input type='text' class='form-control  disabled${vendor_count}  dis${vendor_count} Active${vendor_count}' id="Active${vendor_count}"  name='vendor_Active_SAP[]' placeholder='Enter vendor is active in SAP'></td>`);
+                    $('div').find('#five').append(`<td><input type='text' class='form-control  disabled${vendor_count}  dis${vendor_count} Last_purchase${vendor_count}' id='Last${vendor_count}' name='Last_Purchase[]' 	 placeholder='Enter Last Purchase'></td>`);
                     $('div').find('#six').append(`<td><table id='myTable4'  class="table table-bordered" style="width: 345px !important;">
-                                                                    <tr>
+                                                                    <tr class="material-tr">
                                                                         <thead>
                                                                             <td>Quantity</td>
                                                                             <th>Price</th>
-																			<th>Discount(%)</th>
                                                                             <th>GST(%)</th>
+																			<th>Discount(%)</th>
                                                                             <th>Total</th>
                                                                         </thead>
                                                                     </tr>
@@ -1806,32 +2171,32 @@ input[type=number]::-webkit-outer-spin-button {
                                                                     $result = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '$request_id'");
                                                                     while ($row = sqlsrv_fetch_array($result)) {
                                                                         ?>
-                                                                            <tr class="material-tr">
+                                                                            <tr>
                                                                                 <td>
-                                                                                    <input type="text" style="width: 75px; " class="form-control  qty3 vendor${i}_qty_material<?php echo $mat_index;?>"  readonly data-id="${i}" id='qty3${i}' name="Quantity_Details[]-<?php echo $row['ID'] ?>${i}" value="<?php echo $row['Quantity'] ?>" placeholder="Enter Quantity Details"> <input type="hidden" class="form-control" name="Meterial_Name[]" value="<?php echo $row['Item_Code'] ?>" >
-                                                                                    <input type="hidden" class="form-control" name="V_id[]" value="Vendor ${i}" >
+                                                                                    <input type="text" style="width: 75px; " class="form-control  qty3 vendor${vendor_count}_qty_material<?php echo $mat_index;?>"  readonly data-id="${vendor_count}" id='qty3${vendor_count}' name="Quantity_Details[]-<?php echo $row['ID'] ?>${vendor_count}" value="<?php echo $row['Quantity'] ?>" placeholder="Enter Quantity Details"> <input type="hidden" class="form-control" name="Meterial_Name[]" value="<?php echo $row['Item_Code'] ?>" >
+                                                                                    <input type="hidden" class="form-control" name="V_id[]" value="Vendor ${vendor_count}" >
                                                                                 </td>
                                                                                 <td>
-                                                                                    <input type="number" style="width: 75px;" min="0" class="form-control vendor_price_${i} price3 material_price vendor${i}_price_material<?php echo $mat_index;?>" data-id="${i}" id='price3${i}' name="Price[]-<?php echo $row['ID'] ?>${i}" value="" placeholder="Enter Price" step=".01" readonly error-msg='Price is mandatory.' data-rowid="${i}" data-materialindex="<?php echo $mat_index;?>">
+                                                                                    <input type="number" style="width: 75px;" min="0" class="form-control vendor_price_${vendor_count} price3 material_price vendor${vendor_count}_price_material<?php echo $mat_index;?>" data-id="${vendor_count}" id='price3${vendor_count}' name="Price[]-<?php echo $row['ID'] ?>${vendor_count}" value="" placeholder="Enter Price" step=".01" readonly error-msg='Price is mandatory.' data-rowid="${vendor_count}" data-materialindex="<?php echo $mat_index;?>">
 																					<span class="text-danger"></span>
                                                                                 </td>
                                                                                 <td>
 																					<input type="number" min="0"
-																						class="form-control vendor_discount_percent_${i} discount_percent" style="width: 75px;"
+																						class="form-control vendor_discount_percent_${vendor_count} discount_percent" style="width: 75px;"
 																						name="discount_percent[]" 
-																						placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="${i}" readonly id="vendor${i}_discount_percentage_material<?php echo $mat_index;?>" data-materialindex="<?php echo $mat_index;?>">
+																						placeholder="Enter Discount" step=".01"  required error-msg='Discount is mandatory.' data-rowid="${vendor_count}" readonly id="vendor${vendor_count}_discount_percentage_material<?php echo $mat_index;?>" data-materialindex="<?php echo $mat_index;?>">
 																					<span class="error_msg text-danger"></span>
 																				</td>
                                                                                 <td>
 																					<input type="number" min="0"
-																						class="form-control vendor_gst_percent_${i} gst_percent" style="width: 75px;"
+																						class="form-control vendor_gst_percent_${vendor_count} gst_percent" style="width: 75px;"
 																						name="gst_percent[]" 
-																						placeholder="Enter GST" step=".01"  required error-msg='Price is mandatory.' data-rowid="${i}" readonly id="vendor${i}_gst_percentage_material<?php echo $mat_index;?>" data-materialindex="<?php echo $mat_index;?>">
+																						placeholder="Enter GST" step=".01"  required error-msg='Price is mandatory.' data-rowid="${vendor_count}" readonly id="vendor${vendor_count}_gst_percentage_material<?php echo $mat_index;?>" data-materialindex="<?php echo $mat_index;?>">
 																					<span class="error_msg text-danger"></span>
 																				</td>
                                                                                 <td>
-                                                                                	<input type="hidden" class="vendor${i}_discount_reduced_total_material<?php echo $mat_index;?>">
-                                                                                    <input type="text" style="width: 75px; " class="form-control  amount3 vendor${i}_total_material<?php echo $mat_index;?>"  readonly data-id="${i}" id='amount3${i}' name="Total[]-<?php echo $row['ID'] ?>${i}" value="" >
+                                                                                	<input type="hidden" class="vendor${vendor_count}_discount_reduced_total_material<?php echo $mat_index;?> reduced_total">
+                                                                                    <input type="text" style="width: 75px; " class="form-control  amount3 vendor${vendor_count}_total_material<?php echo $mat_index;?>"  readonly data-id="${vendor_count}" id='amount3${vendor_count}' name="Total[]-<?php echo $row['ID'] ?>${vendor_count}" value="" >
                                                                                 </td>
                                                                             </tr>
                                                                         <?php
@@ -1842,31 +2207,31 @@ input[type=number]::-webkit-outer-spin-button {
                     															
 
 				   $('div').find('#seven1').append(`<td>
-						<input type="text" readonly class="form-control amt_tot${i}" min='0' value="0" name="amt_tot[]" id="amt_tot${i}" title="Total"></td>`);
+						<input type="text" readonly class="form-control amt_tot${vendor_count}" min='0' value="0" name="amt_tot[]" id="amt_tot${vendor_count}" title="Total"></td>`);
 
-                    $('div').find('#eight').append(`<td><input type='date' class='form-control'  min="<?php echo date("Y-m-d"); ?>" name='Delivery_Time[]' id='' data-id="${i}" value="<?php echo date('Y-m-d'); ?>" 	 placeholder='Enter Delivery Time'></td>`);
-                    $('div').find('#nine').append(`<td><input type='number' min='0' class='form-control  txtCali${i} additonal_charges'	data-id="${i}"  name='Fright_Charges[]'    placeholder='Enter Fright Charges' readonly id="freight_charge_${i}"></td>`);
-                    $('div').find('#ten').append(`<td><input type='number' min='0' class='form-control  txtCali${i} additonal_charges' 	data-id="${i}"  name='Insurance_Details[]' placeholder='Enter Insurance Details' readonly id="insurance_amount_${i}"></td>`);
+                    $('div').find('#eight').append(`<td><input type='date' class='form-control'  min="<?php echo date("Y-m-d"); ?>" name='Delivery_Time[]' id='' data-id="${vendor_count}" value="<?php echo date('Y-m-d'); ?>" 	 placeholder='Enter Delivery Time'></td>`);
+                    $('div').find('#nine').append(`<td><input type='number' min='0' class='form-control  txtCali${vendor_count} additonal_charges'	data-id="${vendor_count}"  name='Fright_Charges[]'    placeholder='Enter Fright Charges' readonly id="freight_charge_${vendor_count}"></td>`);
+                    $('div').find('#ten').append(`<td><input type='number' min='0' class='form-control  txtCali${vendor_count} additonal_charges' 	data-id="${vendor_count}"  name='Insurance_Details[]' placeholder='Enter Insurance Details' readonly id="insurance_amount_${vendor_count}"></td>`);
 
                     $('div').find('#ten1').append(`	<td><input type="number" min="0" class="form-control package_calc" 
-						name="package_amount[]" placeholder="Enter Packaging Charges" readonly id="package_amount_${i}" data-id="${i}" data-type="amount"></td>`);
+						name="package_amount[]" placeholder="Enter Packaging Charges" readonly id="package_amount_${vendor_count}" data-id="${vendor_count}" data-type="amount"></td>`);
 														
                     $('div').find('#ten2').append(`<td><input type="number" min="0" class="form-control package_calc" 
-					name="package_percentage[]" placeholder="Enter Packaging percentage" readonly id="package_percentage_${i}" data-id="${i}" data-type="percent"></td>`);														
+					name="package_percentage[]" placeholder="Enter Packaging percentage" readonly id="package_percentage_${vendor_count}" data-id="${vendor_count}" data-type="percent"></td>`);														
 															
-                    $('div').find('#eleven').append(`<td><input type='number' min='0' class='form-control  txtCali${i}' data-id="${i}"  name='GST_Component[]' id="gst_amount_${i}" readonly placeholder='Enter GST Component'></td>`);
+                    $('div').find('#eleven').append(`<td><input type='number' min='0' class='form-control  txtCali${vendor_count}' data-id="${vendor_count}"  name='GST_Component[]' id="gst_amount_${vendor_count}" readonly placeholder='Enter GST Component'></td>`);
 													
 														
 					$('div').find('#eleven1').append(`<td><input type="number" min="0" class="form-control discount_charges" name="discount_amount[]"
-							placeholder="Enter Discount Amount" id="discount_amount_${i}" readonly data-id="${i}"></td>`);
+							placeholder="Enter Discount Amount" id="discount_amount_${vendor_count}" readonly data-id="${vendor_count}"></td>`);
 
-                    $('div').find('#seven').append(`<td><input type="hidden" id="totCal4${i}" data-id="${i}"  onBlur="reSum();">
-                                                    <input type="hidden" id="old_total3${i}" >
-                                                    <input type='number' min='0'  readonly class='form-control  total3${i} valueof${i}' name='Value_Of[]' id='total3${i}' data-id="${i}" placeholder='Enter Value of' ></td>`);
+                    $('div').find('#seven').append(`<td><input type="hidden" id="totCal4${vendor_count}" data-id="${vendor_count}"  onBlur="reSum();">
+                                                    <input type="hidden" id="old_total3${vendor_count}" >
+                                                    <input type='number' min='0'  readonly class='form-control  total3${vendor_count} valueof${vendor_count}' name='Value_Of[]' id='total3${vendor_count}' data-id="${vendor_count}" placeholder='Enter Value of' ></td>`);
                     $('div').find('#twelve').append("<td><input type='text' class='form-control '  name='Warrenty[]'     	 placeholder='Enter Warrenty'></td>");
                     // $('div').find('#thirteen').append("<td><input type='text' class='form-control '  name='Payment_Terms[]'  	 placeholder='Enter Payment Terms'></td>");
 
-                    $('div').find('#thirteen').append(`<td><select class="form-control pay_terms payment_terms_${i}" name="Payment_Terms[]" data-id="${i}" error-msg='Payment terms is mandatory.'>
+                    $('div').find('#thirteen').append(`<td><select class="form-control pay_terms payment_terms_${vendor_count}" name="Payment_Terms[]" data-id="${vendor_count}" error-msg='Payment terms is mandatory.'>
 																	<option  value="">Select Payment Terms</option>
 																	<?php
 																	$payment_terms = sqlsrv_query($conn, "select * from Payment_master_PO");
@@ -1884,8 +2249,8 @@ input[type=number]::-webkit-outer-spin-button {
 
 
                     
-                    $('div').find('#checkbox').append(`<td><select class="form-control request_selection request_selection_${i} task${i}"  
-                                                                            name="Requester_Selection[]" required data-id="${i}" error-msg='Selection is mandatory.'>
+                    $('div').find('#checkbox').append(`<td><select class="form-control request_selection request_selection_${vendor_count} task${vendor_count}"  
+                                                                            name="Requester_Selection[]" required data-id="${vendor_count}" error-msg='Selection is mandatory.'>
                                                                             
                                                                         </select>
 																<span class="text-danger"></span>
@@ -1894,12 +2259,12 @@ input[type=number]::-webkit-outer-spin-button {
                     // $('div').find('#pdf').append("<td><input class='form-control file-upload-input' type='file' name='Attachment[]' id='formFile'></td>");
             
                     $('div').find('#pdf').append(`<td><div class="d-flex align-items-center">
-																	<input class="form-control file-upload-input" type="file" name="Attachment_${i}[]" placeholder="" id="formFile" data-id="${i}" onchange="readURL(this)"  accept="image/png, image/gif, image/jpeg,image/jpg,application/pdf" multiple="multiple">
-																	<span class="ms-2 file_view" data-id="${i}"><i class="fa fa-eye text-primary"></i></span>
+																	<input class="form-control file-upload-input" type="file" name="Attachment_${vendor_count}[]" placeholder="" id="formFile" data-id="${vendor_count}" onchange="readURL(this)"  accept="image/png, image/gif, image/jpeg,image/jpg,application/pdf" multiple="multiple">
+																	<span class="ms-2 file_view" data-id="${vendor_count}"><i class="fa fa-eye text-primary"></i></span>
 																	<span class="ms-2 file_remove"><i class="fa fa-window-close text-danger"></i><span>
 																</div>
 																<!-- file preview modal -->
-																<div class="modal fade" id="file_preview_modal_${i}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+																<div class="modal fade modal_css_load" id="file_preview_modal_${vendor_count}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static">
 																  <div class="modal-dialog modal-lg">
 																    <div class="modal-content">
 																      <div class="modal-header">
@@ -1907,10 +2272,10 @@ input[type=number]::-webkit-outer-spin-button {
 																        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 																      </div>
 																      <div class="modal-body">
-																			<img class="preview_file_img_${i} preview_image" src="#" alt="your image" width="100%"/>
+																			<img class="preview_file_img_${vendor_count} preview_image" src="#" alt="your image" width="100%"/>
 																			 
-																			 <iframe class="preview_file_pdf_${i} preview_pdf" src="#"
-                                                                                    style="width: 100%;height: 900px;"
+																			 <iframe class="preview_file_pdf_${vendor_count} preview_pdf" src="#"
+                                                                                    style="width: 100%;height: 500px;"
                                                                                     frameborder="0">
                                                                               </iframe>
 																      </div>
@@ -1921,10 +2286,9 @@ input[type=number]::-webkit-outer-spin-button {
 																  </div>
 																</div>
 																<!-- file preview modal end -->
-																<div class="row mt-2 display_section p-3" id="file_display_section_${i}" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
+																<div class="row mt-2 display_section p-3" id="file_display_section_${vendor_count}" style="border: 2px dashed #ccc;height: 400px;overflow-y: auto;">
                                                 				</div>
 																</td>`);
-
 
 
 
@@ -1946,7 +2310,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 
                     var option = '';
-                    for(start = 0;start <= i;start++) {
+                    for(start = 0;start <= vendor_count;start++) {
                         text  = start;
                         if(start == 0) {
                             start = '';
@@ -1954,9 +2318,9 @@ input[type=number]::-webkit-outer-spin-button {
                         }
                         option += "<option value=" + start +">"+text+"</option>";
                     } 
-                    $(".task"+i).append(option);
+                    $(".task"+vendor_count).append(option);
                     var option1 = '';
-                    for(start = i;start <= i;start++) {
+                    for(start = vendor_count;start <= vendor_count;start++) {
                         text  = start;
                         if(start == 0) {
                             start = '';
@@ -1978,17 +2342,20 @@ input[type=number]::-webkit-outer-spin-button {
                                 $(this).attr('disabled', true);
                             }
                         });
-                    i = i + 1;
+                    i = parseInt(i) + parseInt(1);
+                    vendor_count = parseInt(vendor_count) + parseInt(1);
                     $("input[type='file']").on("change", function () {
+                		// var file_length = this.files.length;
+
                         // if (this.files[0].size > 2000000) {
                         //     alert("Please upload file less than 2MB. Thanks!!");
                         //     $(this).val('');
                         // }
-                        // var file_length = this.files.length;
+
                         // for(i=0; i < file_length; i++) {
 		                //     if (this.files[i].size > 2000000) {
 		                //         alert("Please upload file less than 2MB. Thanks!!");
-		                //         // $(this).val('');
+		                //         $(this).val('');
 		                //     }
                 		// }
                     });
@@ -2000,12 +2367,12 @@ input[type=number]::-webkit-outer-spin-button {
                 
                 // file size 
 
-                $("input[type='file']").on("change", function () {
+                $("input[type='file']").on("change", function () {                	
+                	// var file_length = this.files.length;
                     // if (this.files[0].size > 2000000) {
                     //     alert("Please upload file less than 2MB. Thanks!!");
                     //     $(this).val('');
                     // }
-                    // var file_length = this.files.length;
                 	// for(i=0; i < file_length; i++) {
 	                //     if (this.files[i].size > 2000000) {
 	                //         alert("Please upload file less than 2MB. Thanks!!");
@@ -2013,6 +2380,7 @@ input[type=number]::-webkit-outer-spin-button {
 	                //     }
 
                 	// }
+
                 });
 
 
@@ -2057,23 +2425,6 @@ input[type=number]::-webkit-outer-spin-button {
                 	}
                 });
 
-                function get_mapping_details(request_id,quotation_value,po_creator_id)
-                {
-            		$.ajax({
-						url: 'common_ajax.php',
-						type: 'POST',
-						data: { Action : 'get_emp_mapping_details',request_id : request_id,quotation_value : quotation_value,po_creator_id : po_creator_id },
-						dataType: "json",
-						success: function(response) {
-							$('#recommendor_id').val(response[0].Recommender);
-							$('#finance_verifier_id').val(response[0].Finance_Verfier);
-							$('#approver_id').val(response[0].Approver);
-							$('#approver2_id').val(response[0].Approver_2);
-                            $('#mapping_id').val(response[0].id);
-						}
-					});	
-                }
-
 
 		        function get_involved_persons(value)
 		        {
@@ -2116,7 +2467,7 @@ input[type=number]::-webkit-outer-spin-button {
 
                             }
                             $('#involved_persons_tbody').html(table_data);  
-                            $('#involved_persons_div').show();                                        
+                            $('#involved_persons_div').show();                                 
 		                },
 		                complete:function(){
 		                    // $('#ajax-preloader').hide();
@@ -2143,8 +2494,6 @@ input[type=number]::-webkit-outer-spin-button {
 
 		        	// multi display section empty
 		        	$(this).closest('td').find('.display_section').empty();
-
-
 		        });
 
 
@@ -2154,28 +2503,11 @@ input[type=number]::-webkit-outer-spin-button {
 		        	var value = $(this).val();
 		        	var row_id = $(this).data('id');
 
-		        	// justification remark for single vendor functionality part start
-                    var entered_vendor_count = 0;
-                    $('.vendors').each(function(){
-                        if($(this).val() != 'Select Vendor SAP') {
-                            entered_vendor_count++;
-                        }
-                    });
-
-                    $('#justification').addClass('required_for_valid');
-                    $('.justification_div').show();
-                    if(entered_vendor_count > 1) {
-                        $('#justification').removeClass('required_for_valid');
-                        $('.justification_div').hide();
-                    }
-                    // justification remark for single vendor functionality part end
-
-
 		        	if(value != '' && value != 'Select Vendor SAP') {
 		        		$('.vendor_price_'+row_id).removeAttr('readonly');
 		        		// $('.vendor_gst_percent_'+row_id).removeAttr('readonly');
 		        		// $('.vendor_discount_percent_'+row_id).removeAttr('readonly');
-
+ 
 		        		//price validation message add
 		       			$('.vendor_price_'+row_id).addClass('required_for_valid');
 		       			$('.vendor_price_'+row_id).closest('td').find('span').addClass('error_msg');
@@ -2183,6 +2515,11 @@ input[type=number]::-webkit-outer-spin-button {
 		       			// request selection validation 
 		       			$('.request_selection_'+row_id).addClass('required_for_valid');
 		       			$('.request_selection_'+row_id).closest('td').find('span').addClass('error_msg');
+
+		       			// payment terms validation 
+		       			// $('.payment_terms_'+row_id).addClass('required_for_valid');
+		       			// $('.payment_terms_'+row_id).closest('td').find('span').addClass('error_msg');
+		       			
 
 		        	} else {
 		        		$('.vendorname'+row_id).val("");
@@ -2194,6 +2531,7 @@ input[type=number]::-webkit-outer-spin-button {
 		        		$('.vendor_gst_percent_'+row_id).attr('readonly',true);
 		        		$('.vendor_discount_percent_'+row_id).attr('readonly',true);
 
+
 		        		//price validation message remove
 		       			$('.vendor_price_'+row_id).removeClass('required_for_valid');
 		       			$('.vendor_price_'+row_id).closest('td').find('span').hide();
@@ -2204,36 +2542,17 @@ input[type=number]::-webkit-outer-spin-button {
 		       			$('.request_selection_'+row_id).closest('td').find('span').hide();
 		       			$('.request_selection_'+row_id).closest('td').find('span').removeClass('error_msg');
 
+
+		       			// payment terms validation 
+		       			// $('.payment_terms_'+row_id).removeClass('required_for_valid');
+		       			// $('.payment_terms_'+row_id).closest('td').find('span').hide('error_msg');
+		       			// $('.payment_terms_'+row_id).closest('td').find('span').removeClass('error_msg');
+
+
 		        	}
 		        });	
 
 
-
-			    // function readURL(input) {
-			    // 	var row_id = $(input).data('id');
-			    	
-			    //     if (input.files && input.files[0]) {
-			    //         var reader = new FileReader();
-			    //         var extension = input.files[0].name.split('.').pop().toLowerCase();
-			            
-			    //         reader.onload = function (e) {
-			    //             // $('#preview_image').attr('src', e.target.result);
-			    //             if(extension == 'pdf') {
-			    //             	$('.preview_file_pdf_'+row_id).attr('src', e.target.result+'#toolbar=0');
-			    //             	$('.preview_file_img_'+row_id).hide();
-			    //             	$('.preview_file_pdf_'+row_id).show();
-			    //             } else {
-			    //             	$('.preview_file_img_'+row_id).attr('src', e.target.result);
-			    //             	$('.preview_file_pdf_'+row_id).hide();
-			    //             	$('.preview_file_img_'+row_id).show();
-
-			    //             }    
-
-			    //         }
-
-			    //         reader.readAsDataURL(input.files[0]);
-			    //     }
-			    // }
 
 			    function readURL(input) {
 			    	var row_id = $(input).data('id');
@@ -2262,7 +2581,8 @@ input[type=number]::-webkit-outer-spin-button {
 
 		                		var reader = new FileReader();
 				            	var extension = input.files[i].name.split('.').pop().toLowerCase();
-				            
+
+
 					           if(extension == 'pdf') {
 					           		reader.onload = function (e) {
 						                	display_section += `<div class="col-md-3 h-50 mt-2">
@@ -2286,12 +2606,12 @@ input[type=number]::-webkit-outer-spin-button {
 
 					           }
 
+
 				        	}
 
 	                    }
 			    	}
 			    }
-
 
 
 				 function validation(){
@@ -2304,13 +2624,11 @@ input[type=number]::-webkit-outer-spin-button {
 				    if(current_val == ''){
 				      error_count++;
 				      $(this).closest('td').find(".error_msg").html(error_msg).show();
-                      $(this).closest('div').find(".error_msg").html(error_msg).show();
 
 				      // $(".error_msg").html(error_msg).show();
 
 				    }else{
 				      $(this).closest('td').find(".error_msg").html('').hide();
-                      $(this).closest('div').find(".error_msg").html('').hide();
 
 				      // $(".error_msg").html('').hide();
 				    }
@@ -2364,8 +2682,9 @@ input[type=number]::-webkit-outer-spin-button {
 		        	var row = $(this).data('id'); 
 		        	$('#file_preview_modal_'+row).modal('show');
 		        });
+		        
 
-		    	$(document).on('click','#save',function(){
+		        $(document).on('click','#save',function(){
                   var error_count = validation();
 
 					if(error_count == 0) {
@@ -2396,6 +2715,13 @@ input[type=number]::-webkit-outer-spin-button {
 					                        index++;
 					                        form.append('Attachment'+index , $(this)[0].files[0]);
 					                      });
+					                      // $('.file-upload-input').each(function(index){
+					                      //   index++;
+					                      //   let length = $(this)[0].files.length;
+					                      //   for(j=0; j < length; j++) {
+					                      //   	form.append('Attachment'+index , $(this)[0].files[j]);
+					                      //   }
+					                      // });
 
 					                      //save form data
 					                      quotation_save(form);
@@ -2414,44 +2740,45 @@ input[type=number]::-webkit-outer-spin-button {
                   	}
             });
 
-		    function quotation_save(form) 
-		    {
-	    	     $.ajax({
-                      url: 'common_ajax.php',
-                      type: 'POST',
-                      data: form,
-                      processData: false,  // Prevent jQuery from automatically transforming the data into a query string
-                      contentType: false,  // Prevent jQuery from setting the content type
-                      dataType: 'json',
-                      beforeSend: function(){
-                          $('#ajax-preloader').show();
-                      },
-                      success: function(response) {
-                          if(response.status == 200) {
-                              // alert(response.message);
-	                      		swal({
-								  title: "Success",
-								  text: response.message,
-								  icon: "success",
-								  timer: 2000,
-								  buttons: false,
-								}).then(() => {
-			                         window.location.href = 'show_vendor_request.php';
-								});
-                          } else {
-                              // alert(response.message);
-	                      		swal({
-		                          title: "Error!",
-		                          text: response.message,
-		                          icon: "warning",
-		                        });
-                          }
-                      },
-                      complete:function() {
-                            $('#ajax-preloader').hide();
-                      }
-                  });
-		    } 
+			    function quotation_save(form) 
+			    {
+		    	     $.ajax({
+	                      url: 'common_ajax.php',
+	                      type: 'POST',
+	                      data: form,
+	                      processData: false,  // Prevent jQuery from automatically transforming the data into a query string
+	                      contentType: false,  // Prevent jQuery from setting the content type
+	                      dataType: 'json',
+	                      beforeSend: function(){
+	                          $('#ajax-preloader').show();
+	                      },
+	                      success: function(response) {
+	                          if(response.status == 200) {
+	                              // alert(response.message);
+		                      		swal({
+									  title: "Success",
+									  text: response.message,
+									  icon: "success",
+									  timer: 2000,
+									  buttons: false,
+									}).then(() => {
+				                         window.location.href = 'show_vendor_request.php';
+									});
+	                          } else {
+	                              // alert(response.message);
+		                      		swal({
+			                          title: "Error!",
+			                          text: response.message,
+			                          icon: "warning",
+			                        });
+	                          }
+	                      },
+	                      complete:function() {
+	                            $('#ajax-preloader').hide();
+	                      }
+	                  });
+			    } 
+
 
 		        $(document).on('keyup','.gst_percent',function(){
 			    	var rowid = $(this).data('rowid');
@@ -2464,6 +2791,7 @@ input[type=number]::-webkit-outer-spin-button {
 					update_gst_amount(rowid);
 
 			    	update_net_amount(rowid);
+
 			    });
 
 			   	$(document).on('keyup','.discount_percent',function(){
@@ -2477,8 +2805,6 @@ input[type=number]::-webkit-outer-spin-button {
 
 			    	update_discount_amount(rowid);
 
-					update_gst_amount(rowid);
-
 			    	update_net_amount(rowid);
 
 
@@ -2491,6 +2817,14 @@ input[type=number]::-webkit-outer-spin-button {
 	        		if(discount_percent <= 0) {
 		        		$('#discount_amount_'+rowid).removeAttr('readonly');
 	        		}
+
+
+	        		// enable gst field after enter discount
+					// if(current_material_dicount_percent > 0) {
+						
+				    // 	$('#vendor'+rowid+'_gst_percentage_material'+material_row_id).removeAttr('readonly');
+
+					// }
 
 			    });
 
@@ -2515,14 +2849,8 @@ input[type=number]::-webkit-outer-spin-button {
 
 			    	if(total_price > 0) {
 				    	$('#vendor'+rowid+'_gst_percentage_material'+material_index).removeAttr('readonly');
-	        			$('#vendor'+rowid+'_discount_percentage_material'+material_index).removeAttr('readonly');
 
-	        			$('#freight_charge_'+rowid).removeAttr('readonly');
-		        		$('#insurance_amount_'+rowid).removeAttr('readonly');
-		        		$('#package_percentage_'+rowid).removeAttr('readonly');
-		        		$('#package_amount_'+rowid).removeAttr('readonly');
-			        	
-		        		//discount entered percentage check
+				    	//discount entered percentage check
 			        	var discount_percent = 0;
 		        		// $('.vendor_discount_percent_'+rowid).each(function(){
 		        		// 	discount_percent += $(this).val();
@@ -2531,6 +2859,23 @@ input[type=number]::-webkit-outer-spin-button {
 		        		$('.discount_percent').each(function(){
 		        			discount_percent += $(this).val();
 		        		});
+
+				    	if((discount_percent > 0 && material_price != '') || ($('#discount_amount_'+rowid).val() == '' || $('#discount_amount_'+rowid).val() == 0)) {
+
+	        				$('#vendor'+rowid+'_discount_percentage_material'+material_index).removeAttr('readonly');
+
+				    	} else {
+				    		if(discount_percent <= 0) {
+	        					$('#discount_amount_'+rowid).removeAttr('readonly');
+				    		}
+				    	}
+
+
+	        			$('#freight_charge_'+rowid).removeAttr('readonly');
+		        		$('#insurance_amount_'+rowid).removeAttr('readonly');
+		        		$('#package_percentage_'+rowid).removeAttr('readonly');
+		        		$('#package_amount_'+rowid).removeAttr('readonly');
+			        	
 
 
 		        		if(discount_percent <= 0 || ($('#discount_amount_'+rowid).val() == '' || $('#discount_amount_'+rowid).val() == 0)) {
@@ -2548,19 +2893,19 @@ input[type=number]::-webkit-outer-spin-button {
 			    	for(i=1 ; i <= material_count ; i++) {
 			    		qty    = $(".vendor"+rowid+"_qty_material"+i).val();
 
-			    		console.log(qty);
+			    		// console.log(qty);
 			    		
 			    		if(qty > 0) {
 							// price  = qty * $(".vendor"+rowid+"_price_material"+i).val();
 							price  = $(".vendor"+rowid+"_discount_reduced_total_material"+i).val();
 			    		}
 
-			    		console.log(price);
+			    		// console.log(price);
 
 
 						gst_percent  = $("#vendor"+rowid+"_gst_percentage_material"+i).val();
 
-			    		console.log(gst_percent);
+			    		// console.log(gst_percent);
 
 
 						if(price > 0 && gst_percent > 0) {
@@ -2597,6 +2942,17 @@ input[type=number]::-webkit-outer-spin-button {
 
 		        function update_net_amount(rowid)
 		        {
+		        	// var material_count = $('#material_request_count').val();
+
+		        	// var total_amount = 0;
+		        	// for(var mi=1;mi <= material_count;mi++) {
+		        	// 	var reduced_total = $('.vendor'+rowid+'_total_material'+mi).val();
+		        	// 	total_amount = parseInt(total_amount) + parseInt(reduced_total);
+		        	// }
+
+		        	// // console.log(total_amount);
+
+
 		        	var total_amount =$('.amt_tot'+rowid).val();
 		        	var gst_amount = $('#gst_amount_'+rowid).val() ||  0;
 		        	var freight_amount = $('#freight_charge_'+rowid).val() || 0;
@@ -2610,10 +2966,8 @@ input[type=number]::-webkit-outer-spin-button {
 
 		        }
 
-
 		      	function update_material_tot_amount(vendor_rowid,material_row_id,discount_percentage,gst_percentage = '')
 		        {
-
 		        	var qty =$('.vendor'+vendor_rowid+'_qty_material'+material_row_id).val();
 		        	var price =$('.vendor'+vendor_rowid+'_price_material'+material_row_id).val();
 		        	var total_base_amount = parseFloat(qty) * parseFloat(price);
@@ -2621,7 +2975,7 @@ input[type=number]::-webkit-outer-spin-button {
 		        	if(discount_percentage > 0) {
 			        	var discount_amount   = parseFloat(total_base_amount) * parseFloat(discount_percentage)/100; 
 			        	var final_total = parseFloat(total_base_amount) - parseFloat(discount_amount);
-
+	
 			        	// discount reduced total update 
 			        	$('.vendor'+vendor_rowid+'_discount_reduced_total_material'+material_row_id).val(final_total);
 
@@ -2632,12 +2986,19 @@ input[type=number]::-webkit-outer-spin-button {
 							final_total    = parseFloat(final_total) + parseFloat(gst_amount);		
 
 			        	}
-
 			        	$('.vendor'+vendor_rowid+'_total_material'+material_row_id).val(final_total);
 
 		        	} else if((discount_percentage == '' || discount_percentage == 0) && gst_percentage > 0) {
 						var gst_amount = parseFloat(total_base_amount) * parseFloat(gst_percentage)/100;  
 			        	var final_total = parseFloat(total_base_amount) + parseFloat(gst_amount);
+			        	// alert();
+			        	// console.log(qty);
+			        	// console.log(price);
+
+			        	// console.log(total_base_amount);
+			        	// console.log(gst_amount);
+			        	// console.log(final_total);
+
 
 			        	$('.vendor'+vendor_rowid+'_discount_reduced_total_material'+material_row_id).val(total_base_amount);
 
@@ -2651,51 +3012,16 @@ input[type=number]::-webkit-outer-spin-button {
 
 		        }
 
-		        $(document).on('keyup','.discount_charges',function(){
-		        	var rowid = $(this).data('id');        	
-		        	var total_amount =$('.amt_tot'+rowid).val();
-		        	var gst_amount = $('#gst_amount_'+rowid).val() ||  0;
-		        	var freight_amount = $('#freight_charge_'+rowid).val() || 0;
-		        	var insurance_amount = $('#insurance_amount_'+rowid).val() || 0;
-		        	var package_amount = $('#package_amount_'+rowid).val() || 0;
+		        // function isNumberKey(evt,element) {
+				//     var charCode = (evt.which) ? evt.which : event.keyCode
+				//     if (            
+				//         (charCode != 46 || $(element).val().indexOf('.') != -1) &&      // “.” CHECK DOT, AND ONLY ONE.
+				//         (charCode < 48 || charCode > 57))
+				//         return false;
+				//         return true;
+        		// }
 
-		        	var discount_amount = $('#discount_amount_'+rowid).val() || 0;
-
-
-		        	console.log(total_amount);
-		        	console.log(gst_amount);
-		        	console.log(freight_amount);
-		        	console.log(insurance_amount);
-		        	console.log(package_amount);
-		        	console.log(discount_amount);
-
-
-		        	if(parseFloat(discount_amount) > parseFloat(total_amount)) {
-		        		swal({
-				          title: "Warning!",
-				          text: "Dicount amount cannot be greater than total price amount.",
-				          icon: "warning",
-				        });	
-		        		$('#discount_amount_'+rowid).val(0)
-
-		        	} else if(parseFloat(discount_amount) > 0 && parseFloat(discount_amount) < parseFloat(total_amount)) {
-			        	var net_amount = parseFloat(total_amount) + parseFloat(gst_amount) + parseFloat(freight_amount) + parseFloat(insurance_amount) + parseFloat(package_amount) - parseFloat(discount_amount);
-
-						$('.valueof'+rowid).val(net_amount.toFixed(2));
-
-						$('.vendor_discount_percent_'+rowid).each(function(){
-							$(this).attr('readonly', true);
-						});	
-		        	} else {
-		        		var net_amount = parseFloat(total_amount) + parseFloat(gst_amount) + parseFloat(freight_amount) + parseFloat(insurance_amount) + parseFloat(package_amount) - parseFloat(discount_amount);
-
-						$('.valueof'+rowid).val(net_amount.toFixed(2));
-        			}
-
-				});
-
-
-		       	$('input[type="number"]').on('keydown', function(event) {
+	  			$('input[type="number"]').on('keydown', function(event) {
 	  				// return isNumberKey(evt,this); 
 	                   // this.value = this.value.replace(/[^0-9.]/g, ''); // Allow digits and decimal points
 	  				if (event.key === 'E' || event.key === 'e' || event.key === '-') {
@@ -2704,16 +3030,30 @@ input[type=number]::-webkit-outer-spin-button {
     			});
 
 
+    			// $(document).on('click','.add_more_file',function(){
+				// 	var file_input = `<div class="d-flex align-items-center mt-2">
+				// 		<input class="form-control file-upload-input" type="file" name="Attachment[]" placeholder="" id="formFile" onchange="readURL(this)" data-id="1" accept="image/*,application/pdf">
+				// 		<span class="ms-2 file_view" data-id="1"><i class="fa fa-eye text-primary"></i></span>
+				// 		<span class="ms-2 file_remove"><i class="fa fa-window-close text-danger"></i></span>
+				// 		<span class="ms-2 add_more_file"><i class="fa fa-plus-circle text-success"></i><span>
+
+				// 	</div>`;
+
+				// 	$(this).closest('td').append(file_input);
+    			// });
+
+
     			$(document).on('click','.multi_preview',function(){
     				var file_type = $(this).data('filetype');
     				var src = $(this).attr('src');
     				var row_id = $(this).data('id');
 
-
 					 if(file_type == 'pdf') {
 					 	// var src = $('#pdf_input'+row_id).val();
-                        var src = $(this).closest('div').find('#pdf_input'+row_id).val();
-	                	$('.preview_file_pdf_'+row_id).attr('src', src+'#toolbar=0');
+                		var src = $(this).closest('div').find('#pdf_input'+row_id).val();
+                        var src_url = 'https://docs.google.com/viewer?url=https://corporate.rasiseeds.com/corporate/final_request/'+src+'&embedded=true';
+
+	                	$('.preview_file_pdf_'+row_id).attr('src', src_url+'#toolbar=0');
 	                	$('.preview_file_img_'+row_id).hide();
 	                	$('.preview_file_pdf_'+row_id).show();
 				     } else {
@@ -2724,7 +3064,12 @@ input[type=number]::-webkit-outer-spin-button {
 		        	$('#file_preview_modal_'+row_id).modal('show');
 
 		  		});
-		        
+	  			
+
+	  		$(".modal").draggable({
+                handle: ".modal-content"
+            });
+
 				
         </script>
         <!-- CUSTOM SCRIPT END -->

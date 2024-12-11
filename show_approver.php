@@ -236,8 +236,10 @@ $Employee_Id = $_SESSION['EmpID'];
                                                             <tbody>
                                                                 <?php
                                                                     $i = 1;
-                                                                    $sql = "SELECT * FROM Tb_Request Inner Join (select DISTINCT Purchaser,Purchase_Type,Approver from Tb_Master_Emp WHERE Tb_Master_Emp.Approver='".$Employee_Id."') as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
-                                                                    WHERE Tb_Request.Approver='$Employee_Id' and Tb_Request.is_sendbacked='1' ORDER BY Tb_Request.Request_ID DESC";
+                                                                    $sql = "SELECT Tb_Request.Id,Tb_Request.Request_ID,Tb_Request.Request_Type,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Department,Tb_Request.status,Tb_Request.Plant FROM Tb_Request Inner Join (select DISTINCT Purchaser,Purchase_Type,Approver from Tb_Master_Emp WHERE Tb_Master_Emp.Approver='".$Employee_Id."') as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
+                                                                    WHERE Tb_Request.Approver='$Employee_Id' and Tb_Request.is_sendbacked='1'
+                                                                    GROUP BY Tb_Request.Request_ID,Tb_Request.Request_Type,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Department,Tb_Request.status,Tb_Request.Id,Tb_Request.Plant
+                                                                     ORDER BY Tb_Request.Request_ID DESC";
                                                                     $params = array();
                                                                     $options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
                                                                     $stmt = sqlsrv_prepare($conn, $sql, $params, $options);
@@ -277,7 +279,7 @@ $Employee_Id = $_SESSION['EmpID'];
                                                                     </td>
                                                                     <td>
                                                                         <div class="action-btns">
-                                                                            <a href="view_purchase_apr_request.php?id=<?php echo $row['Request_ID'] ?>" class="action-btn btn-view bs-tooltip me-2" data-toggle="tooltip" data-placement="top" title="View">
+                                                                            <a href="view_recommender_request.php?id=<?php echo $row['Request_ID'] ?>" class="action-btn btn-view bs-tooltip me-2" data-toggle="tooltip" data-placement="top" title="View">
                                                                             <i class="mdi mdi-eye"></i>
                                                                         </a>
                                                                             <?php
@@ -316,8 +318,10 @@ $Employee_Id = $_SESSION['EmpID'];
                                                             <tbody>
                                                                 <?php
                                                                 $i = 1;
-                                                                $sql = "SELECT * FROM Tb_Request Inner Join (select DISTINCT Purchaser,Purchase_Type,Approver from Tb_Master_Emp WHERE Tb_Master_Emp.Approver='".$Employee_Id."') as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category 
-                                                                WHERE Tb_Request.Approver='$Employee_Id' and Tb_Request.status='Approver_Reject' ORDER BY Tb_Request.Request_ID DESC";
+                                                                $sql = "SELECT Tb_Request.Id,Tb_Request.Request_ID,Tb_Request.Request_Type,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Department,Tb_Request.status,Tb_Request.Plant FROM Tb_Request Inner Join (select DISTINCT Purchaser,Purchase_Type,Approver from Tb_Master_Emp WHERE Tb_Master_Emp.Approver='".$Employee_Id."') as Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category 
+                                                                WHERE Tb_Request.Approver='$Employee_Id' and Tb_Request.status='Approver_Reject' 
+                                                                GROUP BY Tb_Request.Request_ID,Tb_Request.Request_Type,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Department,Tb_Request.status,Tb_Request.Id,Tb_Request.Plant
+                                                                ORDER BY Tb_Request.Request_ID DESC";
                                                                 $params = array();
                                                                 $options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
                                                                 $stmt = sqlsrv_prepare($conn, $sql, $params, $options);

@@ -11,13 +11,20 @@ require 'PHPMailer/SMTP.php';
 $request_id = $_GET['id'];
 $Employee_Id = $_SESSION['EmpID'];
 
-$saved_quotation_sql = "SELECT * FROM Tb_Vendor_Selection WHERE Request_ID = '".$request_id."'";
+
+$from = (isset($_GET['from']) && $_GET['from'] != '') ? trim($_GET['from']) : '';
+
+
+// $saved_quotation_sql = "SELECT * FROM Tb_Vendor_Selection WHERE Request_ID = '".$request_id."'";
+$saved_quotation_sql = "SELECT * FROM Tb_Approver WHERE Request_ID = '".$request_id."'";
+
 $saved_quotation_exec = sqlsrv_query($conn, $saved_quotation_sql, array(), array("Scrollable" => 'static'));
 $saved_count = sqlsrv_num_rows($saved_quotation_exec);
 $saved_data = array();
 while($saved_quotation_res = sqlsrv_fetch_array($saved_quotation_exec,SQLSRV_FETCH_ASSOC)) {
 	$saved_data[] = $saved_quotation_res;
 }
+
 
 $request_detail_sql = "SELECT * from Tb_Request WHERE Request_ID = '".$request_id."'";
 $request_detail_exec = sqlsrv_query($conn, $request_detail_sql);
@@ -34,7 +41,6 @@ foreach ($saved_data as $key => $value) {
 
 
 if (isset($_POST["save"])) {
-	// echo "<pre>";print_r($_FILES);exit;
 	$_POST = array_map(function($value) { 
          if(is_array($value)){
                  $mArr = array_map(function($value1) { 
@@ -45,13 +51,17 @@ if (isset($_POST["save"])) {
              return str_replace("'","''", $value); 
          }
   	}, $_POST);
+	// echo "<pre>";print_r($_POST);exit;
+
+
 
 	// vendor detail exist check
-	$vendor_exist_query ="SELECT * from Tb_Vendor_Selection where Request_Id = '".$request_id."'";
+	$vendor_exist_query ="SELECT * from Tb_Approver where Request_Id = '".$request_id."'";
     $vendor_exist_query_exec = sqlsrv_query($conn, $vendor_exist_query,array(),array("Scrollable" => 'static'));
 	$vendor_exist_count = sqlsrv_num_rows($vendor_exist_query_exec);
 	if($vendor_exist_count > 0) {
 		$findex = 1;
+		$previous_apprved_data = array();
         while($row = sqlsrv_fetch_array($vendor_exist_query_exec,SQLSRV_FETCH_ASSOC)) {
             if($row['Attachment'] != '' && $_FILES["Attachment_".$findex]["name"][0] != '') {
                 foreach (explode(',',$row['Attachment']) as $akey => $avalue) {
@@ -60,174 +70,141 @@ if (isset($_POST["save"])) {
             }
 
             $findex++;  
+            $previous_apprved_data[] = $row;
         }
+		// echo "<pre>";print_r($previous_apprved_data);exit;
 		// delete already saved quotation vendor detail 
-		sqlsrv_query($conn, "DELETE FROM Tb_Vendor_Selection where Request_Id = '".$request_id."'");		
+		sqlsrv_query($conn, "DELETE FROM Tb_Approver where Request_Id = '".$request_id."'");		
 	}
 
 
 	// vendor detail quantity exist check
-	$vendor_quantity_exist_query ="SELECT * from Tb_Vendor_Quantity where Request_Id = '".$request_id."'";
+	$vendor_quantity_exist_query ="SELECT * from Tb_Approver_Meterial where Request_Id = '".$request_id."'";
     $vendor_quantity_exist_query_exec = sqlsrv_query($conn, $vendor_quantity_exist_query,array(),array("Scrollable" => 'static'));
 	$vendor_quantity_exist_count = sqlsrv_num_rows($vendor_quantity_exist_query_exec);
 
 
 	if($vendor_quantity_exist_count > 0) {
 		// delete already saved quotation vendor quantity 
-		sqlsrv_query($conn, "DELETE FROM Tb_Vendor_Quantity where Request_Id = '".$request_id."'");	
+		sqlsrv_query($conn, "DELETE FROM Tb_Approver_Meterial where Request_Id = '".$request_id."'");	
 	}
 
 
+		// first selected approver selection index get 
+		$approver_index = array_search('1', $_POST['Approver_Selection']);
 
-	$data_count = 0;
-	foreach ($_POST['Vendor_SAP'] as $key => $sap_val) {
-		if($sap_val != 'Select Vendor SAP') {
-			$data_count++;
+		// first preference quotation value get  
+		$selected_quoation_value = $_POST['Value_Of'][$approver_index];
+
+		// approver_2 availability check for choosed quotation mapping start
+		$approver2_exist = 0;
+		if ($selected_quoation_value > 50000) {
+		$approver2_exist_check = "SELECT Tb_Master_Emp.Approver_2 from Tb_Master_Emp 
+			inner join Tb_Request on Tb_Request.Plant = Tb_Master_Emp.Plant AND Tb_Request.Request_ID = '" . $_POST['request_id'] . "' AND Tb_Master_Emp.Status ='Active' 
+			inner join (SELECT TOP 1 * FROM Tb_Request_Items WHERE Request_ID = '" . $_POST['request_id'] . "') as Tb_Request_Items on Tb_Request_Items.MaterialGroup =  Tb_Master_Emp.Material_Group
+			where Tb_Master_Emp.PO_creator_Release_Codes = '" . $_POST['po_creator_id'] . "' AND Value != ''";
+
+		$approver2_exist_check_exec =  sqlsrv_query($conn, $approver2_exist_check);
+		$approver2_exist_check_arr  =  sqlsrv_fetch_array($approver2_exist_check_exec)['Approver_2'];
+
+		if ($approver2_exist_check_arr != null && $approver2_exist_check_arr != '') {
+			$approver2_exist = 1;
 		}
-	}
+		}
+		// approver_2 availability check for choosed quotation mapping end
 
 
-	//approval mapping id insertion
-    $query1 = sqlsrv_query($conn, "UPDATE Tb_Request set approval_mapping_id = '".$_POST['mapping_id']."' WHERE Request_id = '$request_id' ");
+		$status = $previous_apprved_data[0]['Status'];
 
-	// for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
+		$request_to = '';
+		if ($approver2_exist == 1 || ($_POST["approver2_id"] != '' && $_POST["approver2_id"] != null)) {
+			$request_to = $_POST["approver2_id"];
+		}
 
-	for ($i = 0; $i < $data_count; $i++) {
+
+
+		for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
+			$Vendor_SAP = $_POST['Vendor_SAP'][$i];
+			$Vendor_Name = $_POST['Vendor_Name'][$i];
+			$Vendor_City = $_POST['Vendor_City'][$i];
+			$vendor_Active_SAP = $_POST['vendor_Active_SAP'][$i];
+			$Last_Purchase = $_POST['Last_Purchase'][$i];
+			$Delivery_Time = $_POST['Delivery_Time'][$i];
+			$Value_Of = $_POST['Value_Of'][$i];
+			$Fright_Charges = $_POST['Fright_Charges'][$i];
+			$Insurance_Details = $_POST['Insurance_Details'][$i];
+			$GST_Component = $_POST['GST_Component'][$i];
+			$Warrenty = $_POST['Warrenty'][$i];
+			$Payment_Terms = $_POST['Payment_Terms'][$i];
+			$Requester_Selection = $_POST['Requester_Selection'][$i];
+			$Recommender_Selection = $_POST['Recommender_Selection'][$i];
+			$Requester_Remarks = $_POST['Requester_Remarks'][$i];
+			$Recommender_Remarks = $_POST['Recommender_Remarks'][$i];
+			if (!isset($_POST['Finance_Remarks'])) {
+				$Finance_Remarks = "";
+			} else {
+				$Finance_Remarks = $_POST['Finance_Remarks'][$i];
+			}
+			if (!isset($_POST['Total_Budget'])) {
+				$Total_Budget = "";
+			} else {
+				$Total_Budget = $_POST['Total_Budget'][$i];
+			}
+			if (!isset($_POST['Available_Budget'])) {
+				$Available_Budget = "";
+			} else {
+				$Available_Budget = $_POST['Available_Budget'][$i];
+			}
+			// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
+			$Approver_Remarks = $_POST['approver_remarks'];
+			$Approver_Selection = trim($_POST['Approver_Selection'][$i]);
+			// $fil = $_POST["Attachment"][$i];
+			if (!isset($_POST['Attachment'])) {
+				$fil = "";
+			} else {
+				$fil = $_POST['Attachment'][$i];
+			}
+			$V_id = $_POST['V1_id'][$i];
+			$emp_id = $Employee_Id;
+
+
+			$total_amount    = $_POST['amt_tot'][$i];
+			$discount_amount = $_POST['discount_amount'][$i];
+			$package_amount = $_POST['package_amount'][$i];
+			$package_percentage = $_POST['package_percentage'][$i];
+
+			$query = "INSERT INTO Tb_Approver
+			(Request_id,V_id,Vendor_SAP,Vendor_Name,Vendor_City,vendor_Active_SAP,Last_Purchase,Delivery_Time2,
+			Value_Of,Fright_Charges,Insurance_Details,GST_Component,Warrenty,Payment_Terms,Requester_Remarks,
+			Recommender_Remarks,Finance_Remarks,Total_Budget,Available_Budget,Approver_Remarks,Attachment,Time_Log,Status,Requester_Selection,Recommender_Selection,
+			Approver_Selection,EMP_ID,total_amount,discount_amount,package_amount,package_percentage,Requested_to)VALUES
+			('$request_id','$V_id','$Vendor_SAP','$Vendor_Name','$Vendor_City',
+			'$vendor_Active_SAP','$Last_Purchase','$Delivery_Time','$Value_Of','$Fright_Charges','$Insurance_Details','$GST_Component',
+			'$Warrenty','$Payment_Terms','$Requester_Remarks','$Recommender_Remarks','$Finance_Remarks','$Total_Budget ','$Available_Budget ','$Approver_Remarks ',
+				'$fil',GETDATE(),'$status','$Requester_Selection','$Recommender_Selection','$Approver_Selection','$emp_id','$total_amount','$discount_amount','$package_amount','$package_percentage','$request_to')";
+
+			$query1 = sqlsrv_query($conn, "UPDATE Tb_Request set status = '$status' WHERE Request_Id = '$request_id' ");
+			$query1 = sqlsrv_query($conn, "UPDATE Tb_Request_Items set status = '$status' WHERE Request_Id = '$request_id' ");
+
+			$rs = sqlsrv_query($conn, $query);
+		}
 		
-		$Vendor_SAP = $_POST['Vendor_SAP'][$i];
-		$Vendor_Name = $_POST['Vendor_Name'][$i];
-		$Vendor_City = $_POST['Vendor_City'][$i];
-		$vendor_Active_SAP = $_POST['vendor_Active_SAP'][$i];
-		$Last_Purchase = $_POST['Last_Purchase'][$i];
-		$Delivery_Time = $_POST['Delivery_Time'][$i];
-		$Value_Of = $_POST['Value_Of'][$i];
-		$Fright_Charges = $_POST['Fright_Charges'][$i];
-		$Insurance_Details = $_POST['Insurance_Details'][$i];
-		$GST_Component = $_POST['GST_Component'][$i];
-		$Warrenty = $_POST['Warrenty'][$i];
-		$Payment_Terms = $_POST['Payment_Terms'][$i];
-		$Requester_Selection = $_POST['Requester_Selection'][$i];
-		$Requester_Remarks = $_POST['Requester_Remarks'][$i];
-		// $fil = $_FILES["Attachment"]["name"][$i];
 
-		$V_id = $_POST['V1_id'][$i];
-		$emp_id = $Employee_Id;
-		// $Requested_to = $Recommender_Code;
-		$Requested_to = $_POST['recommendor_id'];
+		for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
 
-		$total_amount    = $_POST['amt_tot'][$i];
-		$discount_amount = $_POST['discount_amount'][$i];
-		$package_amount = $_POST['package_amount'][$i];
-		$package_percentage = $_POST['package_percentage'][$i];
-		
-		$fil = '';
-        if($_FILES["Attachment_".$file_index]["name"][0] != '') {
-            $file_count = COUNT($_FILES["Attachment_".$file_index]["name"]);
-            if($file_count > 0) {
-                $separate_findex = 1;
-                    for($j=0;$j < $file_count;$j++) {
-                        $extension = pathinfo($_FILES["Attachment_".$file_index]["name"][$j], PATHINFO_EXTENSION);
-                        $allowed = array("jpg","jpeg", "png", "gif", "pdf", "wmv", "pdf", "zip");
-                        if (in_array($extension, $allowed)) {
-                            $filename = $request_id.'_Vendor'.$file_index.'_file'.$separate_findex.'_';
+			$Quantity_Details = $_POST['Quantity_Details'][$i];
+			$Meterial_Name = $_POST['Meterial_Name'][$i];
+			$Price = $_POST['Price'][$i];
+			$Total = $_POST['Total'][$i];
+			$V_id = $_POST['V_id'][$i];
+			$gst_percentage      = $_POST['gst_percent'][$i];
+			$discount_percentage = $_POST['discount_percent'][$i];
 
-                            $separator = ($file_count <= $j+1) ? '' : ','; 
-                            $fil .= $filename.strtotime(date('h:i:s')).'.'.$extension.$separator;
-
-                            $fil_save = $filename.strtotime(date('h:i:s')).'.'.$extension;
-
-
-                            $tmp_name = $_FILES["Attachment_".$file_index]["tmp_name"][$j];
-                            $path = "file/" . $fil_save;
-
-                            move_uploaded_file($tmp_name, $path);
-                        }
-                        $separate_findex++;
-                    }
-            }
-        } elseif(COUNT($saved_data) > 0) {
-            $fil = $saved_data[$i]['Attachment']; 
-        }
-
-
-
-		$vendor ="INSERT INTO Tb_Vendor_Selection(Request_Id, Vendor_SAP, Vendor_Name, Vendor_City,vendor_Active_SAP,
-			Last_Purchase, Delivery_Time, Value_Of, Fright_Charges, Insurance_Details, GST_Component, Warrenty,
-			Payment_Terms, Requester_Selection, Requester_Remarks, Attachment, Time_Log, status, V_id, EMP_ID,Requested_to,total_amount,discount_amount,package_amount,package_percentage) VALUES 
-			('$request_id','$Vendor_SAP','$Vendor_Name','$Vendor_City','$vendor_Active_SAP','$Last_Purchase',
-			'$Delivery_Time','$Value_Of','$Fright_Charges','$Insurance_Details','$GST_Component','$Warrenty','$Payment_Terms','$Requester_Selection',
-			'$Requester_Remarks','$fil',GETDATE(),'Added','$V_id','$emp_id','$Requested_to','$total_amount','$discount_amount','$package_amount','$package_percentage')";
-
-        $rs_vendor = sqlsrv_query($conn, $vendor);
-
-		$query1 = sqlsrv_query($conn, "UPDATE Tb_Request set status = 'Added',Recommender = '$Requested_to',is_saved = '0' WHERE Request_Id = '$request_id' ");
-		$query1 = sqlsrv_query($conn, "UPDATE Tb_Request_Items set status = 'Added',Recommender = '$Requested_to' WHERE Request_Id = '$request_id' ");
-
-
-		// Request move to approver level if the recommendor and verifier is empty  AND 
-		// Request move to approver level if the recommendor and approver is same employee  
-		if(($_POST['recommendor_id'] == '' && $_POST['finance_verifier_id'] == '') || ($_POST['recommendor_id'] == $_POST['approver_id'] && $_POST['finance_verifier_id'] == '')) {
-			$Requested_to = $_POST['approver_id'];
-
-		    $query = "INSERT INTO Tb_Recommender (Request_id,V_id,Vendor_SAP,Vendor_Name,Vendor_City,vendor_Active_SAP,Last_Purchase,Delivery_Time1,
-	        Value_Of,Fright_Charges,Insurance_Details,GST_Component,Warrenty,Payment_Terms,Requester_Remarks,
-	        Recommender_Remarks,Attachment,Time_Log,Status,Requester_Selection,Recommender_Selection,Finance_Verification,EMP_ID,Requested_to,total_amount,discount_amount,package_amount,package_percentage)  
-	        VALUES('$request_id','$V_id','$Vendor_SAP','$Vendor_Name','$Vendor_City',
-	        '$vendor_Active_SAP','$Last_Purchase','$Delivery_Time','$Value_Of','$Fright_Charges','$Insurance_Details','$GST_Component',
-	        '$Warrenty','$Payment_Terms','$Requester_Remarks','$Requester_Remarks',
-	        '$fil',GETDATE(),'Recommended','$Requester_Selection','$Requester_Selection','$value','$emp_id','$Requested_to','$total_amount','$discount_amount','$package_amount','$package_percentage')";
-
-	        $query1 = sqlsrv_query($conn, "UPDATE Tb_Request set status = 'Recommended',Approver = '".$_POST['approver_id']."' WHERE Request_Id = '$request_id'");
-	        $query1 = sqlsrv_query($conn, "UPDATE Tb_Request_Items set status = 'Recommended',Approver = '".$_POST['approver_id']."' WHERE Request_Id = '$request_id'");
-
-	        $rs = sqlsrv_query($conn, $query);
-		}
-
-			
-	}
-
-
-	
-
-	$material_data_count = 0;
-	foreach ($_POST['Price'] as $key => $Price_val) {
-		if($Price_val != '') {
-			$material_data_count++;
-		}
-	}
-
-	// for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
-	for ($i = 0; $i < $material_data_count; $i++) {
-
-
-		$Quantity_Details = $_POST['Quantity_Details'][$i];
-		$Meterial_Name = $_POST['Meterial_Name'][$i];
-		$Price = $_POST['Price'][$i];
-		$Total = $_POST['Total'][$i];
-		$V_id = $_POST['V_id'][$i];
-		$Requested_to = $_POST['recommendor_id'];
-		$gst_percentage      = $_POST['gst_percent'][$i];
-		$discount_percentage = $_POST['discount_percent'][$i];
-
-		$meterial = "INSERT INTO Tb_Vendor_Quantity(Request_Id, Meterial_Name, Quantity, status, Price, Total,  V_id, EMP_ID,Requested_to,gst_percentage,discount_percentage) VALUES 
- 			('$request_id','$Meterial_Name','$Quantity_Details','Added','$Price','$Total','$V_id','$emp_id','$Requested_to','$gst_percentage','$discount_percentage')";
-
-		$rs_material = sqlsrv_query($conn, $meterial);
-
-
-		// Request move to approver level if the recommendor and verifier is empty  
-		if(($_POST['recommendor_id'] == '' && $_POST['finance_verifier_id'] == '') || ($_POST['recommendor_id'] == $_POST['approver_id'] && $_POST['finance_verifier_id'] == '')) {
-			$Requested_to = $_POST['approver_id'];
-
-			$meterial = "INSERT INTO Tb_Recommender_Meterial(Request_id, Meterial_Name, Quantity, Status, Price, Total,  V_id,EMP_ID,Requested_to,gst_percentage,discount_percentage) VALUES 
-	 		('$request_id','$Meterial_Name','$Quantity_Details','$status','$Price','$Total','$V_id','$emp_id','$Requested_to','$gst_percentage','$discount_percentage')";
+			$meterial = "INSERT INTO Tb_Approver_Meterial(Request_id, Meterial_Name, Quantity, Status, Price, Total,  V_id,EMP_ID,gst_percentage,discount_percentage) VALUES 
+			('$request_id','$Meterial_Name','$Quantity_Details','$status','$Price','$Total','$V_id','$emp_id','$gst_percentage','$discount_percentage')";
 
 			$rs_material = sqlsrv_query($conn, $meterial);
 		}
-		
-	}
-
-
 
 
 		$update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Request INNER JOIN Tb_Request_Items 
@@ -364,8 +341,8 @@ if (isset($_POST["save"])) {
 		  }else{
 			?>
 			<script type="text/javascript">
-				alert("Quotation added successsfully");
-				window.location = "show_vendor_request.php";
+				alert("Request approval updated successsfully");
+				window.location = "show_approver.php";
 			</script>
 			<?php
 		  }
@@ -437,6 +414,79 @@ input[type=number]::-webkit-outer-spin-button {
 		.preview_image,.preview_pdf {
 			display: none;
 		}
+
+		.display_section {
+            cursor: pointer;
+        }
+
+        .preview_icon {
+            display: none;
+            position: absolute;
+            top: 23%;
+            left: 42%;
+            font-size: 20px;
+        }
+
+        .material-tr {
+            height: 83px;
+        }
+
+        .material-tr > td {
+            height: auto;
+            vertical-align: middle;
+        }
+
+        .modal-content {
+  			cursor: move;
+		}
+
+		body {
+		    /* STOP MOVING AROUND! */
+		    overflow-x: hidden;
+		    overflow-y: scroll !important;
+		}
+
+		.modal_css_load {
+		    position: fixed;
+		    top: 0;
+		    left: 0;
+		    z-index: 1055;
+		    display: none;
+		    width: 100%;
+		    height: 100%;
+		     -ms-overflow-style: none;  /* Internet Explorer 10+ */
+		    scrollbar-width: none;  /* Firefox */
+		}
+
+		.btn-close {
+    		margin: unset !important;
+		}
+
+		@media only screen and (max-width: 600px) {
+		    .plant_top_detail {
+		        font-size: 10px !important;
+		    }
+		    .form-control-plaintext {
+		        font-size: 10px;
+		    }
+		    .material_tbl {
+		        width: auto !important;
+		    }
+
+		    th:first-child {
+		        position: unset;
+		        left: unset;
+		    }
+
+		    .table-wrapper {
+		        margin-left: unset;
+		    }
+
+            .footer {
+                left: 0 !important;
+                text-align: center;
+             }  		    
+		}		
         </style>
 
     </head>
@@ -480,7 +530,11 @@ input[type=number]::-webkit-outer-spin-button {
                                  <div class="page-title">
                                          <ol class="breadcrumb m-0">
                                              <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
-                                             <li class="breadcrumb-item"><a href="show_vendor_request.php">Show Vendor Request</a></li>
+                                             <?php if($from == 'limit_exceed') { ?>
+                                             	<li class="breadcrumb-item"><a href="show_exceed_approver.php">Show Vendor Request</a></li>
+                                             <?php } else { ?>
+                                             	<li class="breadcrumb-item"><a href="show_vendor_request.php">Show Vendor Request</a></li>
+                                             <?php } ?>
                                              <li class="breadcrumb-item active">Quotation For Request</li>
                                          </ol>
                                  </div>
@@ -489,7 +543,7 @@ input[type=number]::-webkit-outer-spin-button {
                                 <div class="float-end d-none d-sm-block">
 								     <h4 class="">Request ID : <?php echo $request_id ?></h4>
 								     <?php
-								     $po_creator_sql = sqlsrv_query($conn, "SELECT TOP 1 Tb_Request.EMP_ID,Tb_Request.Plant,Tb_Request_Items.MaterialGroup from Tb_Request 
+								     $po_creator_sql = sqlsrv_query($conn, "SELECT TOP 1 Tb_Request.EMP_ID,Tb_Request.Plant,Tb_Request_Items.MaterialGroup,Tb_Request.vendor_justification from Tb_Request 
 										left join Tb_Request_Items ON Tb_Request_Items.Request_ID = Tb_Request.Request_ID
 										where Tb_Request.Request_ID = '$request_id'");
 									  $po_creator = sqlsrv_fetch_array($po_creator_sql);
@@ -521,7 +575,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                 $plant_detail = sqlsrv_fetch_array($plant_sql_exec);
 
                                             ?>
-                                            <h1 class="badge bg-success" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
+                                            <h1 class="badge bg-success plant_top_detail text-wrap" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
 
                                             <form method="POST" enctype="multipart/form-data" id="quotation_form">
 			                                     <input type="hidden" id="mapping_id" name="mapping_id">
@@ -572,7 +626,7 @@ input[type=number]::-webkit-outer-spin-button {
 															$vendor_index = 0;
 															for ($i=1; $i <= $saved_count; $i++) { ?>
 															<td>
-																<select class="form-control s vendors" 
+																<!-- <select class="form-control s vendors" 
 																	name="Vendor_SAP[]" id="vendor-dropdown<?php echo ($vendor_index != 0) ? $vendor_index : '' ?>" data-id="<?php echo $i; ?>">
 																	<option selected>Select Vendor SAP</option>
 																	<option value="New">New Vendor</option>
@@ -585,7 +639,9 @@ input[type=number]::-webkit-outer-spin-button {
 																		<?php
 																	}
 																	?>
-																</select>
+																</select> -->
+																	<input type="text" class="form-control" readonly name="Vendor_SAP[]"
+																	value="<?php echo $saved_data[$vendor_index]['Vendor_SAP'] ?>">
 															</td>
 															<?php $vendor_index++; } ?>
 														</tr>
@@ -653,6 +709,7 @@ input[type=number]::-webkit-outer-spin-button {
 																		<?php
 																		$result = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '$request_id'",[],array( "Scrollable" => SQLSRV_CURSOR_KEYSET ));
 																		$item_count = sqlsrv_num_rows($result);
+																		$mt_index =1;
 																		while ($row = sqlsrv_fetch_array($result)) {
 																			$ID = $row['ID'];
 																			$ItemCode = $row['Item_Code'];
@@ -660,7 +717,13 @@ input[type=number]::-webkit-outer-spin-button {
 																			?>
 																			<tr>
 																				<input type="hidden" id="mat_count" name="mat_count" value="<?php echo $item_count; ?>">
-																				<td><input type="text" class="form-control-plaintext" readonly value="<?php echo trim($row['Description']) ?>-<?php echo $row['UOM'] ?>"
+																				<td>
+	                                                                              <div>
+	                                                                                  <span class="badge badge-soft-primary"><?php echo substr(trim($ItemCode),-10); ?></span>
+	                                                                                  <span class="badge badge-soft-danger ms-3"><?php echo trim($row['UOM']); ?></span>
+
+	                                                                              </div>																					
+																					<input type="text" class="form-control-plaintext" readonly value="<?php echo $mt_index.') '.trim($row['Description']) ?>"
                                                                                     data-bs-toggle="modal" data-bs-target=".bs-example-modal-center<?php echo $ID ?>">
 																						<!-- Modal -->
 																						<div class="modal fade bs-example-modal-center<?php echo $ID ?>" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
@@ -673,31 +736,33 @@ input[type=number]::-webkit-outer-spin-button {
                                                                                                         </button>
                                                                                                     </div>
                                                                                                     <div class="modal-body">
-                                                                                                        <table class="table table-bordered" >
-                                                                                                            <thead>
-                                                                                                                <tr>
-                                                                                                                    <td>Vendor Code</td>
-                                                                                                                    <th>Material Name</th>
-                                                                                                                    <th>Price</th>
-                                                                                                                    <th>Purchace Date</th>
-                                                                                                                </tr>
-                                                                                                            </thead>
-                                                                                                            <tbody>
-                                                                                                            <?php
-                                                                                                                $result1 = sqlsrv_query($conn, "SELECT TOP 3 * FROM MIGO_DET WHERE  MATNR = '$ItemCode' ORDER BY LINE_ID DESC ");
-                                                                                                                while ($row1 = sqlsrv_fetch_array($result1)) {
-                                                                                                            ?>
-                                                                                                                <tr>
-                                                                                                                    <td><?php echo $row1['LIFNR'] ?></td>
-                                                                                                                    <td><?php echo $row['Description'] ?></td>
-                                                                                                                    <td><?php echo $row1['MENGE'] ?></td>
-                                                                                                                    <td><?php echo $row1['BUDAT_MKPF']->format('Y-m-d') ?></td>
-                                                                                                                </tr>
-                                                                                                                <?php
-                                                                                                                        }
-                                                                                                                    ?>
-                                                                                                            </tbody>
-                                                                                                        </table>
+                                                                                                        <div class="table-responsive">
+	                                                                                                        <table class="table table-bordered" >
+	                                                                                                            <thead>
+	                                                                                                                <tr>
+	                                                                                                                    <td>Vendor Code</td>
+	                                                                                                                    <th>Material Name</th>
+	                                                                                                                    <th>Price</th>
+	                                                                                                                    <th>Purchace Date</th>
+	                                                                                                                </tr>
+	                                                                                                            </thead>
+	                                                                                                            <tbody>
+	                                                                                                            <?php
+	                                                                                                                $result1 = sqlsrv_query($conn, "SELECT TOP 3 * FROM MIGO_DET WHERE  MATNR = '$ItemCode' ORDER BY LINE_ID DESC ");
+	                                                                                                                while ($row1 = sqlsrv_fetch_array($result1)) {
+	                                                                                                            ?>
+	                                                                                                                <tr>
+	                                                                                                                    <td><?php echo $row1['LIFNR'] ?></td>
+	                                                                                                                    <td><?php echo $row['Description'] ?></td>
+	                                                                                                                    <td><?php echo $row1['MENGE'] ?></td>
+	                                                                                                                    <td><?php echo $row1['BUDAT_MKPF']->format('Y-m-d') ?></td>
+	                                                                                                                </tr>
+	                                                                                                                <?php
+	                                                                                                                        }
+	                                                                                                                    ?>
+	                                                                                                            </tbody>
+	                                                                                                        </table>
+                                                                                                    	</div>
                                                                                                     </div>
                                                                                                     <div class="modal-footer">
                                                                                                         <button type="button" class="btn btn-danger waves-effect waves-light btn-sm" data-bs-dismiss="modal" aria-label="Close">Close</button>
@@ -708,7 +773,7 @@ input[type=number]::-webkit-outer-spin-button {
 																				</td>
 																			</tr>
 																		<?php
-																		}
+																		$mt_index++;}
 																		?>
 																	</tbody>
 																</table>
@@ -742,7 +807,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 																			$array_ind = ($arr_index > 0) ? $arr_index : '';
 																			?>
-																			<tr>
+																			<tr class="material-tr">
 																				<td>
 																					<input type="text"
 																						class="form-control  qty<?php echo $array_ind; ?> vendor<?php echo $tbl_index; ?>_qty_material<?php echo $inner_index;?>" style="width: 75px; "
@@ -912,7 +977,7 @@ input[type=number]::-webkit-outer-spin-button {
 															for ($i=0; $i < $saved_count; $i++) { ?>
 															<td>
 																<input type="date" class="form-control " min="<?php echo date("Y-m-d"); ?>"
-																	name="Delivery_Time[]" value="<?php echo $saved_data[$i]['Delivery_Time']; ?>"
+																	name="Delivery_Time[]" value="<?php echo $saved_data[$i]['Delivery_Time2']; ?>"
 																	placeholder="Enter Delivery Time" readonly>
 															</td>
 															<?php } ?>
@@ -932,7 +997,7 @@ input[type=number]::-webkit-outer-spin-button {
 															<?php 
 															for ($i=0; $i < $saved_count; $i++) { ?>
 															<td>
-																<select class="form-control pay_terms" 
+																<!-- <select class="form-control pay_terms" 
 																	name="Payment_Terms[]" readonly>
 																	<option  value="">Select Payment Terms</option>
 																	<?php
@@ -945,7 +1010,10 @@ input[type=number]::-webkit-outer-spin-button {
 																		<?php
 																	}
 																	?>
-																</select>
+																</select> -->
+																<input type="text" readonly class="form-control " 
+																	name="Payment_Terms[]"
+																	value="<?php echo $saved_data[$i]['Payment_Terms'] ?>">
 															</td>
 															<?php } ?>
 
@@ -960,19 +1028,22 @@ input[type=number]::-webkit-outer-spin-button {
 															$rindex = 1;
 															for ($i=0; $i < $saved_count; $i++) { ?>
 															<td>
-																<select class="form-control task request_selection required_for_valid request_selection_<?php echo $rindex;?>"
+																<!-- <select class="form-control task request_selection required_for_valid request_selection_<?php echo $rindex;?>"
 																	name="Requester_Selection[]" required data-id="<?php echo $rindex;?>" error-msg='Selection is mandatory.'>
 																	<option value="">Select Requester Selection</option>
 																	<?php for ($j=1; $j <= $saved_count; $j++) { ?>
 																		<option value="<?php echo $j; ?>" <?php if($saved_data[$i]['Requester_Selection'] == $j) { ?> selected <?php } ?>><?php echo $j; ?></option>
 																	<?php } ?>
 																</select>
-																<span class="error_msg text-danger"></span>
+																<span class="error_msg text-danger"></span> -->
+																<input type="text" class="form-control " readonly 
+																	name="Requester_Selection[]"
+																	value="<?php echo $saved_data[$i]['Requester_Selection'] ?>">
 															</td>
 															<?php $rindex++; } ?>
 														</tr>
 														<tr id="text">
-														<?php 
+															<?php 
 															$requester_name = sqlsrv_query($conn, "SELECT  * FROM HR_Master_Table 
 															WHERE Employee_Code = '".$request_details['Requested_to']."' ");
 															$requester_names = sqlsrv_fetch_array($requester_name);
@@ -983,10 +1054,56 @@ input[type=number]::-webkit-outer-spin-button {
 															<?php 
 															for ($i=0; $i < $saved_count; $i++) { ?>
 															<td>
-																<input type="text" class="form-control" name="Requester_Remarks[]" placeholder="Enter Remark" value="<?php echo $saved_data[$i]['Requester_Remarks']; ?>">
+																<input type="text" class="form-control" name="Requester_Remarks[]" readonly placeholder="Enter Remark" value="<?php echo $saved_data[$i]['Requester_Remarks']; ?>">
 															</td>
 															<?php } ?>															
 														</tr>
+
+
+														<tr id="checkbox">
+															<th>Recommender's selection<span style="color:red">*</span></th>
+															<?php 
+															$rindex = 1;
+															for ($i=0; $i < $saved_count; $i++) { ?>
+															<td>
+																<input type="text" class="form-control " readonly 
+																	name="Recommender_Selection[]"
+																	value="<?php echo $saved_data[$i]['Recommender_Selection'] ?>">
+															</td>
+															<?php $rindex++; } ?>
+														</tr>
+														<tr id="text">
+															<?php 
+															$requester_name = sqlsrv_query($conn, "SELECT  * FROM HR_Master_Table 
+															WHERE Employee_Code = '".$request_details['Recommender']."' ");
+															$requester_names = sqlsrv_fetch_array($requester_name);
+															$name = $requester_names['Employee_Name'];
+															?>
+                                                            <th>Requester's Remarks<span class="required-label">&nbsp;&nbsp;(<?php echo $name ?>)</span></th>
+															
+															<?php 
+															for ($i=0; $i < $saved_count; $i++) { ?>
+															<td>
+																<input type="text" class="form-control" name="Recommender_Remarks[]" readonly placeholder="Enter Remark" value="<?php echo $saved_data[$i]['Recommender_Remarks']; ?>">
+															</td>
+															<?php } ?>															
+														</tr>
+
+
+														<tr id="checkbox">
+															<th>Approver's selection<span style="color:red">*</span></th>
+															<?php 
+															$rindex = 1;
+															for ($i=0; $i < $saved_count; $i++) { ?>
+															<td>
+																<input type="text" class="form-control " readonly 
+																	name="Approver_Selection[]"
+																	value="<?php echo $saved_data[$i]['Approver_Selection'] ?>">
+															</td>
+															<?php $rindex++; } ?>
+														</tr>
+
+
 														<tr id="pdf">
 															<th>PDF / JPG attachment
 															</th>
@@ -1004,11 +1121,12 @@ input[type=number]::-webkit-outer-spin-button {
 																$file_extension = explode('.', $saved_data[$i]['Attachment'])[1];
 																?>
                                                                 <!-- file preview modal -->
-                                                                <div class="modal fade" id="file_preview_modal_<?php echo $rindex; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                                <div class="modal fade modal_css_load" id="file_preview_modal_<?php echo $rindex; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static">
                                                                   <div class="modal-dialog modal-lg">
                                                                     <div class="modal-content">
                                                                       <div class="modal-header">
                                                                         <h1 class="modal-title fs-5" id="exampleModalLabel">File Preview</h1>
+                                                                      <a href="#" id="attachment_download_<?php echo $rindex; ?>" class="ms-auto" download><button type="button" class="btn btn-sm btn-info ms-auto me-3"><i class='mdi mdi-download font-size-16 align-middle me-1 text-white'></i> Download</button></a>                                                                        
                                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                                       </div>
                                                                       <div class="modal-body">
@@ -1063,21 +1181,63 @@ input[type=number]::-webkit-outer-spin-button {
                                                 <div class="row" id="involved_persons_div" style="display:none;">
                                                     <div class="col-md-5">
                                                         <h4>Involved Persons</h4>
-                                                        <table class="table table-striped table-bordered table-hover" >
-                                                          <thead>
-                                                            <tr>
-                                                              <th>Purchaser</th>
-                                                              <th>Recommender</th>
-                                                              <th>Approver</th>
-                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
-                                                            </tr>
-                                                          </thead>
-                                                          <tbody id="involved_persons_tbody">
+                                                        <div class="table-responsive">
+	                                                        <table class="table table-striped table-bordered table-hover" >
+	                                                          <thead>
+	                                                            <tr>
+	                                                              <th>Purchaser</th>
+	                                                              <th>Recommender</th>
+	                                                              <th>Approver</th>
+	                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
+	                                                            </tr>
+	                                                          </thead>
+	                                                          <tbody id="involved_persons_tbody">
 
-                                                          </tbody>
-                                                        </table>
+	                                                          </tbody>
+	                                                        </table>
+                                                    	</div>
                                                     </div>
                                                 </div>
+
+
+                                                <?php if(COUNT($saved_data) == 1 && ($po_creator['vendor_justification'] != null)) { ?>
+                                                <br>
+                                                <div class="row justification_div justify-content-center"> 
+                                                    <div class="col-2">
+                                                        <label for="justification" class="float-end">Justification For Single Vendor<span class="text-danger"> *</span></label>
+                                                    </div>   
+                                                    <div class="col-6">
+	                                                    <textarea class="form-control required_for_valid" name="justification" id="justification" required readonly error-msg="Justification field is required"><?php echo $po_creator['vendor_justification']; ?>
+	                                                    </textarea>
+	                                                    <span class="error_msg text-danger" style="display: none;"></span>
+	                                                </div>
+                                                </div>
+                                                <?php } ?> 
+
+
+                                                <br>
+                                                <div class="row justify-content-center"> 
+                                                    <div class="col-2">
+                                                        <label for="approver_remarks" class="float-end">Approver's Remarks<span class="text-danger"> *</span></label>
+                                                    </div>   
+                                                    <div class="col-6">
+                                                        <textarea class="form-control required_for_valid" name="approver_remarks" id="approver_remarks" required error-msg="Approver remarks field is required" <?php if($from == 'limit_exceed'){ ?> readonly <?php } ?>><?php echo $saved_data[0]['Approver_Remarks'] ?></textarea>
+                                                        <span class="error_msg text-danger" style="display: none;"></span>
+                                                    </div>
+                                                </div>
+
+                                                <?php if($from == 'limit_exceed') { ?>
+                                                    <br>
+                                                    <div class="row justify-content-center"> 
+                                                            <div class="col-2">
+                                                                <label for="Approver2_Remarks" class="float-end">Approver2 Remarks<span class="text-danger"> *</span></label>
+                                                            </div>   
+                                                            <div class="col-6">
+                                                                <textarea class="form-control required_for_valid" name="approver2_remarks" id="Approver2_Remarks" required error-msg="Approver2 remarks field is required"><?php echo $saved_data[0]['Approver2_Remarks'] ?></textarea>
+                                                                <span class="error_msg text-danger" style="display: none;"></span>
+                                                            </div>
+                                                        </div>
+                                                <?php } ?>
 
                                                 <div class="d-flex gap-2 col-2 mx-auto" style="padding: 35px 0px 0px 0px;">
                                                 	<input type="hidden" name="save">
@@ -1154,6 +1314,11 @@ input[type=number]::-webkit-outer-spin-button {
         <!-- CUSTOM SCRIPT -->
        <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
         
+
+        <!-------Model Trag and Trap ---------->
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+        <!-----------End --------------->
+
         <script>
             var i = 1;
             //VENDOR
@@ -1168,7 +1333,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 				var first_pref_quote_value = $('#first_pref_quote_value').val();
 				var request_id = '<?php echo $request_id ?>';
-				var emp_id = '<?php echo $Employee_Id ?>';
+				var emp_id = $('#po_creator_id').val();
 
 				if(first_pref_quote_value != '') {
 					get_involved_persons(first_pref_quote_value);
@@ -1706,7 +1871,7 @@ input[type=number]::-webkit-outer-spin-button {
                                                                     $result = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '$request_id'");
                                                                     while ($row = sqlsrv_fetch_array($result)) {
                                                                         ?>
-                                                                            <tr>
+                                                                            <tr class="material-tr">
                                                                                 <td>
                                                                                     <input type="text" style="width: 75px; " class="form-control  qty3 vendor${i}_qty_material<?php echo $mat_index;?>"  readonly data-id="${i}" id='qty3${i}' name="Quantity_Details[]-<?php echo $row['ID'] ?>${i}" value="<?php echo $row['Quantity'] ?>" placeholder="Enter Quantity Details"> <input type="hidden" class="form-control" name="Meterial_Name[]" value="<?php echo $row['Item_Code'] ?>" >
                                                                                     <input type="hidden" class="form-control" name="V_id[]" value="Vendor ${i}" >
@@ -2400,7 +2565,8 @@ input[type=number]::-webkit-outer-spin-button {
 
                      if(file_type == 'pdf') {
                         var src = $(this).closest('div').find('#pdf_input'+row_id).val();
-                        $('.preview_file_pdf_'+row_id).attr('src', src+'#toolbar=0');
+                        var src_url = 'https://docs.google.com/viewer?url=https://corporate.rasiseeds.com/corporate/final_request/'+src+'&embedded=true';
+                        $('.preview_file_pdf_'+row_id).attr('src', src_url+'#toolbar=0');
                         $('.preview_file_img_'+row_id).hide();
                         $('.preview_file_pdf_'+row_id).show();
                      } else {
@@ -2408,11 +2574,12 @@ input[type=number]::-webkit-outer-spin-button {
                         $('.preview_file_pdf_'+row_id).hide();
                         $('.preview_file_img_'+row_id).show();
                      } 
+            		$('#attachment_download_'+row_id).attr('href',src);
                     $('#file_preview_modal_'+row_id).modal('show');
 
                 });
 
-                
+
                 $(document).on('click','#send_back_btn',function(){
                     $('#sendback_new_modal').modal('show');
                 });
@@ -2426,7 +2593,7 @@ input[type=number]::-webkit-outer-spin-button {
 
                 $(document).on('click','#send_back_remark_submit',function(){
                     let remark        = $('#Recommender_sendback_remark').val();
-                    let sendback_from = 'Recommender';
+                    let sendback_from = 'Approver';
                     let request_id    = $('#r_id').val(); 
                     $('#sendback_new_modal').modal('hide');
 
@@ -2464,6 +2631,10 @@ input[type=number]::-webkit-outer-spin-button {
                         }
                     });
                 });
+
+                $(".modal").draggable({
+  					handle: ".modal-content"
+				});
 		        
 				
         </script>

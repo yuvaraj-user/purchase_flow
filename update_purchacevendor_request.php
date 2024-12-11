@@ -87,6 +87,13 @@ $Plant = $selector_arr1['Plant'];
             width: 209px !important;
         }
 
+        @media only screen and (max-width: 600px) {
+            .footer {
+                left: 0 !important;
+                text-align: center;
+             }      
+        }        
+
         </style>
     </head>
 
@@ -157,6 +164,7 @@ $Plant = $selector_arr1['Plant'];
                                                 $updated_query = sqlsrv_fetch_array($update_qry);
                                                 $pl = $updated_query['Plant'];
                                                 $sl = $updated_query['Storage_Location'];
+                                                // echo $updated_query['Storage_Location'];exit;
 
                                                 $mat_group_query =  sqlsrv_query($conn, "SELECT TOP 1 * from Tb_Request_Items WHERE Request_ID = '".$updated_query['Request_ID']."'");
 
@@ -204,7 +212,7 @@ $Plant = $selector_arr1['Plant'];
                                                                         where Document_type = '".$request_type."' AND PO_creator_Release_Codes = '".$_SESSION['EmpID']."'");
                                                                     while ($c = sqlsrv_fetch_array($plant)) {
                                                                 ?>
-                                                                <option <?php if ($updated_query['Plant'] == $c['Plant']) { ?> selected="selected" <?php } ?> value="<?php echo $c['Plant'] ?>">
+                                                                <option <?php if (trim($updated_query['Plant']) == trim($c['Plant'])) { ?> selected="selected" <?php } ?> value="<?php echo $c['Plant'] ?>">
                                                                     <?php echo $c['Plant'] ?> - <?php echo $c['Plant_Name'] ?> 
                                                                 </option>
                                                                 <?php
@@ -220,13 +228,14 @@ $Plant = $selector_arr1['Plant'];
                                                             <select class="storage-dropdowns form-select" name="storage_location" id="storage-dropdown">
                                                                 <option value="">Select Storage Location</option>
                                                                 <?php
-                                                                    $storage = sqlsrv_query($conn, "SELECT DISTINCT StorageLocation,Plant from MaterialMaster Where Plant = '".$updated_query['Plant']."'");
+                                                                    $storage = sqlsrv_query($conn, "SELECT DISTINCT StorageLocation,Plant,Storage_description from MaterialMaster Where Plant = '".$updated_query['Plant']."'");
                                                                     while ($row = sqlsrv_fetch_array($storage)) {
                                                                 ?>
 
-                                                                <option <?php if ($updated_query['Storage_Location'] == $row['StorageLocation']) { ?> selected="selected" <?php } ?> value="<?php echo $row["StorageLocation"]; ?>">
+                                                                <option <?php if (trim($updated_query['Storage_Location']) == trim($row['StorageLocation'])) { ?> selected="selected" <?php } ?> value="<?php echo $row["StorageLocation"]; ?>">
                                                                     <?php echo $row["Plant"]; ?>-
-                                                                    <?php echo $row["StorageLocation"] ?>
+                                                                    <?php echo $row["StorageLocation"] ?>-
+                                                                    <?php echo $row["Storage_description"]; ?>
                                                                 </option>
                                                                 <?php } ?>
                                                             </select>
@@ -255,7 +264,7 @@ $Plant = $selector_arr1['Plant'];
                                                                     while ($row = sqlsrv_fetch_array($material)) {
                                                                 ?>
 
-                                                                <option <?php if ($mat_group_query_exec['MaterialGroup'] == $row['MaterialGroup']) { ?> selected="selected" <?php } ?> value="<?php echo $row["MaterialGroup"]; ?>">
+                                                                <option <?php if (trim($mat_group_query_exec['MaterialGroup']) == trim($row['MaterialGroup'])) { ?> selected="selected" <?php } ?> value="<?php echo $row["MaterialGroup"]; ?>">
                                                                     <?php echo $row["MaterialGroup"]; ?>
                                                                 </option>
                                                                 <?php } ?>
@@ -263,17 +272,56 @@ $Plant = $selector_arr1['Plant'];
                                                             </select>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="text-end pb-3">
-                                                        <button type="button" class="btn btn-primary btn-sm" id="add">
-                                                        <span class="btn-label">
-                                                            <i class="fa fa-plus"></i>
-                                                        </span>
-                                                        Add More
-                                                        </button>
+
+
+                                                      <?php if($department == 'Sales & Marketing') { ?>
+
+                                                    <div class="col-md-2 season-div">
+                                                        <div class="mb-3">
+                                                            <label for="season" class="form-label season_label" >Season</label>
+                                                           <select class="season form-select w-100" name="season" id="season" style="width:100%;">
+                                                                <option value="">Select Season</option>
+                                                                <?php 
+                                                                    $season_sql = "SELECT DISTINCT Season_Code from Master_Season where Default_Season = '1'";
+                                                                    $season_exec = sqlsrv_query($conn,$season_sql);
+                                                                    while($season_res  = sqlsrv_fetch_array($season_exec)) {
+                                                                ?>
+                                                                <option value="<?php echo $season_res['Season_Code']; ?>" <?php if($updated_query['Season'] == $season_res['Season_Code']){ ?> selected <?php } ?>><?php echo $season_res['Season_Code']; ?></option>
+                                                                <?php } ?>
+                                                            </select>
+                                                        </div>
                                                     </div>
+
+                                                    <div class="col-md-2 activity-div">
+                                                        <div class="mb-3">
+                                                            <label for="activity" class="form-label activity_label" >Activity</label>
+                                                           <select class="activity form-select w-100" name="activity" id="activity" style="width:100%;">
+                                                                <option value="">Select Activty</option>
+                                                                <option value="PSA" <?php if($updated_query['Activity'] == 'PSA'){ ?> selected <?php } ?>>PSA</option>
+                                                                <option value="PDA" <?php if($updated_query['Activity'] == 'PDA'){ ?> selected <?php } ?>>PDA</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-2 crop-year-div">
+                                                        <div class="mb-3">
+                                                            <label for="crop_year" class="form-label crop_year_label" >Year</label>
+                                                            <?php
+                                                             $year_sql = "SELECT * from ANP_Config_Business_Year WHERE CAST(GETDATE() AS DATE) BETWEEN from_date AND to_date";
+                                                             $year_exec = sqlsrv_query($conn,$year_sql);
+                                                             $year_res  = sqlsrv_fetch_array($year_exec);
+
+                                                            ?>
+                                                           <select class="crop_year form-select" name="crop_year" id="crop_year" style="width:100%;">
+                                                                <option value="">Select Year</option>
+                                                                <option value="<?php echo $year_res['Business_Year']; ?>" <?php if($updated_query['Crop_Year'] == $year_res['Business_Year']) { ?> selected <?php } ?>><?php echo $year_res['Business_Year']; ?></option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
+                                                    <?php } ?>
                                                 </div>
+
                                                 <div class="row" style="padding: 0px 0px 20px 0px;">
                                                     <div class="table-responsive">
                                                         <?php
@@ -317,12 +365,12 @@ $Plant = $selector_arr1['Plant'];
 
                                                                 <tr data-rowno="<?php echo $row_no; ?>">
                                                                         <td class="sr_no">
-                                                                            <input type="hidden" class="form-control"name="id[]" value="<?php echo $row['ID'] ?>">
+                                                                            <input type="hidden" class="form-control"name="id" value="<?php echo $row['ID'] ?>">
                                                                             <?php echo $row_no; ?>
                                                                         </td>
                                                                         <td>
                                                                             <div class="col-md-12" >
-                                                                                <select class="select2 form-control items-dropdown" id="item-dropdown<?php echo $row_no; ?>" style="width: 175px;" data-id="<?php echo $row_no; ?>" name="item_code[]" placeholder="Select Name." >
+                                                                                <select class="select2 form-control items-dropdown" id="item-dropdown<?php echo $row_no; ?>" style="width: 175px;" data-id="<?php echo $row_no; ?>" name="item_code" placeholder="Select Name." >
                                                                                     <option value="">Select Item Code</option>
                                                                                     <option <?php if ($row['Item_Code'] == 'New_Item') { ?> selected="selected" <?php } ?> value="New_Item">New Item</option>
                                                                                     <?php
@@ -337,38 +385,39 @@ $Plant = $selector_arr1['Plant'];
                                                                                     }
                                                                                     while ($row1 = sqlsrv_fetch_array($result1)) {
                                                                                     ?>
-                                                                                    <option <?php if ($row['Item_Code'] == $row1['ItemCode']) { ?> selected="selected" <?php } ?> value="<?php echo $row1["ItemCode"]; ?>"><?php echo $row1["ItemDescription"]; ?>&nbsp;-&nbsp;
+                                                                                    <option <?php if (trim($row['Item_Code']) == trim($row1['ItemCode'])) { ?> selected="selected" <?php } ?> value="<?php echo $row1["ItemCode"]; ?>"><?php echo $row1["ItemDescription"]; ?>&nbsp;-&nbsp;
                                                                                         <?php echo $row1["ItemCode"]; ?></option>
                                                                                     <?php } ?>
 
                                                                                 </select>
                                                                             </div>
+                                                                            <span class="badge bg-info text-white text-center p-1 mt-2 item_code_info" style="font-size: 13px;"><?php echo $row["Item_Code"]; ?></span>
                                                                         </td>
                                                                         <td id="divn">
                                                                             <div class="col-md-12">
-                                                                            <textarea id="description<?php echo $row_no; ?>" style="width: 210px;" class="form-control disabled description" name="description[]"   row="2" placeholder="Enter Description" required=""><?php echo $row['Description']; ?></textarea>
+                                                                            <textarea id="description<?php echo $row_no; ?>" style="width: 210px;" class="form-control disabled description" name="description"   row="2" placeholder="Enter Description" required=""><?php echo $row['Description']; ?></textarea>
 
                                                                             </div>
                                                                         </td>
                                                                         <td id="divb">
                                                                             <div class="col-md-12" >
-                                                                                <input type="text" class="form-control disabled uom" id="uom<?php echo $row_no; ?>" style="width: 110px;"  name="uom[]" readonly placeholder="Enter UOM" value="<?php echo $row['UOM']; ?>">
+                                                                                <input type="text" class="form-control disabled uom" id="uom<?php echo $row_no; ?>" style="width: 110px;"  name="uom" readonly placeholder="Enter UOM" value="<?php echo $row['UOM']; ?>">
                                                                             </div>
                                                                         </td>
                                                                         <td id="divb">
                                                                             <div class="col-md-12" id="existing_material_div">
-                                                                                <input type="text" class="form-control  disabled MaterialGroup" style="width: 100px;" id="MaterialGroup<?php echo $row_no; ?>"  readonly name="MaterialGroup[]" placeholder="Enter MaterialGroup" value="<?php echo $row['MaterialGroup']; ?>">
+                                                                                <input type="text" class="form-control  disabled MaterialGroup" style="width: 100px;" id="MaterialGroup<?php echo $row_no; ?>"  readonly name="MaterialGroup" placeholder="Enter MaterialGroup" value="<?php echo $row['MaterialGroup']; ?>">
                                                                             </div>
                                                                         </td>
                                                                         <td>
                                                                             <div class="col-md-12">
-                                                                                <input type="number" min="0" class="form-control uqty" id="quantity<?php echo $row_no; ?>" style="width: 125px;" name="quantity[]"  placeholder="Enter Quantity" data-id="<?php echo $row_no; ?>" required="" value="<?php echo $row['Quantity']; ?>">
+                                                                                <input type="number" min="0" class="form-control uqty" id="quantity<?php echo $row_no; ?>" style="width: 125px;" name="quantity"  placeholder="Enter Quantity" data-id="<?php echo $row_no; ?>" required="" value="<?php echo $row['Quantity']; ?>">
                                                                             </div>
                                                                         </td>
 
                                                                         <td class="replacement_feature" style="<?php echo $replacement_style; ?>">
                                                                             <div class="col-md-12">
-                                                                                <select class="select2 form-control replacement-dropdown" id="replace<?php echo $row_no; ?>"  data-id="<?php echo $row_no; ?>" name="replace[]" style="width: 145px;" disabled>
+                                                                                <select class="select2 form-control replacement-dropdown" id="replace<?php echo $row_no; ?>"  data-id="<?php echo $row_no; ?>" name="replace" style="width: 145px;" disabled>
                                                                                     <option value="">Select</option>
                                                                                     <option value="new" <?php if ($row['Replace_Type'] == 'new') { ?> selected="selected" <?php } ?>>New</option>
                                                                                     <option value="replacement" <?php if ($row['Replace_Type'] == 'replacement') { ?> selected="selected" <?php } ?>>Replacement</option>
@@ -418,36 +467,36 @@ $Plant = $selector_arr1['Plant'];
                                                                               <?php }
                                                                               //else{ ?>
 
-                                                                                <!-- <input type="hidden" class="select2 form-control replacement-dropdown" id="replace<?php //echo $row_no; ?>"  data-id="<?php //echo $row_no; ?>" name="replace[]"> -->
+                                                                                <!-- <input type="hidden" class="select2 form-control replacement-dropdown" id="replace<?php //echo $row_no; ?>"  data-id="<?php //echo $row_no; ?>" name="replace"> -->
 
                                                                               <?php //} ?>
-                                                                                <input type="hidden" id="rdateofpurchase<?php echo $row_no; ?>" name="rdateofpurchase[]" value="<?php echo $row['Date_of_Purchase']; ?>">
-                                                                                <input type="hidden" id="rqty<?php echo $row_no; ?>" value="<?php echo $row['Replace_Qty']; ?>" name="rqty[]">
-                                                                                <input type="hidden" id="rremarks<?php echo $row_no; ?>" name="rremarks[]" value="<?php echo $row['Replace_Remarks']; ?>">
-                                                                                <input type="hidden" id="rcost<?php echo $row_no; ?>" name="rcost[]" value="<?php echo $row['Replace_Cost']; ?>">
+                                                                                <input type="hidden" id="rdateofpurchase<?php echo $row_no; ?>" name="rdateofpurchase" value="<?php echo $row['Date_of_Purchase']; ?>">
+                                                                                <input type="hidden" id="rqty<?php echo $row_no; ?>" value="<?php echo $row['Replace_Qty']; ?>" name="rqty">
+                                                                                <input type="hidden" id="rremarks<?php echo $row_no; ?>" name="rremarks" value="<?php echo $row['Replace_Remarks']; ?>">
+                                                                                <input type="hidden" id="rcost<?php echo $row_no; ?>" name="rcost" value="<?php echo $row['Replace_Cost']; ?>">
 
                                                                             </div>
                                                                         </td>
                                                                         <td>
                                                                             <div class="col-md-12">
-                                                                                <input type="date" class="form-control" id="Expected_Date<?php echo $row_no; ?>" style="width: 155px;" min="<?php echo date("Y-m-d"); ?>" value="<?php echo date('Y-m-d'); ?>" name="Expected_Date[]"  placeholder="Enter Date" required="" value="<?php echo $row['Expected_Date']; ?>">
+                                                                                <input type="date" class="form-control" id="Expected_Date<?php echo $row_no; ?>" style="width: 155px;" min="<?php echo date("Y-m-d"); ?>" value="<?php echo date('Y-m-d'); ?>" name="Expected_Date"  placeholder="Enter Date" required="" value="<?php echo $row['Expected_Date']; ?>">
                                                                             </div>
                                                                         </td>
                                                                         <td>
                                                                             <div class="col-md-12">
-                                                                                <textarea id="Specification<?php echo $row_no; ?>" class="form-control" name="Specification[]" style="width: 155px;height: 36px;"  row="2" placeholder="Enter Specification" required=""><?php echo $row['Specification']; ?></textarea>
+                                                                                <textarea id="Specification<?php echo $row_no; ?>" class="form-control" name="Specification" style="width: 155px;height: 36px;"  row="2" placeholder="Enter Specification" required=""><?php echo $row['Specification']; ?></textarea>
                                                                             </div>
                                                                         </td>
                                                                         <td>
                                                                             <div class="col-md-12">
-                                                                                <input class="form-control file-upload-input" type="file"  id="Attachment<?php echo $row_no; ?>" style="width: 170px;" name="Attachment[]"  placeholder="Enter Quantity" >
-                                                                                <input type="hidden" name="Saved_Attachment[]" value="<?php echo $row['Attachment']; ?>">
+                                                                                <input class="form-control file-upload-input" type="file"  id="Attachment<?php echo $row_no; ?>" style="width: 170px;" name="Attachment"  placeholder="Enter Quantity" >
+                                                                                <input type="hidden" name="Saved_Attachment" value="<?php echo $row['Attachment']; ?>">
                                                                             </div>
                                                                         </td>
                                                                         <td>
                                                                             <div class="col-md-12">
                                                                             
-                                                                                <select class="select2 form-control" id="type_val" data-id="<?php echo $row_no; ?>"  name="budget[]" style="width: 145px;"  onchange="openPopup(this);" >
+                                                                                <select class="select2 form-control" id="type_val" data-id="<?php echo $row_no; ?>"  name="budget" style="width: 145px;"  onchange="openPopup(this);" >
                                                                                     <option <?php if ($row['Budget'] == "Yes") { ?> selected="selected" <?php } ?> value="Yes">Yes</option>
                                                                                     <option <?php if ($row['Budget'] == "No") { ?> selected="selected" <?php } ?> value="No">No</option>
                                                                                 </select>
@@ -470,6 +519,16 @@ $Plant = $selector_arr1['Plant'];
                                                     </div>
                                                     <!-- END MODEL -->
                                                 </div>
+                                                 <div class="row">
+                                                    <div class="text-end pb-3">
+                                                        <button type="button" class="btn btn-primary btn-sm" id="add">
+                                                        <span class="btn-label">
+                                                            <i class="fa fa-plus"></i>
+                                                        </span>
+                                                        Add More
+                                                        </button>
+                                                    </div>
+                                                </div>
                                                 <div class="row mb-3 d-none">
                                                 <label for="example-datetime-local-input" class="col-sm-2 col-form-label">Finance Verification<span class="required-label"style="color:red">*</span></label>
                                                     <div class="col-sm-2">
@@ -489,7 +548,7 @@ $Plant = $selector_arr1['Plant'];
                                                 <div class="row mb-3">
                                                     <label for="example-datetime-local-input" class="col-md-2 col-sm-2 col-form-label">Informer Details</label>
                                                     <div class="col-md-10 col-sm-10 informer-div">
-                                                        <select class="select2 form-control select2-multiple" name="persion[]"  implode multiple data-placeholder="Choose ...">
+                                                        <select class="select2 form-control select2-multiple" name="persion"  implode multiple data-placeholder="Choose ...">
                                                             <?php
                                                                 $HR_Master_Table = sqlsrv_query($conn, "Select * from HR_Master_Table ");
                                                                 while ($HR = sqlsrv_fetch_array($HR_Master_Table)) {
@@ -783,6 +842,10 @@ $Plant = $selector_arr1['Plant'];
                 $("#storage-dropdown").select2();
                 $('#mat_group').select2();
 
+                $('.season').select2();
+                $('.activity').select2();
+                $('.crop_year').select2();
+
                 var Plant         = $('#plant-dropdown').val();
                 var MaterialGroup = $('#mat_group').val();
 
@@ -877,6 +940,10 @@ $Plant = $selector_arr1['Plant'];
                 $(".storage_div").hide();
                 $(".mat_group_div").hide();
 
+                $('.season-div').hide();
+                $('.activity-div').hide();
+                $('.crop-year-div').hide(); 
+
                 $('.material_section_body').empty();
 
                 // request type document no set 
@@ -923,6 +990,11 @@ $Plant = $selector_arr1['Plant'];
                 var Plant_Code = this.value;
                 $(".storage_div").hide();
                 $(".mat_group_div").hide();
+                
+                $('.season-div').hide();
+                $('.activity-div').hide();
+                $('.crop-year-div').hide(); 
+
                 $('.material_section_body').empty();
                 $('#trow_no').val(1);
 
@@ -958,6 +1030,9 @@ $Plant = $selector_arr1['Plant'];
               // request type document no set 
                 var request_type_code = (request_type == 'Asset purchases') ? 'ZCAP' : ((request_type == 'Material purchases') ? 'ZNB' : 'ZSER');
 
+                $('.season-div').hide();
+                $('.activity-div').hide();
+                $('.crop-year-div').hide(); 
 
                 $('#trow_no').val(1);
 
@@ -999,6 +1074,10 @@ $Plant = $selector_arr1['Plant'];
                 var MaterialGroup = $(this).val();
                 $('.material_section_body').empty();
                 $('#trow_no').val(1);
+
+                $('.season-div').show();
+                $('.activity-div').show();
+                $('.crop-year-div').show();  
 
                 $.ajax({
                     url: "fetch-item-code.php?employe=<?php echo $Employee_Id ?>",
@@ -1090,6 +1169,8 @@ $Plant = $selector_arr1['Plant'];
                     $('#replace'+id).val('').trigger("change");
                     $('#uom'+id).prop('readonly',true);
                     $('#uom'+id).addClass('disabled');
+                    $(this).closest('td').find('.item_code_info').text(ItemCode);
+                    $(this).closest('td').find('.item_code_info').show();
                 }
 
                 $.ajax({
@@ -1358,7 +1439,7 @@ $Plant = $selector_arr1['Plant'];
                                         <div class="modal-body">
                                                 <div class="form-group">
                                                     <div class="input-group mb-3">
-                                                        <textarea class="form-control" name="budget_remark[]" aria-label="With textarea"></textarea>
+                                                        <textarea class="form-control" name="budget_remark" aria-label="With textarea"></textarea>
                                                     </div>
                                                 </div>
                                         </div>
@@ -1379,68 +1460,69 @@ $Plant = $selector_arr1['Plant'];
                             </td>
                             <td>
                                 <div class="col-md-12" >
-                                    <select class="select2 form-control items-dropdown" data-id="${row_no}" id="item-dropdown${row_no}" style="width: 175px;" name="item_code[]" placeholder="Select Name." >
+                                    <select class="select2 form-control items-dropdown" data-id="${row_no}" id="item-dropdown${row_no}" style="width: 175px;" name="item_code" placeholder="Select Name." >
                                     </select>
                                 </div>
+                                <span class="badge bg-info text-white text-center p-1 mt-2 item_code_info" style="display:none;    font-size: 13px;"></span>
                             </td>
                             <td id="divn">
                                 <div class="col-md-12">
-                                <textarea id="description${row_no}" style="width: 210px;" data-id="${row_no}" class="form-control disabled description" name="description[]"   row="2" placeholder="Enter Description" required=""></textarea>
+                                <textarea id="description${row_no}" style="width: 210px;" data-id="${row_no}" class="form-control disabled description" name="description"   row="2" placeholder="Enter Description" required=""></textarea>
 
                                 </div>
                             </td>
                             <td id="divb">
                                 <div class="col-md-12" >
-                                    <input type="text" class="form-control disabled uom" data-id="${row_no}" id="uom${row_no}" style="width: 110px;"  name="uom[]" readonly placeholder="Enter UOM" >
+                                    <input type="text" class="form-control disabled uom" data-id="${row_no}" id="uom${row_no}" style="width: 110px;"  name="uom" readonly placeholder="Enter UOM" >
                                 </div>
                             </td>
                             <td id="divb">
                                 <div class="col-md-12" id="existing_material_div">
-                                    <input type="text" class="form-control  disabled MaterialGroup" data-id="${row_no}" style="width: 100px;" id="MaterialGroup${row_no}"  readonly name="MaterialGroup[]" placeholder="Enter MaterialGroup">
+                                    <input type="text" class="form-control  disabled MaterialGroup" data-id="${row_no}" style="width: 100px;" id="MaterialGroup${row_no}"  readonly name="MaterialGroup" placeholder="Enter MaterialGroup">
                                 </div>
                             </td>
                             <td>
                                 <div class="col-md-12">
-                                    <input type="number" min="0" class="form-control quantity" data-id="${row_no}" id="quantity${row_no}" style="width: 125px;" name="quantity[]"  placeholder="Enter Quantity" required="">
+                                    <input type="number" min="0" class="form-control quantity" data-id="${row_no}" id="quantity${row_no}" style="width: 125px;" name="quantity"  placeholder="Enter Quantity" required="">
                                 </div>
                             </td>
 
                              <td class="replacement_feature" style="${style}">
                                 <div class="col-md-12">
                                 
-                                    <select class="select2 form-control ${required_class} replacement-dropdown" id="replace${row_no}" data-id="${row_no}"  name="replace[]" style="width: 145px;" disabled>
+                                    <select class="select2 form-control ${required_class} replacement-dropdown" id="replace${row_no}" data-id="${row_no}"  name="replace" style="width: 145px;" disabled>
                                         <option value="">Select</option>
                                         <option value="new">New</option>
                                         <option value="replacement">Replacement</option>
                                     </select>
 
-                                    <input type="hidden" id="rdateofpurchase${row_no}" name="rdateofpurchase[]">
-                                    <input type="hidden" id="rqty${row_no}" name="rqty[]">
-                                    <input type="hidden" id="rremarks${row_no}" name="rremarks[]">
-                                    <input type="hidden" id="rcost${row_no}" name="rcost[]">
+                                    <input type="hidden" id="rdateofpurchase${row_no}" name="rdateofpurchase">
+                                    <input type="hidden" id="rqty${row_no}" name="rqty">
+                                    <input type="hidden" id="rremarks${row_no}" name="rremarks">
+                                    <input type="hidden" id="rcost${row_no}" name="rcost">
                                 </div>
                                 <span class="error_msg text-danger"></span>
                             </td>
 
                             <td>
                                 <div class="col-md-12">
-                                    <input type="date" class="form-control" data-id="${row_no}" id="Expected_Date${row_no}"style="width: 155px;" min="<?php echo date("Y-m-d"); ?>" value="<?php echo date('Y-m-d'); ?>" name="Expected_Date[]"  placeholder="Enter Quantity" required="">
+                                    <input type="date" class="form-control" data-id="${row_no}" id="Expected_Date${row_no}"style="width: 155px;" min="<?php echo date("Y-m-d"); ?>" value="<?php echo date('Y-m-d'); ?>" name="Expected_Date"  placeholder="Enter Quantity" required="">
                                 </div>
                             </td>
                             <td>
                                 <div class="col-md-12">
-                                    <textarea id="Specification${row_no}" data-id="${row_no}" class="form-control" name="Specification[]" style="width: 155px;height: 36px;"  row="2" placeholder="Enter Specification" required=""></textarea>
+                                    <textarea id="Specification${row_no}" data-id="${row_no}" class="form-control" name="Specification" style="width: 155px;height: 36px;"  row="2" placeholder="Enter Specification" required=""></textarea>
                                 </div>
                             </td>
                             <td>
                                 <div class="col-md-12">
-                                    <input class="form-control file-upload-input" type="file"  data-id="${row_no}" id="Attachment${row_no}" style="width: 170px;" name="Attachment[]"  placeholder="Enter Quantity" >
+                                    <input class="form-control file-upload-input" type="file"  data-id="${row_no}" id="Attachment${row_no}" style="width: 170px;" name="Attachment"  placeholder="Enter Quantity" >
                                 </div>
                             </td>
                             <td>
                                 <div class="col-md-12">
                                 
-                                    <select class="select2 form-control" id="type_val${row_no}" data-id="${row_no}"  name="budget[]" style="width: 145px;"  onchange="openPopup(this);" >
+                                    <select class="select2 form-control" id="type_val${row_no}" data-id="${row_no}"  name="budget" style="width: 145px;"  onchange="openPopup(this);" >
                                         <option value="Yes">Yes</option>
                                         <option value="No">No</option>
                                     </select>
@@ -1492,7 +1574,55 @@ $Plant = $selector_arr1['Plant'];
                   });
             }
 
-            $(document).on('click','#save',function(){
+            // Function to read file as Base64
+            function readFileAsBase64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result); // Resolve with Base64 string
+                    reader.onerror = reject; // Reject on error
+                    reader.readAsDataURL(file); // Read file as Base64
+                });
+            }
+
+            async function json_data_conversion(form)
+            {
+                const jsonData = {};
+
+                for (let [key, value] of form.entries()) {
+                    // If the value is a File, convert it to Base64
+                    if (value instanceof File) {
+                        const fileContent = await readFileAsBase64(value);
+                        // Use an array for files if multiple are uploaded
+                        if (!Array.isArray(jsonData[key])) {
+                            jsonData[key] = []; // Initialize as an array if not already
+                        }
+                        jsonData[key].push(fileContent); // Add the Base64 string to the array
+                    } else if (Array.isArray(jsonData[key])) {
+                        jsonData[key].push(value); // If it's already an array, push the value
+                    } else if (jsonData[key]) {
+                          jsonData[key] = [jsonData[key], value]; // Convert to array if it has a value
+                    } else {
+                          jsonData[key] = value; // Normal form field
+                    }
+                }
+                return jsonData;
+            }
+
+            $(document).on('change','.file-upload-input',function(){
+                 // console.log(this.files[0]);
+                 let file = this.files[0];
+                    // Maximum file size: 1 MB (1,048,576 bytes)
+                    const MAX_FILE_SIZE = 1 * 1024 * 1024;
+
+                    // Validate the file size
+                    if (file.size > MAX_FILE_SIZE) {
+                        $(this).val('');
+                        alert("The file is too large. Please select a file that is less than 1 MB.");
+                        return false;
+                    }
+            });
+
+            $(document).on('click','#save',async function(){
 
                   // duplicate items validation functionality Start
                   var items_arr = [];
@@ -1531,10 +1661,12 @@ $Plant = $selector_arr1['Plant'];
                         form.append('Attachment'+index , $(this)[0].files[0]);
                       });
 
+                     var jsonData = await json_data_conversion(form);
+
                       $.ajax({
-                          url: 'common_ajax.php',
+                          url: 'common_json_ajax.php',
                           type: 'POST',
-                          data: form,
+                          data: JSON.stringify(jsonData),
                           processData: false,  // Prevent jQuery from automatically transforming the data into a query string
                           contentType: false,  // Prevent jQuery from setting the content type
                           dataType: 'json',

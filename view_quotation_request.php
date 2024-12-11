@@ -32,6 +32,7 @@ while($saved_quotation_res = sqlsrv_fetch_array($saved_quotation_exec,SQLSRV_FET
 	$saved_data[] = $saved_quotation_res;
 }
 
+
 $first_preference_quotation_value = '';
 foreach ($saved_data as $key => $value) {
 	if($value['Requester_Selection'] == 1) {
@@ -104,6 +105,63 @@ foreach ($saved_data as $key => $value) {
 		    left: 42%;
 		    font-size: 20px;
 		}
+
+		.material-tr {
+			height: 83px;
+		}
+
+		.material-tr > td {
+			height: auto;
+    		vertical-align: middle;
+		}
+
+		.modal-content {
+    		cursor: move;
+		}
+
+		body {
+		    /* STOP MOVING AROUND! */
+		    overflow-x: hidden;
+		    overflow-y: scroll !important;
+		}
+
+		.modal_css_load {
+		    position: fixed;
+		    top: 0;
+		    left: 0;
+		    z-index: 1055;
+		    display: none;
+		    width: 100%;
+		    height: 100%;
+		     -ms-overflow-style: none;  /* Internet Explorer 10+ */
+		    scrollbar-width: none;  /* Firefox */
+		}
+
+		@media only screen and (max-width: 600px) {
+            .plant_top_detail {
+                font-size: 10px !important;
+            }
+            .form-control-plaintext {
+                font-size: 10px;
+            }
+            .material_tbl {
+                width: auto !important;
+            }
+
+            th:first-child {
+                position: unset;
+                left: unset;
+            }
+
+            .table-wrapper {
+                margin-left: unset;
+            }
+
+            .footer {
+                left: 0 !important;
+                text-align: center;
+             }              
+        }
         </style>
 
     </head>
@@ -156,7 +214,7 @@ foreach ($saved_data as $key => $value) {
                                 <div class="float-end d-none d-sm-block">
 								     <h4 class="">Request ID : <?php echo $request_id ?></h4>
 								    <?php
-                                     $po_creator_sql = sqlsrv_query($conn, "SELECT TOP 1 Tb_Request.EMP_ID,Tb_Request.Plant,Tb_Request_Items.MaterialGroup from Tb_Request 
+                                     $po_creator_sql = sqlsrv_query($conn, "SELECT TOP 1 Tb_Request.EMP_ID,Tb_Request.Plant,Tb_Request_Items.MaterialGroup,Tb_Request.vendor_justification from Tb_Request 
                                         left join Tb_Request_Items ON Tb_Request_Items.Request_ID = Tb_Request.Request_ID
                                         where Tb_Request.Request_ID = '$request_id'");
                                       $po_creator = sqlsrv_fetch_array($po_creator_sql);
@@ -184,7 +242,7 @@ foreach ($saved_data as $key => $value) {
                                                 $plant_detail = sqlsrv_fetch_array($plant_sql_exec);
 
                                             ?>
-                                            <h1 class="badge bg-success" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
+                                            <h1 class="badge bg-success plant_top_detail text-wrap" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
 
                                             <form method="POST" enctype="multipart/form-data">
                                             	  <input type="hidden" id="po_creator_id" value="<?php echo $po_creator['EMP_ID']; ?>">
@@ -265,13 +323,22 @@ foreach ($saved_data as $key => $value) {
 																		<?php
 																		$result = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '$request_id'",[],array( "Scrollable" => SQLSRV_CURSOR_KEYSET ));
 																		$item_count = sqlsrv_num_rows($result);
+																		$item_code_array = [];
+																		$mt_index = 1;
 																		while ($row = sqlsrv_fetch_array($result)) {
 																			$ID = $row['ID'];
 																			$ItemCode = $row['Item_Code'];
+																			array_push($item_code_array, $ItemCode);
 																			// print_r($ID);
 																			?>
 																			<tr>
-																				<td><input type="text" class="form-control-plaintext" readonly value="<?php echo trim($row['Description']) ?>-<?php echo $row['UOM'] ?>"
+																				<td>
+																					<div>
+																						<span class="badge badge-soft-primary"><?php echo substr(trim($ItemCode),-10); ?></span>
+																						<span class="badge badge-soft-danger ms-3"><?php echo trim($row['UOM']); ?></span>
+
+																					</div>
+																					<input type="text" class="form-control-plaintext" readonly value="<?php echo $mt_index.') '.trim($row['Description']) ?>"
                                                                                     data-bs-toggle="modal" data-bs-target=".bs-example-modal-center<?php echo $ID ?>">
 																						<!-- Modal -->
 																						<div class="modal fade bs-example-modal-center<?php echo $ID ?>" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
@@ -284,31 +351,33 @@ foreach ($saved_data as $key => $value) {
                                                                                                         </button>
                                                                                                     </div>
                                                                                                     <div class="modal-body">
-                                                                                                        <table class="table table-bordered" >
-                                                                                                            <thead>
-                                                                                                                <tr>
-                                                                                                                    <td>Vendor Code</td>
-                                                                                                                    <th>Material Name</th>
-                                                                                                                    <th>Price</th>
-                                                                                                                    <th>Purchace Date</th>
-                                                                                                                </tr>
-                                                                                                            </thead>
-                                                                                                            <tbody>
-                                                                                                            <?php
-                                                                                                                $result1 = sqlsrv_query($conn, "SELECT TOP 3 * FROM MIGO_DET WHERE  MATNR = '$ItemCode' ORDER BY LINE_ID DESC ");
-                                                                                                                while ($row1 = sqlsrv_fetch_array($result1)) {
-                                                                                                            ?>
-                                                                                                                <tr>
-                                                                                                                    <td><?php echo $row1['LIFNR'] ?></td>
-                                                                                                                    <td><?php echo $row['Description'] ?></td>
-                                                                                                                    <td><?php echo $row1['MENGE'] ?></td>
-                                                                                                                    <td><?php echo $row1['BUDAT_MKPF']->format('Y-m-d') ?></td>
-                                                                                                                </tr>
-                                                                                                                <?php
-                                                                                                                        }
-                                                                                                                    ?>
-                                                                                                            </tbody>
-                                                                                                        </table>
+                                                                                                    	<div class="table-responsive">
+	                                                                                                        <table class="table table-bordered" >
+	                                                                                                            <thead>
+	                                                                                                                <tr>
+	                                                                                                                    <td>Vendor Code</td>
+	                                                                                                                    <th>Material Name</th>
+	                                                                                                                    <th>Price</th>
+	                                                                                                                    <th>Purchace Date</th>
+	                                                                                                                </tr>
+	                                                                                                            </thead>
+	                                                                                                            <tbody>
+	                                                                                                            <?php
+	                                                                                                                $result1 = sqlsrv_query($conn, "SELECT TOP 3 * FROM MIGO_DET WHERE  MATNR = '$ItemCode' ORDER BY LINE_ID DESC ");
+	                                                                                                                while ($row1 = sqlsrv_fetch_array($result1)) {
+	                                                                                                            ?>
+	                                                                                                                <tr>
+	                                                                                                                    <td><?php echo $row1['LIFNR'] ?></td>
+	                                                                                                                    <td><?php echo $row['Description'] ?></td>
+	                                                                                                                    <td><?php echo $row1['MENGE'] ?></td>
+	                                                                                                                    <td><?php echo $row1['BUDAT_MKPF']->format('Y-m-d') ?></td>
+	                                                                                                                </tr>
+	                                                                                                                <?php
+	                                                                                                                        }
+	                                                                                                                    ?>
+	                                                                                                            </tbody>
+	                                                                                                        </table>
+                                                                                                       	</div>
                                                                                                     </div>
                                                                                                     <div class="modal-footer">
                                                                                                         <button type="button" class="btn btn-danger waves-effect waves-light btn-sm" data-bs-dismiss="modal" aria-label="Close">Close</button>
@@ -319,7 +388,7 @@ foreach ($saved_data as $key => $value) {
 																				</td>
 																			</tr>
 																		<?php
-																		}
+																		$mt_index++;}
 																		?>
 																	</tbody>
 																</table>
@@ -351,6 +420,8 @@ foreach ($saved_data as $key => $value) {
 																	</tr>
 																	<tbody>
 																		<?php
+																		foreach ($item_code_array as $ickey => $icvalue) {
+																			
 																		$i = 1;
 																		$result = sqlsrv_query($conn, "SELECT  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
 																		Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Quantity.Quantity,Tb_Vendor_Quantity.Meterial_Name,
@@ -359,13 +430,17 @@ foreach ($saved_data as $key => $value) {
 																		ON Tb_Vendor_Selection.Request_Id = Tb_Vendor_Quantity.Request_Id
 																		WHERE Tb_Vendor_Selection.Request_Id = '$request_id' AND  Tb_Vendor_Selection.V_id = '$arr'
 																		AND Tb_Vendor_Quantity.V_id = '$arr'
-																		
+																		and Tb_Vendor_Quantity.Meterial_Name = '".$icvalue."'
+
 																		GROUP BY  Tb_Vendor_Selection.Request_Id,Tb_Vendor_Selection.V_id,
 																		Tb_Vendor_Quantity.Request_Id,Tb_Vendor_Quantity.V_id,Tb_Vendor_Quantity.Quantity,Tb_Vendor_Quantity.Meterial_Name,
 																		Tb_Vendor_Quantity.Price,Tb_Vendor_Quantity.Total,Tb_Vendor_Quantity.gst_percentage,Tb_Vendor_Quantity.discount_percentage");
-																		while ($row = sqlsrv_fetch_array($result)) {
+																		// while ($row = sqlsrv_fetch_array($result)) {
+																		$row = sqlsrv_fetch_array($result);
+																		// echo "<pre>";print_r($row);exit;
+
 																			?>
-																			<tr>
+																			<tr class="material-tr">
 																				<td>
 																					<input type="text" class="form-control" style="width: 75px;"readonly value="<?php echo $row['Quantity'] ?>">
 																				</td>
@@ -392,6 +467,7 @@ foreach ($saved_data as $key => $value) {
 																			</tr>
 																		<?php
 																		}
+																		
 																		?>
 																	</tbody>
 																</table>
@@ -564,7 +640,7 @@ foreach ($saved_data as $key => $value) {
 
 
 																<!-- file preview modal -->
-																<div class="modal fade" id="file_preview_modal_<?php echo $rindex; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+																<div class="modal fade modal_css_load" id="file_preview_modal_<?php echo $rindex; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static">
 																  <div class="modal-dialog modal-lg">
 																    <div class="modal-content">
 																      <div class="modal-header">
@@ -622,21 +698,37 @@ foreach ($saved_data as $key => $value) {
                                                 <div class="row" id="involved_persons_div" style="display:none;">
                                                     <div class="col-md-5">
                                                         <h4>Involved Persons</h4>
-                                                        <table class="table table-striped table-bordered table-hover" >
-                                                          <thead>
-                                                            <tr>
-                                                              <th>Purchaser</th>
-                                                              <th>Recommender</th>
-                                                              <th>Approver</th>
-                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
-                                                            </tr>
-                                                          </thead>
-                                                          <tbody id="involved_persons_tbody">
+                                                        <div class="table-responsive">
+	                                                        <table class="table table-striped table-bordered table-hover" >
+	                                                          <thead>
+	                                                            <tr>
+	                                                              <th>Purchaser</th>
+	                                                              <th>Recommender</th>
+	                                                              <th>Approver</th>
+	                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
+	                                                            </tr>
+	                                                          </thead>
+	                                                          <tbody id="involved_persons_tbody">
 
-                                                          </tbody>
-                                                        </table>
+	                                                          </tbody>
+	                                                        </table>
+                                                    	</div>
                                                     </div>
                                                 </div>
+
+                                                <?php if(COUNT($saved_data) == 1 && ($po_creator['vendor_justification'] != null)) { ?>
+                                                <br>
+                                                <div class="row justification_div justify-content-center"> 
+                                                    <div class="col-2">
+                                                        <label for="justification" class="float-end">Justification For Single Vendor<span class="text-danger"> *</span></label>
+                                                    </div>   
+                                                    <div class="col-6">
+	                                                    <textarea class="form-control required_for_valid" name="justification" id="justification" required readonly error-msg="Justification field is required"><?php echo $po_creator['vendor_justification']; ?>
+	                                                    </textarea>
+	                                                    <span class="error_msg text-danger" style="display: none;"></span>
+	                                                </div>
+                                                </div>
+                                            	<?php } ?> 
 
                                             </form>
                                         </div>
@@ -677,6 +769,11 @@ foreach ($saved_data as $key => $value) {
         <!-- CUSTOM SCRIPT -->
         
         <!-- CUSTOM SCRIPT END -->
+
+       	<!-------Model Trag and Trap ---------->
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+		<!-----------End --------------->
+
         <script type="text/javascript">
 
 	        	$(document).ready(function() {
@@ -690,6 +787,27 @@ foreach ($saved_data as $key => $value) {
 					}
 
 				});
+
+				function get_mapping_details(request_id, quotation_value, po_creator_id) {
+					$.ajax({
+						url: 'common_ajax.php',
+						type: 'POST',
+						data: {
+							Action: 'get_emp_mapping_details',
+							request_id: request_id,
+							quotation_value: quotation_value,
+							po_creator_id: po_creator_id
+						},
+						dataType: "json",
+						success: function(response) {
+							$('#recommendor_id').val(response[0].Recommender);
+							$('#finance_verifier_id').val(response[0].Finance_Verfier);
+							$('#approver_id').val(response[0].Approver);
+							$('#approver2_id').val(response[0].Approver_2);
+							$('#mapping_id').val(response[0].id);
+						}
+					});
+				}
 
 		        function get_involved_persons(value)
 		        {
@@ -749,7 +867,8 @@ foreach ($saved_data as $key => $value) {
 					 if(file_type == 'pdf') {
 					 	// var src = $('#pdf_input'+row_id).val();
                         var src = $(this).closest('div').find('#pdf_input'+row_id).val();
-	                	$('.preview_file_pdf_'+row_id).attr('src', src+'#toolbar=0');
+                        var src_url = 'https://docs.google.com/viewer?url=https://corporate.rasiseeds.com/corporate/final_request/'+src+'&embedded=true';
+	                	$('.preview_file_pdf_'+row_id).attr('src', src_url+'#toolbar=0');
 	                	$('.preview_file_img_'+row_id).hide();
 	                	$('.preview_file_pdf_'+row_id).show();
 				     } else {
@@ -760,6 +879,10 @@ foreach ($saved_data as $key => $value) {
 		        	$('#file_preview_modal_'+row_id).modal('show');
 
 		  		});
+
+        	$(".modal").draggable({
+                handle: ".modal-content"
+            });
         </script>
 
     </body>

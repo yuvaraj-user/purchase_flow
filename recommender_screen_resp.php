@@ -1183,18 +1183,6 @@ if (isset($_POST["Verification"])) {
             .material_tbl {
                 width: auto !important;
             }
-        }
-
-        @media only screen and (max-width: 600px) {
-            .plant_top_detail {
-                font-size: 10px !important;
-            }
-            .form-control-plaintext {
-                font-size: 10px;
-            }
-            .material_tbl {
-                width: auto !important;
-            }
 
             th:first-child {
                 position: unset;
@@ -1204,11 +1192,6 @@ if (isset($_POST["Verification"])) {
             .table-wrapper {
                 margin-left: unset;
             }
-
-            .footer {
-                left: 0 !important;
-                text-align: center;
-             }              
         }
 
         </style>
@@ -1265,7 +1248,7 @@ if (isset($_POST["Verification"])) {
                                      <input type="hidden" id="r_id" value="<?php echo $request_id; ?>">
 
                                     <?php
-                                    $po_creator_sql = sqlsrv_query($conn, "SELECT TOP 1 Tb_Request.EMP_ID,Tb_Request.Plant,Tb_Request_Items.MaterialGroup,Tb_Request.vendor_justification from Tb_Request 
+                                    $po_creator_sql = sqlsrv_query($conn, "SELECT TOP 1 Tb_Request.EMP_ID,Tb_Request.Plant,Tb_Request_Items.MaterialGroup from Tb_Request 
                                         left join Tb_Request_Items ON Tb_Request_Items.Request_ID = Tb_Request.Request_ID
                                         where Tb_Request.Request_ID = '$request_id'");
                                       $po_creator = sqlsrv_fetch_array($po_creator_sql);
@@ -1276,12 +1259,12 @@ if (isset($_POST["Verification"])) {
                         </div>
                      </div>
                      <!-- end page title -->    
+                     <br>
 
-
+                            <!-- <div class="table-responsive"> -->
                     <div class="container-fluid">
 
                         <div class="page-content-wrapper">
-
                             <div class="row">
                                 <div class="col-12">
                                     <div class="card">
@@ -1292,7 +1275,7 @@ if (isset($_POST["Verification"])) {
                                                 $plant_detail = sqlsrv_fetch_array($plant_sql_exec);
 
                                             ?>
-                                            <h1 class="badge bg-success plant_top_detail text-wrap" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
+                                            <h1 class="badge bg-success plant_top_detail" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
 
                                             <form method="POST" enctype="multipart/form-data">
                                                  <input type="hidden" id="mapping_id" name="mapping_id">
@@ -1506,34 +1489,32 @@ if (isset($_POST["Verification"])) {
                                                                                                         </button>
                                                                                                     </div>
                                                                                                     <div class="modal-body">
-                                                                                                        <div class="table-responsive">
-                                                                                                            <table class="table table-bordered" >
-                                                                                                                <thead>
-                                                                                                                    <tr>
-                                                                                                                        <td>Vendor Code</td>
-                                                                                                                        <th>Material Name</th>
-                                                                                                                        <th>Price</th>
-                                                                                                                        <th>Purchace Date</th>
-                                                                                                                    </tr>
-                                                                                                                </thead>
-                                                                                                                <tbody>
+                                                                                                        <table class="table table-bordered" >
+                                                                                                            <thead>
+                                                                                                                <tr>
+                                                                                                                    <td>Vendor Code</td>
+                                                                                                                    <th>Material Name</th>
+                                                                                                                    <th>Price</th>
+                                                                                                                    <th>Purchace Date</th>
+                                                                                                                </tr>
+                                                                                                            </thead>
+                                                                                                            <tbody>
+                                                                                                            <?php
+                                                                                                                $result1 = sqlsrv_query($conn, "SELECT TOP 3 * FROM MIGO_DET WHERE  MATNR = '$ItemCode' ORDER BY LINE_ID DESC ");
+                                                                                                                while ($row1 = sqlsrv_fetch_array($result1)) {
+                                                                                                            ?>
+                                                                                                                <tr>
+                                                                                                                    <td><?php echo $row1['LIFNR'] ?></td>
+                                                                                                                    <td><?php echo $row['Description'] ?></td>
+                                                                                                                    <td><?php echo $row1['MENGE'] ?></td>
+                                                                                                                    <td><?php echo $row1['MENGE'] ?></td>
+                                                                                                                    <td><?php echo ($row1['BUDAT_MKPF'] != null && $row1['BUDAT_MKPF'] != '') ? $row1['BUDAT_MKPF']->format('Y-m-d') : '' ?></td>
+                                                                                                                </tr>
                                                                                                                 <?php
-                                                                                                                    $result1 = sqlsrv_query($conn, "SELECT TOP 3 * FROM MIGO_DET WHERE  MATNR = '$ItemCode' ORDER BY LINE_ID DESC ");
-                                                                                                                    while ($row1 = sqlsrv_fetch_array($result1)) {
-                                                                                                                ?>
-                                                                                                                    <tr>
-                                                                                                                        <td><?php echo $row1['LIFNR'] ?></td>
-                                                                                                                        <td><?php echo $row['Description'] ?></td>
-                                                                                                                        <td><?php echo $row1['MENGE'] ?></td>
-                                                                                                                        <td><?php echo $row1['MENGE'] ?></td>
-                                                                                                                        <td><?php echo ($row1['BUDAT_MKPF'] != null && $row1['BUDAT_MKPF'] != '') ? $row1['BUDAT_MKPF']->format('Y-m-d') : '' ?></td>
-                                                                                                                    </tr>
-                                                                                                                    <?php
-                                                                                                                            }
-                                                                                                                        ?>
-                                                                                                                </tbody>
-                                                                                                            </table>
-                                                                                                        </div>
+                                                                                                                        }
+                                                                                                                    ?>
+                                                                                                            </tbody>
+                                                                                                        </table>
                                                                                                     </div>
                                                                                                     <div class="modal-footer">
                                                                                                         <button type="button" class="btn btn-danger waves-effect waves-light btn-sm" data-bs-dismiss="modal" aria-label="Close">Close</button>
@@ -2340,10 +2321,16 @@ if (isset($_POST["Verification"])) {
                                                                               <div class="modal-body">
                                                                                         <img class="preview_file_img_1 preview_image" src="" alt="your image" width="100%" style="display: block;">
 
-                                                                                     <iframe class="preview_file_pdf_1 preview_pdf" src=""
+                                                                                     <iframe class="preview_file_pdf_1 preview_pdf"
                                                                                             style="width: 100%;height: 900px;display: block;"
                                                                                             frameborder="0">
                                                                                       </iframe>
+
+
+
+                                                                                     
+
+                                                                                      <!-- <div id="pdfContainer"></div> -->
 
                                                                               </div>
                                                                               <div class="modal-footer">
@@ -2494,33 +2481,21 @@ if (isset($_POST["Verification"])) {
                                                 <div class="row" id="involved_persons_div" style="display:none;">
                                                     <div class="col-md-5">
                                                         <h4>Involved Persons</h4>
-                                                        <div class="table-responsive">
-                                                            <table class="table table-striped table-bordered table-hover" >
-                                                              <thead>
-                                                                <tr>
-                                                                  <th>Purchaser</th>
-                                                                  <th>Recommender</th>
-                                                                  <th>Approver</th>
-                                                                  <th style="display:none;" class="inv_fin_appr">Final Approver</th>
-                                                                </tr>
-                                                              </thead>
-                                                              <tbody id="involved_persons_tbody">
+                                                        <table class="table table-striped table-bordered table-hover" >
+                                                          <thead>
+                                                            <tr>
+                                                              <th>Purchaser</th>
+                                                              <th>Recommender</th>
+                                                              <th>Approver</th>
+                                                              <th style="display:none;" class="inv_fin_appr">Final Approver</th>
+                                                            </tr>
+                                                          </thead>
+                                                          <tbody id="involved_persons_tbody">
 
-                                                              </tbody>
-                                                            </table>
-                                                        </div>
+                                                          </tbody>
+                                                        </table>
                                                     </div>
                                                 </div>
-
-                                                <?php if($vendor_data_count == 1) { ?>
-                                                <br>
-                                                <div class="col-6 m-auto justification_div">
-                                                    <label for="justification">Justification For Single Vendor<span class="text-danger"> *</span></label>
-                                                    <textarea class="form-control required_for_valid" name="justification" id="justification" required readonly error-msg="Justification field is required"><?php echo $po_creator['vendor_justification']; ?>
-                                                    </textarea>
-                                                    <span class="error_msg text-danger" style="display: none;"></span>
-                                                </div>
-                                                <?php } ?> 
 
                                                 <center style="padding: 35px 0px 0px 0px;">
                                                     <!-- Default -->
@@ -2597,6 +2572,7 @@ if (isset($_POST["Verification"])) {
         
                         
                     </div> <!-- container-fluid -->
+                            <!-- </div> -->
                 </div>
                 <!-- End Page-content -->
 
@@ -2650,6 +2626,9 @@ if (isset($_POST["Verification"])) {
         <!-------Model Trag and Trap ---------->
         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
         <!-----------End --------------->
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.7.570/pdf.min.js"></script>
+
 
         <script>
             $(document).ready(function () {
@@ -3263,10 +3242,11 @@ if (isset($_POST["Verification"])) {
             var src = $(this).attr('src');
             var row_id = $(this).data('id');
 
-
              if(file_type == 'pdf') {
                 // var src = $('#pdf_input'+row_id).val();
                 var src = $(this).closest('div').find('#pdf_input'+row_id).val();
+                // loadPDF(src);
+
                 var src_url = 'https://docs.google.com/viewer?url=https://corporate.rasiseeds.com/corporate/final_request/'+src+'&embedded=true';
 
                 $('.preview_file_pdf_'+row_id).attr('src', src_url+'#toolbar=0');
@@ -3282,6 +3262,36 @@ if (isset($_POST["Verification"])) {
             $('#file_preview_modal_'+row_id).modal('show');
 
         });
+
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.7.570/pdf.worker.min.js';
+
+        function loadPDF(url) {
+            pdfjsLib.getDocument(url).promise.then(function(pdf) {
+                var numPages = pdf.numPages;
+                for (var pageNum = 1; pageNum <= numPages; pageNum++) {
+                    pdf.getPage(pageNum).then(function(page) {
+                        var scale = 1.3; // Adjust scale for better viewing on mobile
+                        var viewport = page.getViewport({ scale: scale });
+
+                        var canvas = document.createElement('canvas');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        var context = canvas.getContext('2d');
+                        var renderContext = {
+                            canvasContext: context,
+                            viewport: viewport
+                        };
+                        page.render(renderContext);
+
+                        document.getElementById('pdfContainer').appendChild(canvas);
+                    });
+                }
+            }).catch(function(error) {
+                console.error('Error loading PDF: ', error);
+            });
+        }
+
 
         $(document).on('click','#send_back_btn',function(){
             $('#sendback_new_modal').modal('show');

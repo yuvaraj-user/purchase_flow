@@ -10,10 +10,6 @@ require 'PHPMailer/Exception.php';
 require 'PHPMailer/PHPMailer.php';
 require 'PHPMailer/SMTP.php';
 
-require 'Send_Mail.php';
-$mail = new Send_Mail();
-
-
 function strToHex($string)
 {
 $hex = '';
@@ -107,19 +103,16 @@ return array('Status' => 1, 'Message' => $response);
 
 
 if (isset($_POST["save"])) {
-	// echo "<pre>";print_r($_POST);exit;
-	$_POST = array_map(function ($value) {
-	if (is_array($value)) {
-		$mArr = array_map(function ($value1) {
-			return str_replace("'", "''", $value1);
-		}, $value);
-		return $mArr;
-	} else {
-		return str_replace("'", "''", $value);
-	}
-	}, $_POST);
-
-
+$_POST = array_map(function ($value) {
+if (is_array($value)) {
+	$mArr = array_map(function ($value1) {
+		return str_replace("'", "''", $value1);
+	}, $value);
+	return $mArr;
+} else {
+	return str_replace("'", "''", $value);
+}
+}, $_POST);
 // echo "<pre>";print_r($selected_quoation_value);exit;
 
 // first selected approver selection index get 
@@ -153,77 +146,74 @@ $status = 'Waiting_for_approval2';
 $request_to = $_POST["approver2_id"];
 }
 
-
 $update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Approver WHERE Request_id = '$request_id'");
 $updated_query = sqlsrv_fetch_array($update_qry);
-
 if ($updated_query['Request_id'] == '') {
 
-	for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
-		$Vendor_SAP = $_POST['Vendor_SAP'][$i];
-		$Vendor_Name = $_POST['Vendor_Name'][$i];
-		$Vendor_City = $_POST['Vendor_City'][$i];
-		$vendor_Active_SAP = $_POST['vendor_Active_SAP'][$i];
-		$Last_Purchase = $_POST['Last_Purchase'][$i];
-		$Delivery_Time = $_POST['Delivery_Time'][$i];
-		$Value_Of = $_POST['Value_Of'][$i];
-		$Fright_Charges = $_POST['Fright_Charges'][$i];
-		$Insurance_Details = $_POST['Insurance_Details'][$i];
-		$GST_Component = $_POST['GST_Component'][$i];
-		$Warrenty = $_POST['Warrenty'][$i];
-		$Payment_Terms = $_POST['Payment_Terms'][$i];
-		$Requester_Selection = $_POST['Requester_Selection'][$i];
-		$Recommender_Selection = $_POST['Recommender_Selection'][$i];
-		$Requester_Remarks = $_POST['Requester_Remarks'][$i];
-		$Recommender_Remarks = $_POST['Recommender_Remarks'][$i];
-		if (!isset($_POST['Finance_Remarks'])) {
-			$Finance_Remarks = "";
-		} else {
-			$Finance_Remarks = $_POST['Finance_Remarks'][$i];
-		}
-		if (!isset($_POST['Total_Budget'])) {
-			$Total_Budget = "";
-		} else {
-			$Total_Budget = $_POST['Total_Budget'][$i];
-		}
-		if (!isset($_POST['Available_Budget'])) {
-			$Available_Budget = "";
-		} else {
-			$Available_Budget = $_POST['Available_Budget'][$i];
-		}
-		// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-		$Approver_Remarks = $_POST['approver_remarks'];
-		$Approver_Selection = trim($_POST['Approver_Selection'][$i]);
-		// $fil = $_POST["Attachment"][$i];
-		if (!isset($_POST['Attachment'])) {
-			$fil = "";
-		} else {
-			$fil = $_POST['Attachment'][$i];
-		}
-		$V_id = $_POST['V1_id'][$i];
-		$emp_id = $Employee_Id;
-
-
-		$total_amount    = $_POST['amt_tot'][$i];
-		$discount_amount = $_POST['discount_amount'][$i];
-		$package_amount = $_POST['package_amount'][$i];
-		$package_percentage = $_POST['package_percentage'][$i];
-
-		$query = "INSERT INTO Tb_Approver
-		(Request_id,V_id,Vendor_SAP,Vendor_Name,Vendor_City,vendor_Active_SAP,Last_Purchase,Delivery_Time2,
-		Value_Of,Fright_Charges,Insurance_Details,GST_Component,Warrenty,Payment_Terms,Requester_Remarks,
-		Recommender_Remarks,Finance_Remarks,Total_Budget,Available_Budget,Approver_Remarks,Attachment,Time_Log,Status,Requester_Selection,Recommender_Selection,
-		Approver_Selection,EMP_ID,total_amount,discount_amount,package_amount,package_percentage,Requested_to)VALUES
-		('$request_id','$V_id','$Vendor_SAP','$Vendor_Name','$Vendor_City',
-		'$vendor_Active_SAP','$Last_Purchase','$Delivery_Time','$Value_Of','$Fright_Charges','$Insurance_Details','$GST_Component',
-		'$Warrenty','$Payment_Terms','$Requester_Remarks','$Recommender_Remarks','$Finance_Remarks','$Total_Budget ','$Available_Budget ','$Approver_Remarks ',
-			'$fil',GETDATE(),'$status','$Requester_Selection','$Recommender_Selection','$Approver_Selection','$emp_id','$total_amount','$discount_amount','$package_amount','$package_percentage','$request_to')";
-
-		$query1 = sqlsrv_query($conn, "UPDATE Tb_Request set status = '$status' WHERE Request_Id = '$request_id' ");
-		$query1 = sqlsrv_query($conn, "UPDATE Tb_Request_Items set status = '$status' WHERE Request_Id = '$request_id' ");
-
-		$rs = sqlsrv_query($conn, $query);
+for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
+	$Vendor_SAP = $_POST['Vendor_SAP'][$i];
+	$Vendor_Name = $_POST['Vendor_Name'][$i];
+	$Vendor_City = $_POST['Vendor_City'][$i];
+	$vendor_Active_SAP = $_POST['vendor_Active_SAP'][$i];
+	$Last_Purchase = $_POST['Last_Purchase'][$i];
+	$Delivery_Time = $_POST['Delivery_Time'][$i];
+	$Value_Of = $_POST['Value_Of'][$i];
+	$Fright_Charges = $_POST['Fright_Charges'][$i];
+	$Insurance_Details = $_POST['Insurance_Details'][$i];
+	$GST_Component = $_POST['GST_Component'][$i];
+	$Warrenty = $_POST['Warrenty'][$i];
+	$Payment_Terms = $_POST['Payment_Terms'][$i];
+	$Requester_Selection = $_POST['Requester_Selection'][$i];
+	$Recommender_Selection = $_POST['Recommender_Selection'][$i];
+	$Requester_Remarks = $_POST['Requester_Remarks'][$i];
+	$Recommender_Remarks = $_POST['Recommender_Remarks'][$i];
+	if (!isset($_POST['Finance_Remarks'])) {
+		$Finance_Remarks = "";
+	} else {
+		$Finance_Remarks = $_POST['Finance_Remarks'][$i];
 	}
+	if (!isset($_POST['Total_Budget'])) {
+		$Total_Budget = "";
+	} else {
+		$Total_Budget = $_POST['Total_Budget'][$i];
+	}
+	if (!isset($_POST['Available_Budget'])) {
+		$Available_Budget = "";
+	} else {
+		$Available_Budget = $_POST['Available_Budget'][$i];
+	}
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
+	$Approver_Selection = trim($_POST['Approver_Selection'][$i]);
+	// $fil = $_POST["Attachment"][$i];
+	if (!isset($_POST['Attachment'])) {
+		$fil = "";
+	} else {
+		$fil = $_POST['Attachment'][$i];
+	}
+	$V_id = $_POST['V1_id'][$i];
+	$emp_id = $Employee_Id;
+
+
+	$total_amount    = $_POST['amt_tot'][$i];
+	$discount_amount = $_POST['discount_amount'][$i];
+	$package_amount = $_POST['package_amount'][$i];
+	$package_percentage = $_POST['package_percentage'][$i];
+
+	$query = "INSERT INTO Tb_Approver
+	(Request_id,V_id,Vendor_SAP,Vendor_Name,Vendor_City,vendor_Active_SAP,Last_Purchase,Delivery_Time2,
+	Value_Of,Fright_Charges,Insurance_Details,GST_Component,Warrenty,Payment_Terms,Requester_Remarks,
+	Recommender_Remarks,Finance_Remarks,Total_Budget,Available_Budget,Approver_Remarks,Attachment,Time_Log,Status,Requester_Selection,Recommender_Selection,
+	Approver_Selection,EMP_ID,total_amount,discount_amount,package_amount,package_percentage,Requested_to)VALUES
+	('$request_id','$V_id','$Vendor_SAP','$Vendor_Name','$Vendor_City',
+	'$vendor_Active_SAP','$Last_Purchase','$Delivery_Time','$Value_Of','$Fright_Charges','$Insurance_Details','$GST_Component',
+	'$Warrenty','$Payment_Terms','$Requester_Remarks','$Recommender_Remarks','$Finance_Remarks','$Total_Budget ','$Available_Budget ','$Approver_Remarks ',
+		'$fil',GETDATE(),'$status','$Requester_Selection','$Recommender_Selection','$Approver_Selection','$emp_id','$total_amount','$discount_amount','$package_amount','$package_percentage','$request_to')";
+
+	$query1 = sqlsrv_query($conn, "UPDATE Tb_Request set status = '$status' WHERE Request_Id = '$request_id' ");
+	$query1 = sqlsrv_query($conn, "UPDATE Tb_Request_Items set status = '$status' WHERE Request_Id = '$request_id' ");
+
+	$rs = sqlsrv_query($conn, $query);
+}
 } else {
 for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	$Vendor_SAP = $_POST['Vendor_SAP'][$i];
@@ -242,8 +232,6 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	$Recommender_Selection = $_POST['Recommender_Selection'][$i];
 	$Requester_Remarks = $_POST['Requester_Remarks'][$i];
 	$Recommender_Remarks = $_POST['Recommender_Remarks'][$i];
-	$Approver_Selection = trim($_POST['Approver_Selection'][$i]);
-
 	if (!isset($_POST['Finance_Remarks'])) {
 		$Finance_Remarks = "";
 	} else {
@@ -259,8 +247,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = trim($_POST['Approver_Selection'][$i]);
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -271,7 +258,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	$V_id = $_POST['V1_id'][$i];
 	$emp_id = $Employee_Id;
 
-	$query1 = sqlsrv_query($conn, "UPDATE Tb_Approver set Status = '$status',Total_Budget = '$Total_Budget',Finance_Remarks = '$Finance_Remarks',Approver_Remarks = '$Approver_Remarks'
+	$query1 = sqlsrv_query($conn, "UPDATE Tb_Approver set Status = '$status',Finance_Remarks = '$Finance_Remarks',Total_Budget = '$Total_Budget',Finance_Remarks = '$Finance_Remarks',Approver_Remarks = '$Approver_Remarks'
     ,Approver_Selection = '$Approver_Selection'  WHERE V_id = '$V_id' and Request_id = '$request_id' ");
 
 	$query2 = sqlsrv_query($conn, "UPDATE Tb_Request set status = '$status' WHERE Request_Id = '$request_id' ");
@@ -308,8 +295,115 @@ for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
 }
 }
 
+//POST SAP
+if ($status == 'Approved') {
 
-//informer mail details get for mail sending
+$Post_qry =  sqlsrv_query($conn, "SELECT Request_Type,Item_Code,Tb_Request_Items.Quantity
+,Tb_Vendor_Selection.Vendor_SAP,Tb_Vendor_Selection.Vendor_Name,Tb_Vendor_Selection.Vendor_City
+,Tb_Vendor_Quantity.Quantity,price,Tb_Vendor_Selection.Fright_Charges,Tb_Vendor_Selection.Insurance_Details
+,Tb_Vendor_Selection.GST_Component,Total,Tb_Vendor_Selection.Payment_Terms,Tb_Approver.Approver_Remarks,Plant,Storage_Location,Tb_Vendor_Selection.Warrenty,Tb_Request.Request_ID,Tb_Request_Items.MaterialGroup,Tb_Request.Requested_to  FROM Tb_Request 
+
+INNER JOIN Tb_Request_Items ON Tb_Request.Request_ID = Tb_Request_Items.Request_Id 
+INNER JOIN (Select * from Tb_Vendor_Selection )Tb_Vendor_Selection  ON Tb_Vendor_Selection.Request_ID = Tb_Request.Request_Id
+INNER JOIN (Select * from Tb_Vendor_Quantity )Tb_Vendor_Quantity ON Tb_Vendor_Quantity.Request_ID = Tb_Request.Request_Id And Tb_Request_Items.Item_Code=Tb_Vendor_Quantity.Meterial_Name
+LEFT JOIN Tb_Approver ON Tb_Approver.Request_ID = Tb_Request.Request_Id ANd Tb_Approver.Vendor_SAP=Tb_Vendor_Selection.Vendor_SAP
+AND Tb_Vendor_Quantity.V_id = Tb_Approver.V_id
+
+WHERE Tb_Request.Request_ID = '$request_id' AND Tb_Vendor_Selection.Vendor_SAP!='Select Vendor SAP'
+and Tb_Approver.Approver_Selection = '1' 
+
+group by Request_Type,Item_Code,Tb_Request_Items.Quantity
+,Tb_Vendor_Selection.Vendor_SAP,Tb_Vendor_Selection.Vendor_Name,Tb_Vendor_Selection.Vendor_City
+,Tb_Vendor_Quantity.Quantity,price,Tb_Vendor_Selection.Fright_Charges,Tb_Vendor_Selection.Insurance_Details
+,Tb_Vendor_Selection.GST_Component,Total,Tb_Vendor_Selection.Payment_Terms,Tb_Approver.Approver_Remarks,Plant,Storage_Location,Tb_Vendor_Selection.Warrenty,Tb_Request.Request_ID,Tb_Request_Items.MaterialGroup,Tb_Request.Requested_to");
+
+
+//$Postvalue_qry = sqlsrv_fetch_array($Post_qry);
+
+
+while ($Postvalue_qry = sqlsrv_fetch_array($Post_qry)) {
+
+
+	$Request_Type =  $Postvalue_qry['Request_Type'];
+	$Request_ID =  $Postvalue_qry['Request_ID'];
+	$Plant =  $Postvalue_qry['Plant'];
+	$Storage_Location =  $Postvalue_qry['Storage_Location'];
+	$Quantity =  $Postvalue_qry['Quantity'];
+	$Vendor_SAP =  trim($Postvalue_qry['Vendor_SAP']);
+	$Vendor_Name =  $Postvalue_qry['Vendor_Name'];
+	$Vendor_City =  $Postvalue_qry['Vendor_City'];
+	$vendorquantity =  $Postvalue_qry['vendorquantity'];
+	$price =  $Postvalue_qry['price'];
+	$Fright_Charges =  $Postvalue_qry['Fright_Charges'];
+	$Insurance_Details =  $Postvalue_qry['Insurance_Details'];
+	$GST_Component =  $Postvalue_qry['GST_Component'];
+	$Total =  $Postvalue_qry['Total'];
+	$Payment_Terms =  $Postvalue_qry['Payment_Terms'];
+	$Totalbudget =  "0";
+	$Availableabudget =  "0";
+	$Approver_Remarks =  $Postvalue_qry['Approver_Remarks'];
+	$Warrenty =  $Postvalue_qry['Warrenty'];
+	$MaterialGroup_SER =  $Postvalue_qry['MaterialGroup'];
+	$PURCHASER_ID =  $Postvalue_qry['Requested_to'];
+
+	$array = [];
+	$array['PO_REQUEST_ID'] = @$Postvalue_qry['Request_ID'];
+
+	if (@$Postvalue_qry['Request_Type'] == "Asset purchases") {
+
+		$array['REQUEST_TYPE'] = "ZCAP";
+	} else if (@$Postvalue_qry['Request_Type'] == "Services") {
+		$array['REQUEST_TYPE'] = "ZSER";
+
+
+	$sql_ser="Select DISTINCT MaterialCode from Purchase_Servie_SAP_Master Where Material_discription='".@$Postvalue_qry['MaterialGroup']."' ";
+	$stmt = sqlsrv_query($conn, $sql_ser);
+	$Header_data_ser = sqlsrv_fetch_array($stmt,SQLSRV_FETCH_ASSOC);
+
+
+		$array['MATKL'] = @$Header_data_ser['MaterialCode'];
+	} else if (@$Postvalue_qry['Request_Type'] == "Material purchases") {
+		$array['REQUEST_TYPE'] = "ZNB";
+	}
+
+	$array['PLANT'] = @$Postvalue_qry['Plant'];
+	$array['MATERIAL_CODE'] = @$Postvalue_qry['Item_Code'];
+	$array['STORAGE_LOCATION'] = @$Postvalue_qry['Storage_Location'];
+	$array['QUANTITY'] = @$Postvalue_qry['Quantity'];
+	$array['VENDOR_CODE'] = trim(@$Postvalue_qry['Vendor_SAP']);
+	// $array['VENDOR_NAME']=trim(@$Postvalue_qry['Vendor_Name']);
+	$array['VENDOR_NAME'] = strToHex(trim(@$Postvalue_qry['Vendor_Name']));
+	// $array['VENDOR_NAME']=str_replace('&', 'AND', trim(@$Postvalue_qry['Vendor_Name']));
+
+	$array['CITY'] = trim(@$Postvalue_qry['Vendor_City']);
+	$array['VENDOR_QUANTITY'] = @$Postvalue_qry['vendorquantity'];
+	$array['VENDOR_PRICE'] = @$Postvalue_qry['price'];
+	$array['FRIGHT_CHARGES'] = @$Postvalue_qry['Fright_Charges'];
+	$array['INSURANCE_DETAILS'] = @$Postvalue_qry['Insurance_Details'];
+	$array['GST_AMT'] = @$Postvalue_qry['GST_Component'];
+	$array['TOTAL_AMOUNT'] = @$Postvalue_qry['Total'];
+	$array['WARRENTY'] = @$Postvalue_qry['Warrenty'];
+	$array['PAYMENT_TERMS'] = @$Postvalue_qry['Payment_Terms'];
+	$array['TOTAL_BUDGET_AMT'] = @$Totalbudget;
+	$array['AVAILABLE_BUDGET_AMT'] = @$Availableabudget;
+	$array['APPROVERREMARKS'] = @$Postvalue_qry['Approver_Remarks'];
+	$array['PURCHASER_ID'] = @$Postvalue_qry['Requested_to'];
+	$Sap_Data_Array[] = $array;
+
+
+	$url = "http://192.168.162.213:8081/PR_PO_CREATE/PRD/ZIN_RFC_PR_PO_CREATION_UPDATE.php";
+	$SAP_Json_Data = json_encode($Sap_Data_Array);
+
+
+	$Post_To_SAP_Dets = Post_SAP_Data($SAP_Json_Data, $url);
+}
+}
+
+
+
+
+
+
 $update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Request INNER JOIN Tb_Request_Items 
 ON Tb_Request.Request_ID = Tb_Request_Items.Request_Id WHERE Tb_Request.Request_ID = '$request_id'");
 $updated_query = sqlsrv_fetch_array($update_qry);
@@ -322,308 +416,146 @@ $idss[] = $ids['Office_Email_Address'];
 }
 $implode = implode(',', $idss);
 
+if($request_to != '') {
+$update_qry1 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '$verifier_code'");
+$updated_query1 = sqlsrv_fetch_array($update_qry1);
+$To =  $updated_query1['Office_Email_Address'];
 
-//POST SAP
-if ($status == 'Approved') {
+$update_qry12 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '$Recommender_Code'");
+$updated_query12 = sqlsrv_fetch_array($update_qry12);
+$Cc =  $updated_query12['Office_Email_Address'];
 
-	$Post_qry =  sqlsrv_query($conn, "SELECT Request_Type,Item_Code,Tb_Request_Items.Quantity
-	,Tb_Vendor_Selection.Vendor_SAP,Tb_Vendor_Selection.Vendor_Name,Tb_Vendor_Selection.Vendor_City
-	,Tb_Vendor_Quantity.Quantity,price,Tb_Vendor_Selection.Fright_Charges,Tb_Vendor_Selection.Insurance_Details
-	,Tb_Vendor_Selection.GST_Component,Total,Tb_Vendor_Selection.Payment_Terms,Tb_Approver.Approver_Remarks,Plant,Storage_Location,Tb_Vendor_Selection.Warrenty,Tb_Request.Request_ID,Tb_Request_Items.MaterialGroup,Tb_Request.Requested_to  FROM Tb_Request 
+$mail = new PHPMailer;
 
-	INNER JOIN Tb_Request_Items ON Tb_Request.Request_ID = Tb_Request_Items.Request_Id 
-	INNER JOIN (Select * from Tb_Vendor_Selection )Tb_Vendor_Selection  ON Tb_Vendor_Selection.Request_ID = Tb_Request.Request_Id
-	INNER JOIN (Select * from Tb_Vendor_Quantity )Tb_Vendor_Quantity ON Tb_Vendor_Quantity.Request_ID = Tb_Request.Request_Id And Tb_Request_Items.Item_Code=Tb_Vendor_Quantity.Meterial_Name
-	LEFT JOIN Tb_Approver ON Tb_Approver.Request_ID = Tb_Request.Request_Id ANd Tb_Approver.Vendor_SAP=Tb_Vendor_Selection.Vendor_SAP
-	AND Tb_Vendor_Quantity.V_id = Tb_Approver.V_id
+//$mail->SMTPDebug = 3;                               // Enable verbose debug output
 
-	WHERE Tb_Request.Request_ID = '$request_id' AND Tb_Vendor_Selection.Vendor_SAP!='Select Vendor SAP'
-	and Tb_Approver.Approver_Selection = '1' 
+$mail->isSMTP();                                      // Set mailer to use SMTP
 
-	group by Request_Type,Item_Code,Tb_Request_Items.Quantity
-	,Tb_Vendor_Selection.Vendor_SAP,Tb_Vendor_Selection.Vendor_Name,Tb_Vendor_Selection.Vendor_City
-	,Tb_Vendor_Quantity.Quantity,price,Tb_Vendor_Selection.Fright_Charges,Tb_Vendor_Selection.Insurance_Details
-	,Tb_Vendor_Selection.GST_Component,Total,Tb_Vendor_Selection.Payment_Terms,Tb_Approver.Approver_Remarks,Plant,Storage_Location,Tb_Vendor_Selection.Warrenty,Tb_Request.Request_ID,Tb_Request_Items.MaterialGroup,Tb_Request.Requested_to");
+$mail->Host = "rasiseeds-com.mail.protection.outlook.com";
+$mail->SMTPAuth = false;
+$mail->Port = 25;
+$mail->From = "desk@rasiseeds.com";
+$mail->FromName = "desk@rasiseeds.com";
+//$mail->addAddress('joe@example.net', 'Joe User');     // Add a recipient
+// $mail->addAddress($To_Address);               // Name is optional
 
+// Add cc or bcc 
 
-	//$Postvalue_qry = sqlsrv_fetch_array($Post_qry);
+$to = explode(',', $To);
+// $to = array('jr_developer4@mazenetsolution.com', 'sathish.r@rasiseeds.com');
 
+$bcc = array('jr_developer4@mazenetsolution.com', 'sathish.r@rasiseeds.com');
 
-	while ($Postvalue_qry = sqlsrv_fetch_array($Post_qry)) {
-
-
-		$Request_Type =  $Postvalue_qry['Request_Type'];
-		$Request_ID =  $Postvalue_qry['Request_ID'];
-		$Plant =  $Postvalue_qry['Plant'];
-		$Storage_Location =  $Postvalue_qry['Storage_Location'];
-		$Quantity =  $Postvalue_qry['Quantity'];
-		$Vendor_SAP =  trim($Postvalue_qry['Vendor_SAP']);
-		$Vendor_Name =  $Postvalue_qry['Vendor_Name'];
-		$Vendor_City =  $Postvalue_qry['Vendor_City'];
-		$vendorquantity =  $Postvalue_qry['vendorquantity'];
-		$price =  $Postvalue_qry['price'];
-		$Fright_Charges =  $Postvalue_qry['Fright_Charges'];
-		$Insurance_Details =  $Postvalue_qry['Insurance_Details'];
-		$GST_Component =  $Postvalue_qry['GST_Component'];
-		$Total =  $Postvalue_qry['Total'];
-		$Payment_Terms =  $Postvalue_qry['Payment_Terms'];
-		$Totalbudget =  "0";
-		$Availableabudget =  "0";
-		$Approver_Remarks =  $Postvalue_qry['Approver_Remarks'];
-		$Warrenty =  $Postvalue_qry['Warrenty'];
-		$MaterialGroup_SER =  $Postvalue_qry['MaterialGroup'];
-		$PURCHASER_ID =  $Postvalue_qry['Requested_to'];
-
-		$array = [];
-		$array['PO_REQUEST_ID'] = @$Postvalue_qry['Request_ID'];
-
-		if (@$Postvalue_qry['Request_Type'] == "Asset purchases") {
-
-			$array['REQUEST_TYPE'] = "ZCAP";
-		} else if (@$Postvalue_qry['Request_Type'] == "Services") {
-			$array['REQUEST_TYPE'] = "ZSER";
-
-
-		$sql_ser="Select DISTINCT MaterialCode from Purchase_Servie_SAP_Master Where Material_discription='".@$Postvalue_qry['MaterialGroup']."' ";
-		$stmt = sqlsrv_query($conn, $sql_ser);
-		$Header_data_ser = sqlsrv_fetch_array($stmt,SQLSRV_FETCH_ASSOC);
-
-
-			$array['MATKL'] = @$Header_data_ser['MaterialCode'];
-		} else if (@$Postvalue_qry['Request_Type'] == "Material purchases") {
-			$array['REQUEST_TYPE'] = "ZNB";
-		}
-
-		$array['PLANT'] = @$Postvalue_qry['Plant'];
-		$array['MATERIAL_CODE'] = @$Postvalue_qry['Item_Code'];
-		$array['STORAGE_LOCATION'] = @$Postvalue_qry['Storage_Location'];
-		$array['QUANTITY'] = @$Postvalue_qry['Quantity'];
-		$array['VENDOR_CODE'] = trim(@$Postvalue_qry['Vendor_SAP']);
-		// $array['VENDOR_NAME']=trim(@$Postvalue_qry['Vendor_Name']);
-		$array['VENDOR_NAME'] = strToHex(trim(@$Postvalue_qry['Vendor_Name']));
-		// $array['VENDOR_NAME']=str_replace('&', 'AND', trim(@$Postvalue_qry['Vendor_Name']));
-
-		$array['CITY'] = trim(@$Postvalue_qry['Vendor_City']);
-		$array['VENDOR_QUANTITY'] = @$Postvalue_qry['vendorquantity'];
-		$array['VENDOR_PRICE'] = @$Postvalue_qry['price'];
-		$array['FRIGHT_CHARGES'] = @$Postvalue_qry['Fright_Charges'];
-		$array['INSURANCE_DETAILS'] = @$Postvalue_qry['Insurance_Details'];
-		$array['GST_AMT'] = @$Postvalue_qry['GST_Component'];
-		$array['TOTAL_AMOUNT'] = @$Postvalue_qry['Total'];
-		$array['WARRENTY'] = @$Postvalue_qry['Warrenty'];
-		$array['PAYMENT_TERMS'] = @$Postvalue_qry['Payment_Terms'];
-		$array['TOTAL_BUDGET_AMT'] = @$Totalbudget;
-		$array['AVAILABLE_BUDGET_AMT'] = @$Availableabudget;
-		$array['APPROVERREMARKS'] = @$Postvalue_qry['Approver_Remarks'];
-		$array['PURCHASER_ID'] = @$Postvalue_qry['Requested_to'];
-		$Sap_Data_Array[] = $array;
-
-
-		$url = "http://192.168.162.213:8081/PR_PO_CREATE/PRD/ZIN_RFC_PR_PO_CREATION_UPDATE.php";
-		$SAP_Json_Data = json_encode($Sap_Data_Array);
-
-
-		$Post_To_SAP_Dets = Post_SAP_Data($SAP_Json_Data, $url);
-	}
-
-
-
-	if($request_to == '') {
-		
-
-		$approver_involved_arr = [];
-
-		array_push($approver_involved_arr, $updated_query['EMP_ID']);
-
-		array_push($approver_involved_arr, $updated_query['Requested_to']);
-
-		array_push($approver_involved_arr, $updated_query['Recommender']);
-
-		$mail_codes = "'".implode("','",$approver_involved_arr)."'"; 
-
-		$update_qry1 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code IN($mail_codes)");
-		
-		$to_mail_ids = [];
-		while($updated_query1 = sqlsrv_fetch_array($update_qry1)) {
-			$to_mail_ids[] = $updated_query1['Office_Email_Address'];
-		}
-
-		$to = $to_mail_ids;
-
-		// informer mail cc
-		$cc = ($implode != '') ? explode(',', $implode) : array();
-
-		$bcc = array('jr_developer4@mazenetsolution.com','sathish.r@rasiseeds.com');
-		    
-		$subject = $emp_id.' - Purchase Request Approved';
-
-		$mail_template = '
-		<html>
-		<head>
-			<style>
-			table, td, th {
-			border: 1px solid;
-			}
-			
-			table {
-			width: 100%;
-			border-collapse: collapse;
-			}
-			</style>
-			</head>
-				<body>
-					<table >
-						<thead>
-							<tr>
-								<th class="text-center">S.No</th>
-								<th class="text-center">Request ID</th>
-								<th class="text-center">Department</th>
-								<th class="text-center">Category</th>
-								<th class="text-center">Plant</th>
-								<th class="text-center">Meterial</th>
-								<th class="text-center">Quantity</th>                          
-								<th class="text-center">Status</th>                          
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td>
-									1
-								</td>
-								<td>
-									' . $request_id . '
-								</td>
-								<td>
-									' . $updated_query['Department'] . '
-								</td>
-								<td>
-									' . $updated_query['Request_Type'] . '
-								</td>
-								<td>
-									' . $updated_query['Plant'] . '
-								</td>
-								<td>
-									'.$updated_query['Description'].'(' . $updated_query['Item_Code'] . ')
-								</td>
-								<td>
-									' . $updated_query['Quantity'] . '
-								</td>
-								<td>
-								<h4><span class="badge badge-success"><i class="fa fa-check"></i>Approved</span></h4>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</body>
-		</html>';
-
-		$process_mail = $mail->Send_Mail_Details($subject,'','',$mail_template,$to,$cc,$bcc);
-
-		if (!$process_mail) {
-			echo 'Message could not be sent.';
-			echo 'Mailer Error: ' . $mail->ErrorInfo;
-		} else {
-		?>
-			<script type="text/javascript">
-				alert("Approved successsfully");
-				window.location = "show_approver.php";
-			</script>
-		<?php
-		}
-	} 
-
-} else {
-		
-		$update_qry1 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '".$request_to."'");
-		$update_qry1 = sqlsrv_fetch_array($update_qry1);
-		$to_mail_id  = $update_qry1['Office_Email_Address'];
-		
-		$to = explode(',',$to_mail_id);
-
-		// informer mail cc
-		$cc = ($implode != '') ? explode(',', $implode) : array();
-
-		$bcc = array('jr_developer4@mazenetsolution.com','sathish.r@rasiseeds.com');
-		    
-		$subject = $emp_id.' - Purchase Approval Request';
-
-		$mail_template = '
-		<html>
-		<head>
-			<style>
-			table, td, th {
-			border: 1px solid;
-			}
-			
-			table {
-			width: 100%;
-			border-collapse: collapse;
-			}
-			</style>
-			</head>
-				<body>
-					<table >
-						<thead>
-							<tr>
-								<th class="text-center">S.No</th>
-								<th class="text-center">Request ID</th>
-								<th class="text-center">Department</th>
-								<th class="text-center">Category</th>
-								<th class="text-center">Plant</th>
-								<th class="text-center">Meterial</th>
-								<th class="text-center">Quantity</th>                          
-								<th class="text-center">Status</th>                          
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td>
-									1
-								</td>
-								<td>
-									' . $request_id . '
-								</td>
-								<td>
-									' . $updated_query['Department'] . '
-								</td>
-								<td>
-									' . $updated_query['Request_Type'] . '
-								</td>
-								<td>
-									' . $updated_query['Plant'] . '
-								</td>
-								<td>
-									'.$updated_query['Description'].'(' . $updated_query['Item_Code'] . ')
-								</td>
-								<td>
-									' . $updated_query['Quantity'] . '
-								</td>
-								<td>
-								<h4><span class="badge badge-success"><i class="fa fa-check"></i>Waiting for final approval</span></h4>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</body>
-		</html>';
-
-		$process_mail = $mail->Send_Mail_Details($subject,'','',$mail_template,$to,$cc,$bcc);
-
-		if (!$process_mail) {
-			echo 'Message could not be sent.';
-			echo 'Mailer Error: ' . $mail->ErrorInfo;
-		} else {
-		?>
-			<script type="text/javascript">
-				alert("Approved successsfully");
-				window.location = "show_approver.php";
-			</script>
-		<?php
-		}
+foreach ($to as $address) {
+	// $mail->AddAddress($address);
+	$mail->AddAddress(trim($address));
 }
 
+foreach($bcc as $key => $val){   // To Mail ids
+	$mail->addBCC($val); 
+}
 
+$array = "$Cc,$implode";
 
+//$cc = explode(',', $array);
+// print_r($cc);exit;
+// foreach ($cc as $ccc) {
+// 	// $mail->AddAddress($address);
+// 	$mail->addCC(trim($ccc));
+// }
+// $bcc = explode(',', $Bcc);
+
+// foreach ($bcc as $bccc) {
+//   // $mail->AddAddress($address);
+//   $mail->addBCC(trim($bccc));
+// }
+
+// $mail->addAttachment($fil);         // Add attachments
+// $mail->addAttachment($_FILES["attachements"]["tmp_name"], $fil);    // Optional name
+$mail->isHTML(true);                                  // Set email format to HTML
+
+$mail->Subject = $updated_query['Request_Category'];
+
+$mail->Body = '
+<html>
+<head>
+	<style>
+	table, td, th {
+	border: 1px solid;
+	}
+	
+	table {
+	width: 100%;
+	border-collapse: collapse;
+	}
+	</style>
+	</head>
+		<body>
+			<table >
+				<thead>
+					<tr>
+						<th class="text-center">S.No</th>
+						<th class="text-center">Request ID</th>
+						<th class="text-center">Department</th>
+						<th class="text-center">Category</th>
+						<th class="text-center">Plant</th>
+						<th class="text-center">Meterial</th>
+						<th class="text-center">Quantity</th>                          
+						<th class="text-center">Status</th>                          
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>
+							1
+						</td>
+						<td>
+							' . $request_id . '
+						</td>
+						<td>
+							' . $updated_query['Department'] . '
+						</td>
+						<td>
+							' . $updated_query['Request_Type'] . '
+						</td>
+						<td>
+							' . $updated_query['Plant'] . '
+						</td>
+						<td>
+							' . $updated_query['Item_Code'] . '
+						</td>
+						<td>
+							' . $updated_query['Quantity'] . '
+						</td>
+						<td>
+						<h4><span class="badge badge-success"><i class="fa fa-check"></i>Approved</span></h4>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</body>
+</html>';
+
+$mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
+if (!$mail->send()) {
+	echo 'Message could not be sent.';
+	echo 'Mailer Error: ' . $mail->ErrorInfo;
+} else {
+?>
+	<script type="text/javascript">
+		alert("Approved successsfully");
+		window.location = "show_approver.php";
+	</script>
+<?php
+}
+} else {
+?>
+	<script type="text/javascript">
+		alert("Approved successsfully");
+		window.location = "show_approver.php";
+	</script>
+<?php	
+}
 
 }
 // echo "<script>window.location.href ='show_approver.php'</script>";
@@ -668,8 +600,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];	
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = $_POST['Approver_Selection'][$i];
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -731,8 +662,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = $_POST['Approver_Selection'][$i];
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -972,8 +902,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = $_POST['Approver_Selection'][$i];
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -1035,8 +964,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = $_POST['Approver_Selection'][$i];
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -1095,103 +1023,146 @@ for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
 	}
 }
 }
- $update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Request INNER JOIN Tb_Request_Items 
-    ON Tb_Request.Request_ID = Tb_Request_Items.Request_Id WHERE Tb_Request.Request_ID = '$request_id'");
-    $updated_query = sqlsrv_fetch_array($update_qry);
-    $PERSION =  $updated_query['Persion_In_Workflow'];
+$update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Request INNER JOIN Tb_Request_Items 
+ON Tb_Request.Request_ID = Tb_Request_Items.Request_Id WHERE Tb_Request.Request_ID = '$request_id'");
+$updated_query = sqlsrv_fetch_array($update_qry);
+$PERSION =  $updated_query['Persion_In_Workflow'];
+// print_r($PERSION);exit;
+$HR_Master_Table = sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code IN (SELECT * FROM SPLIT_STRING('$PERSION',','))  ");
+$idss = array();
+while ($ids = sqlsrv_fetch_array($HR_Master_Table)) {
+$idss[] = $ids['Office_Email_Address'];
+}
+$implode = implode(',', $idss);
+// print_r($implode);exit;
 
-    $HR_Master_Table = sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code IN (SELECT * FROM SPLIT_STRING('$PERSION',','))  ");
-    $idss = array();
-    while ($ids = sqlsrv_fetch_array($HR_Master_Table)){
-        $idss[] = $ids['Office_Email_Address'];
-    }
-    $implode = implode(',', $idss);
+$update_qry1 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '$verifier_code'");
+$updated_query1 = sqlsrv_fetch_array($update_qry1);
+$To =  $updated_query1['Office_Email_Address'];
+// print_r($To);exit;
 
-    $update_qry1 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '".$updated_query['Recommender']."'");
-    $updated_query1 = sqlsrv_fetch_array($update_qry1);
-    $To =  $updated_query1['Office_Email_Address'];
+$update_qry12 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '$Recommender_Code'");
+$updated_query12 = sqlsrv_fetch_array($update_qry12);
+//$Cc =  $updated_query12['Office_Email_Address'];
+//  print_r($Cc);exit;
 
-    $to = explode(',', $To);
+$mail = new PHPMailer;
 
-    // informer mail cc
-    $cc = ($implode != '') ? explode(',', $implode) : array();
+//$mail->SMTPDebug = 3;                               // Enable verbose debug output
 
-    $bcc = array('jr_developer4@mazenetsolution.com','sathish.r@rasiseeds.com');
+$mail->isSMTP();                                      // Set mailer to use SMTP
 
-    $mail_template = '<html>
-    <head>
-        <style>
-        table, td, th {
-        border: 1px solid;
-        }
-        
-        table {
-        width: 100%;
-        border-collapse: collapse;
-        }
-        </style>
-        </head>
-            <body>
-                <table >
-                    <thead>
-                        <tr>
-                            <th class="text-center">S.No</th>
-                            <th class="text-center">Request ID</th>
-                            <th class="text-center">Department</th>
-                            <th class="text-center">Category</th>
-                            <th class="text-center">Plant</th>
-                            <th class="text-center">Meterial</th>
-                            <th class="text-center">Quantity</th>                          
-                            <th class="text-center">Status</th>                          
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                1
-                            </td>
-                            <td>
-                                ' . $request_id . '
-                            </td>
-                            <td>
-                                ' . $updated_query['Department'] . '
-                            </td>
-                            <td>
-                                ' . $updated_query['Request_Type'] . '
-                            </td>
-                            <td>
-                                ' . $updated_query['Plant'] . '
-                            </td>
-                            <td>
-                                ' . $updated_query['Item_Code'] . '
-                            </td>
-                            <td>
-                                ' . $updated_query['Quantity'] . '
-                            </td>
-                            <td>
-                            <h4><span class="badge badge-danger"><i class="fa fa-check"></i>Rejected</span></h4>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </body>
-    </html>';
-    
-    $subject = $emp_id.' - Purchase Request Rejected';
+$mail->Host = "rasiseeds-com.mail.protection.outlook.com";
+$mail->SMTPAuth = false;
+$mail->Port = 25;
+$mail->From = "desk@rasiseeds.com";
+$mail->FromName = "desk@rasiseeds.com";
+//$mail->addAddress('joe@example.net', 'Joe User');     // Add a recipient
+// $mail->addAddress($To_Address);               // Name is optional
 
-    $process_mail = $mail->Send_Mail_Details($subject,'','',$mail_template,$to,$cc,$bcc);
+// Add cc or bcc 
 
-    if (!$process_mail) {
-        echo 'Message could not be sent.';
-        echo 'Mailer Error: ' . $mail->ErrorInfo;
-      }else{
-        ?>
-        <script type="text/javascript">
-            alert("Rejected successsfully");
-            window.location = "show_recommender.php";
-        </script>
-        <?php
-      }
+$to = explode(',', $To);
+
+$to = array('jr_developer4@mazenetsolution.com', 'sathish.r@rasiseeds.com');
+
+foreach ($to as $address) {
+// $mail->AddAddress($address);
+$mail->AddAddress(trim($address));
+}
+//$array = "$Cc,$implode";
+
+//$cc = explode(',', $array);
+// print_r($cc);exit;
+foreach ($cc as $ccc) {
+// $mail->AddAddress($address);
+$mail->addCC(trim($ccc));
+}
+// $bcc = explode(',', $Bcc);
+
+// foreach ($bcc as $bccc) {
+//   // $mail->AddAddress($address);
+//   $mail->addBCC(trim($bccc));
+// }
+
+// $mail->addAttachment($fil);         // Add attachments
+// $mail->addAttachment($_FILES["attachements"]["tmp_name"], $fil);    // Optional name
+$mail->isHTML(true);                                  // Set email format to HTML
+
+$mail->Subject = $updated_query['Request_Category'];
+
+$mail->Body = '
+<html>
+<head>
+<style>
+table, td, th {
+border: 1px solid;
+}
+
+table {
+width: 100%;
+border-collapse: collapse;
+}
+</style>
+</head>
+	<body>
+		<table >
+			<thead>
+				<tr>
+					<th class="text-center">S.No</th>
+					<th class="text-center">Request ID</th>
+					<th class="text-center">Department</th>
+					<th class="text-center">Category</th>
+					<th class="text-center">Plant</th>
+					<th class="text-center">Meterial</th>
+					<th class="text-center">Quantity</th>                          
+					<th class="text-center">Status</th>                          
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>
+						1
+					</td>
+					<td>
+						' . $request_id . '
+					</td>
+					<td>
+						' . $updated_query['Department'] . '
+					</td>
+					<td>
+						' . $updated_query['Request_Type'] . '
+					</td>
+					<td>
+						' . $updated_query['Plant'] . '
+					</td>
+					<td>
+						' . $updated_query['Item_Code'] . '
+					</td>
+					<td>
+						' . $updated_query['Quantity'] . '
+					</td>
+					<td>
+					<h4><span class="badge badge-success"><i class="fa fa-check"></i>Rejected</span></h4>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</body>
+</html>';
+
+$mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
+if (!$mail->send()) {
+echo 'Message could not be sent.';
+echo 'Mailer Error: ' . $mail->ErrorInfo;
+} else {
+?>
+<script type="text/javascript">
+	alert("Reject successsfully");
+	window.location = "show_approver.php";
+</script>
+<?php
+}
 }
 if (isset($_POST["Verification"])) {
 
@@ -1232,8 +1203,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = $_POST['Approver_Selection'][$i];
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -1296,8 +1266,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = trim($_POST['Approver_Selection'][$i]);
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -1500,7 +1469,7 @@ echo 'Mailer Error: ' . $mail->ErrorInfo;
 }
 
 if (isset($_POST["Reference"])) {
-// echo "<pre>";print_r($_POST);exit;
+
 $update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Approver WHERE Request_id = '$request_id'");
 $updated_query = sqlsrv_fetch_array($update_qry);
 
@@ -1538,8 +1507,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = trim($_POST['Approver_Selection'][$i]);
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -1607,8 +1575,7 @@ for ($i = 0; $i < count($_POST['Vendor_SAP']); $i++) {
 	} else {
 		$Available_Budget = $_POST['Available_Budget'][$i];
 	}
-	// $Approver_Remarks = $_POST['Approver_Remarks'][$i];
-	$Approver_Remarks = $_POST['approver_remarks'];
+	$Approver_Remarks = $_POST['Approver_Remarks'][$i];
 	$Approver_Selection = trim($_POST['Approver_Selection'][$i]);
 	// $fil = $_POST["Attachment"][$i];
 	if (!isset($_POST['Attachment'])) {
@@ -1662,106 +1629,147 @@ for ($i = 0; $i < count($_POST['Quantity_Details']); $i++) {
 }
 }
 
-		//informer mail details get for mail sending 
-		$req_detail_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Request INNER JOIN Tb_Request_Items 
-		ON Tb_Request.Request_ID = Tb_Request_Items.Request_Id WHERE Tb_Request.Request_ID = '$request_id'");
-		$req_detail_res = sqlsrv_fetch_array($req_detail_qry);
-		$PERSION =  $req_detail_res['Persion_In_Workflow'];
-
-		$HR_Master_Table = sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code IN (SELECT * FROM SPLIT_STRING('$PERSION',','))  ");
-		$idss = array();
-		while ($ids = sqlsrv_fetch_array($HR_Master_Table)) {
-		$idss[] = $ids['Office_Email_Address'];
-		}
-		$implode = implode(',', $idss);
-
-
-		$update_qry1 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '".$Reference_emil."'");
-		$to_mail_id  = $update_qry1['Office_Email_Address'];
-		
-		$to = explode(',',$to_mail_id);
-
-		// informer mail cc
-		$cc = ($implode != '') ? explode(',', $implode) : array();
-
-		$bcc = array('jr_developer4@mazenetsolution.com','sathish.r@rasiseeds.com');
-		    
-		$subject = $emp_id.' - Purchase Request Reference Pending';
-
-		$mail_template = '
-		<html>
-		<head>
-			<style>
-			table, td, th {
-			border: 1px solid;
-			}
-			
-			table {
-			width: 100%;
-			border-collapse: collapse;
-			}
-			</style>
-			</head>
-				<body>
-					<table >
-						<thead>
-							<tr>
-								<th class="text-center">S.No</th>
-								<th class="text-center">Request ID</th>
-								<th class="text-center">Department</th>
-								<th class="text-center">Category</th>
-								<th class="text-center">Plant</th>
-								<th class="text-center">Meterial</th>
-								<th class="text-center">Quantity</th>                          
-								<th class="text-center">Status</th>                          
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td>
-									1
-								</td>
-								<td>
-									' . $request_id . '
-								</td>
-								<td>
-									' . $req_detail_res['Department'] . '
-								</td>
-								<td>
-									' . $req_detail_res['Request_Type'] . '
-								</td>
-								<td>
-									' . $req_detail_res['Plant'] . '
-								</td>
-								<td>
-									'.$req_detail_res['Description'].'(' . $req_detail_res['Item_Code'] . ')
-								</td>
-								<td>
-									' . $req_detail_res['Quantity'] . '
-								</td>
-								<td>
-								<h4><span class="badge badge-success"><i class="fa fa-check"></i>Reference</span></h4>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</body>
-		</html>';
-
-		$process_mail = $mail->Send_Mail_Details($subject,'','',$mail_template,$to,$cc,$bcc);
-
-		if (!$process_mail) {
-			echo 'Message could not be sent.';
-			echo 'Mailer Error: ' . $mail->ErrorInfo;
-		} else {
-		?>
-			<script type="text/javascript">
-				alert("Refered successfully");
-				window.location = "show_approver.php";
-			</script>
-		<?php
-		}
+$update_qry =  sqlsrv_query($conn, "SELECT * FROM Tb_Request INNER JOIN Tb_Request_Items 
+ON Tb_Request.Request_ID = Tb_Request_Items.Request_Id WHERE Tb_Request.Request_ID = '$request_id'");
+$updated_query = sqlsrv_fetch_array($update_qry);
+$PERSION =  $updated_query['Persion_In_Workflow'];
+// print_r($PERSION);exit;
+$HR_Master_Table = sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code IN (SELECT * FROM SPLIT_STRING('$PERSION',','))  ");
+$idss = array();
+while ($ids = sqlsrv_fetch_array($HR_Master_Table)) {
+$idss[] = $ids['Office_Email_Address'];
 }
+$implode = implode(',', $idss);
+// print_r($implode);exit;
+$ecode =  $_POST['Reference_emil'];
+$update_qry1 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '$ecode'");
+$updated_query1 = sqlsrv_fetch_array($update_qry1);
+$To =  $updated_query1['Office_Email_Address'];
+// print_r($To);exit;
+
+$update_qry12 =  sqlsrv_query($conn, "SELECT * FROM HR_Master_Table WHERE Employee_Code = '$Recommender_Code'");
+$updated_query12 = sqlsrv_fetch_array($update_qry12);
+$Cc =  $updated_query12['Office_Email_Address'];
+//  print_r($Cc);exit;
+
+$mail = new PHPMailer;
+
+//$mail->SMTPDebug = 3;                               // Enable verbose debug output
+
+$mail->isSMTP();                                      // Set mailer to use SMTP
+
+$mail->Host = "rasiseeds-com.mail.protection.outlook.com";
+$mail->SMTPAuth = false;
+$mail->Port = 25;
+$mail->From = "desk@rasiseeds.com";
+$mail->FromName = "desk@rasiseeds.com";
+//$mail->addAddress('joe@example.net', 'Joe User');     // Add a recipient
+// $mail->addAddress($To_Address);               // Name is optional
+
+// Add cc or bcc 
+
+$to = explode(',', $To);
+$to = array('jr_developer4@mazenetsolution.com', 'sathish.r@rasiseeds.com');
+
+foreach ($to as $address) {
+// $mail->AddAddress($address);
+$mail->AddAddress(trim($address));
+}
+$array = "$Cc,$implode";
+
+//$cc = explode(',', $array);
+// print_r($cc);exit;
+foreach ($cc as $ccc) {
+// $mail->AddAddress($address);
+$mail->addCC(trim($ccc));
+}
+// $bcc = explode(',', $Bcc);
+
+// foreach ($bcc as $bccc) {
+//   // $mail->AddAddress($address);
+//   $mail->addBCC(trim($bccc));
+// }
+
+// $mail->addAttachment($fil);         // Add attachments
+// $mail->addAttachment($_FILES["attachements"]["tmp_name"], $fil);    // Optional name
+$mail->isHTML(true);                                  // Set email format to HTML
+
+$mail->Subject = $updated_query['Request_Category'];
+
+$mail->Body = '
+<html>
+<head>
+<style>
+table, td, th {
+border: 1px solid;
+}
+
+table {
+width: 100%;
+border-collapse: collapse;
+}
+</style>
+</head>
+	<body>
+		<table >
+			<thead>
+				<tr>
+					<th class="text-center">S.No</th>
+					<th class="text-center">Request ID</th>
+					<th class="text-center">Department</th>
+					<th class="text-center">Category</th>
+					<th class="text-center">Plant</th>
+					<th class="text-center">Meterial</th>
+					<th class="text-center">Quantity</th>                          
+					<th class="text-center">Status</th>                          
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>
+						1
+					</td>
+					<td>
+						' . $request_id . '
+					</td>
+					<td>
+						' . $updated_query['Department'] . '
+					</td>
+					<td>
+						' . $updated_query['Request_Type'] . '
+					</td>
+					<td>
+						' . $updated_query['Plant'] . '
+					</td>
+					<td>
+						' . $updated_query['Item_Code'] . '
+					</td>
+					<td>
+						' . $updated_query['Quantity'] . '
+					</td>
+					<td>
+					<h4><span class="badge badge-success"><i class="fa fa-check"></i>' . $status . '</span></h4>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</body>
+</html>';
+
+$mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
+if (!$mail->send()) {
+echo 'Message could not be sent.';
+echo 'Mailer Error: ' . $mail->ErrorInfo;
+} else {
+?>
+<script type="text/javascript">
+	alert("Reference send successsfully");
+	window.location = "show_approver.php";
+</script>
+<?php
+}
+}
+
 
 // total,discount,packageamount display query
 $discount_charges_qry = sqlsrv_query($conn, "SELECT  Tb_Recommender.Request_id,Tb_Recommender.V_id,
@@ -1870,59 +1878,6 @@ th:first-child {
 	height: auto;
 	vertical-align: middle;
 }
-
-
-.modal-content {
-    cursor: move;
-}
-
-body {
-    /* STOP MOVING AROUND! */
-    overflow-x: hidden;
-    overflow-y: scroll !important;
-}
-
-.modal_css_load {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1055;
-    display: none;
-    width: 100%;
-    height: 100%;
-     -ms-overflow-style: none;  /* Internet Explorer 10+ */
-    scrollbar-width: none;  /* Firefox */
-}
-.btn-close {
-    margin: unset !important;
-}
-
-@media only screen and (max-width: 600px) {
-    .plant_top_detail {
-        font-size: 10px !important;
-    }
-    .form-control-plaintext {
-        font-size: 10px;
-    }
-    .material_tbl {
-        width: auto !important;
-    }
-
-    th:first-child {
-        position: unset;
-        left: unset;
-    }
-
-    .table-wrapper {
-        margin-left: unset;
-    }
-
-	.footer {
-	    left: 0 !important;
-	    text-align: center;
-	 }
-
-}
 </style>
 
 </head>
@@ -1980,21 +1935,11 @@ body {
 							</h4>
 
 							<?php
-
-
-
-							$po_Remarks_Sql = sqlsrv_query($conn, "SELECT  EMP_ID,Requested_to,Recommender,Approver from Tb_Request Where Request_ID='$request_id'");
-                                      $po_Remarks_Sql_all = sqlsrv_fetch_array($po_Remarks_Sql);
-
-
-
-
-                                      
 							$selector1 = sqlsrv_query($conn, "SELECT  * FROM Tb_Request
 							WHERE Request_ID = '$request_id' ");
 							$selector_arr1 = sqlsrv_fetch_array($selector1);
 
-							$po_creator_sql = sqlsrv_query($conn, "SELECT TOP 1 Tb_Request.EMP_ID,Tb_Request.Plant,Tb_Request_Items.MaterialGroup,Tb_Request.vendor_justification from Tb_Request 
+							$po_creator_sql = sqlsrv_query($conn, "SELECT TOP 1 Tb_Request.EMP_ID,Tb_Request.Plant,Tb_Request_Items.MaterialGroup from Tb_Request 
               left join Tb_Request_Items ON Tb_Request_Items.Request_ID = Tb_Request.Request_ID
               where Tb_Request.Request_ID = '$request_id'");
 							$po_creator = sqlsrv_fetch_array($po_creator_sql);
@@ -2089,7 +2034,7 @@ body {
                                         $plant_detail = sqlsrv_fetch_array($plant_sql_exec);
 
                                     ?>
-                                    <h1 class="badge bg-success plant_top_detail text-wrap" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
+                                    <h1 class="badge bg-success" style="font-size: 15px;">Plant Details - <span><?php echo $po_creator['Plant']; ?> (<?php echo $plant_detail['Plant_Name']; ?>)</span></h1>
                                     
 
 								<form method="POST" enctype="multipart/form-data">
@@ -2276,7 +2221,6 @@ body {
 																<?php
 																$result = sqlsrv_query($conn, "select * from Tb_Request_Items where Request_ID = '$request_id'", [], array("Scrollable" => SQLSRV_CURSOR_KEYSET));
 																$item_count = sqlsrv_num_rows($result);
-                                                                $mt_index = 1;
 																while ($row = sqlsrv_fetch_array($result)) {
 																	$ID = $row['ID'];
 																	$ItemCode = $row['Item_Code'];
@@ -2292,7 +2236,7 @@ body {
 																			<input type="text"
 																				class="form-control-plaintext"
 																				readonly
-																				value="<?php echo $mt_index.') '.trim($row['Description']) ?>"
+																				value="<?php echo trim($row['Description']) ?>"
 																				data-bs-toggle="modal"
 																				data-bs-target=".bs-example-modal-center<?php echo $ID ?>">
 																			<!-- Modal -->
@@ -2316,50 +2260,48 @@ body {
 																							</button>
 																						</div>
 																						<div class="modal-body">
-																							<div class="table-responsive">
-																								<table
-																									class="table table-bordered">
-																									<thead>
+																							<table
+																								class="table table-bordered">
+																								<thead>
+																									<tr>
+																										<td>Vendor
+																											Code
+																										</td>
+																										<th>Material
+																											Name
+																										</th>
+																										<th>Price
+																										</th>
+																										<th>Purchace
+																											Date
+																										</th>
+																									</tr>
+																								</thead>
+																								<tbody>
+																									<?php
+																									$result1 = sqlsrv_query($conn, "SELECT TOP 3 * FROM MIGO_DET WHERE  MATNR = '$ItemCode' ORDER BY LINE_ID DESC ");
+																									while ($row1 = sqlsrv_fetch_array($result1)) {
+																									?>
 																										<tr>
-																											<td>Vendor
-																												Code
+																											<td>
+																												<?php echo $row1['LIFNR'] ?>
 																											</td>
-																											<th>Material
-																												Name
-																											</th>
-																											<th>Price
-																											</th>
-																											<th>Purchace
-																												Date
-																											</th>
+																											<td>
+																												<?php echo $row['Description'] ?>
+																											</td>
+																											<td>
+																												<?php echo $row1['MENGE'] ?>
+																											</td>
+																											<td>
+																												<?php echo $row1['MENGE'] ?></td>
+                                                                                                            <td><?php echo ($row1['BUDAT_MKPF'] != null && $row1['BUDAT_MKPF'] != '') ? $row1['BUDAT_MKPF']->format('Y-m-d') : '' ?>
+																											</td>
 																										</tr>
-																									</thead>
-																									<tbody>
-																										<?php
-																										$result1 = sqlsrv_query($conn, "SELECT TOP 3 * FROM MIGO_DET WHERE  MATNR = '$ItemCode' ORDER BY LINE_ID DESC ");
-																										while ($row1 = sqlsrv_fetch_array($result1)) {
-																										?>
-																											<tr>
-																												<td>
-																													<?php echo $row1['LIFNR'] ?>
-																												</td>
-																												<td>
-																													<?php echo $row['Description'] ?>
-																												</td>
-																												<td>
-																													<?php echo $row1['MENGE'] ?>
-																												</td>
-																												<td>
-																													<?php echo $row1['MENGE'] ?></td>
-	                                                                                                            <td><?php echo ($row1['BUDAT_MKPF'] != null && $row1['BUDAT_MKPF'] != '') ? $row1['BUDAT_MKPF']->format('Y-m-d') : '' ?>
-																												</td>
-																											</tr>
-																										<?php
-																										}
-																										?>
-																									</tbody>
-																								</table>
-																							</div>
+																									<?php
+																									}
+																									?>
+																								</tbody>
+																							</table>
 																						</div>
 																						<div class="modal-footer">
 																							<button type="button"
@@ -2373,7 +2315,7 @@ body {
 																		</td>
 																	</tr>
 																<?php
-																$mt_index++;}
+																}
 																?>
 															</tbody>
 														</table>
@@ -2680,7 +2622,7 @@ body {
 												</tr>
 												<tr id="seven">
 													<th>Net Amount</th>
-													<td><input type="text" readonly class="form-control  valueof1" data-id="1"
+													<td><input type="text" readonly class="form-control "
 															name="Value_Of[]" id="totale2"
 															title="Total + AdditionalCharges"
 															value="<?php echo $selector_arr['Value_Of'] ?>">
@@ -2696,7 +2638,7 @@ body {
 													while ($array_dy_Details7 = sqlsrv_fetch_array($array_Details7)) {
 
 													?>
-														<td><input type="text" readonly class="form-control  valueof<?php echo $index; ?>"
+														<td><input type="text" readonly class="form-control valueof<?php echo $index; ?>"
 																name="Value_Of[]" id="totale2"
 																title="Total + AdditionalCharges"
 																value="<?php echo $array_dy_Details7['Value_Of'] ?>">
@@ -2809,7 +2751,7 @@ body {
 												<tr id="text">
 													<?php
 													$requester_name = sqlsrv_query($conn, "SELECT  * FROM HR_Master_Table 
-													WHERE Employee_Code = '".$po_Remarks_Sql_all['Requested_to']."' ");
+													WHERE Employee_Code = '$Purchaser_Code' ");
 													$requester_names = sqlsrv_fetch_array($requester_name);
 													$name = $requester_names['Employee_Name'];
 													?>
@@ -2836,7 +2778,7 @@ body {
 													<?php } ?>
 												</tr>
 												<tr id="tara" class="src-table">
-													<th>Recommender's Selection&nbsp;&nbsp;<br>Copy as&nbsp;&nbsp;<input type="checkbox" id="submitreference">
+													<th>Recommender's Selection
 													</th>
 													<td class="woo">
 														<input type="text" class="form-control Recommender_Selection" readonly
@@ -2866,7 +2808,7 @@ body {
 												<tr>
 													<?php
 													$recommender_name = sqlsrv_query($conn, "SELECT  * FROM HR_Master_Table 
-													WHERE Employee_Code = '".$po_Remarks_Sql_all['Recommender']."' ");
+													WHERE Employee_Code = '$Recommender_Code' ");
 													$recommender_names = sqlsrv_fetch_array($recommender_name);
 													$name1 = $recommender_names['Employee_Name'];
 													?>
@@ -3018,7 +2960,7 @@ body {
 													?>
 
 													<td class="woo">
-														<select class="form-control request_selection Approverselectvaluefirst"
+														<select class="form-control request_selection"
 															name="Approver_Selection[]">
 															<option value="">Select Approver Selection
 															</option>
@@ -3034,7 +2976,8 @@ body {
 															?>
 															<?php for ($i = 1; $i <= $vendor_count; $i++) { ?>
 																<option <?php if ($array_dy_Details1421['Recommender_Selection'] == $i) { ?> selected="selected"
-																	<?php } ?>value="<?php echo $i; ?>">
+																	<?php } ?>value="
+                                                                <?php echo $i; ?>">
 																	<?php echo $i; ?>
 																</option>
 															<?php } ?>
@@ -3085,7 +3028,7 @@ body {
 													} ?>
 
 												</tr>
-												<!-- <tr class="remark">
+												<tr class="remark">
 													<?php
 													$array_Details11 = sqlsrv_query($conn, "SELECT  Tb_Approver.Request_id,Tb_Approver.V_id,
 													Tb_Approver_Meterial.Request_id,Tb_Approver_Meterial.V_id,Tb_Approver.Approver_Remarks
@@ -3125,7 +3068,7 @@ body {
 													?>
 														<?php
 														$approver_name = sqlsrv_query($conn, "SELECT  * FROM HR_Master_Table 
-													WHERE Employee_Code = '".$po_Remarks_Sql_all['Approver']."' ");
+													WHERE Employee_Code = '$Approver_Code' ");
 														$approver_names = sqlsrv_fetch_array($approver_name);
 														$name3 = $approver_names['Employee_Name'];
 														?>
@@ -3163,7 +3106,7 @@ body {
 													}
 													?>
 
-												</tr> -->
+												</tr>
 												<tr id="pdf">
 													<?php
 													$view16 = sqlsrv_query($conn, "SELECT * FROM Tb_Recommender WHERE Request_id = '$request_id' ");
@@ -3196,12 +3139,11 @@ body {
 
 
 															<!-- file preview modal -->
-																<div class="modal fade modal_css_load" id="file_preview_modal_1" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static">
+																<div class="modal fade" id="file_preview_modal_1" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
 																  <div class="modal-dialog modal-lg">
 																    <div class="modal-content">
 																      <div class="modal-header">
 																        <h1 class="modal-title fs-5" id="exampleModalLabel">File Preview</h1>
-                                           			                  <a href="#" id="attachment_download_1" class="ms-auto" download><button type="button" class="btn btn-sm btn-info ms-auto me-3"><i class='mdi mdi-download font-size-16 align-middle me-1 text-white'></i> Download</button></a>																        
 																        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 																      </div>
 																      <div class="modal-body">
@@ -3269,7 +3211,6 @@ body {
 														    <div class="modal-content">
 														      <div class="modal-header">
 														        <h1 class="modal-title fs-5" id="exampleModalLabel">File Preview</h1>
-                                                            	 <a href="#" id="attachment_download_<?php echo $rindex; ?>" class="ms-auto" download><button type="button" class="btn btn-sm btn-info ms-auto me-3"><i class='mdi mdi-download font-size-16 align-middle me-1 text-white'></i> Download</button></a>														        
 														        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 														      </div>
 														      <div class="modal-body">
@@ -3397,50 +3338,21 @@ body {
 									<div class="row" id="involved_persons_div" style="display:none;">
 										<div class="col-md-5">
 											<h4>Involved Persons</h4>
-											<div class="table-responsive">
-												<table class="table table-striped table-bordered table-hover">
-													<thead>
-														<tr>
-															<th>Purchaser</th>
-															<th>Recommender</th>
-																<th>Approver</th>
-	                                                        <th style="display:none;" class="inv_fin_appr">Final Approver</th>
-														</tr>
-													</thead>
-													<tbody id="involved_persons_tbody">
+											<table class="table table-striped table-bordered table-hover">
+												<thead>
+													<tr>
+														<th>Purchaser</th>
+														<th>Recommender</th>
+															<th>Approver</th>
+                                                        <th style="display:none;" class="inv_fin_appr">Final Approver</th>
+													</tr>
+												</thead>
+												<tbody id="involved_persons_tbody">
 
-													</tbody>
-												</table>
-											</div>
+												</tbody>
+											</table>
 										</div>
 									</div>
-
-
-                                    <?php if($vendor_data_count == 1 && ($po_creator['vendor_justification'] != null)) { ?>
-                                    <br>
-									<div class="row justification_div justify-content-center"> 
-	                                    <div class="col-2">
-	                                        <label for="justification" class="float-end">Justification For Single Vendor<span class="text-danger"> *</span></label>
-	                                    </div>   
-	                                    <div class="col-6">
-                                        <textarea class="form-control required_for_valid" name="justification" id="justification" required readonly error-msg="Justification field is required"><?php echo $po_creator['vendor_justification']; ?>
-                                        </textarea>
-                                        <span class="error_msg text-danger" style="display: none;"></span>
-                                    	</div>
-                                    </div>
-
-                                    <?php } ?> 
-
-                                    <br>
-									<div class="row justify-content-center"> 
-	                                    <div class="col-2">
-	                                        <label for="approver_remarks" class="float-end">Approver's Remarks<span class="text-danger"> *</span></label>
-	                                    </div>   
-	                                    <div class="col-6">
-	                                        <textarea class="form-control required_for_valid" name="approver_remarks" id="approver_remarks" required error-msg="Approver remarks field is required"></textarea>
-	                                        <span class="error_msg text-danger" style="display: none;"></span>
-                                    	</div>
-                                    </div>
 
 									<center style="padding: 35px 0px 0px 0px;">
 										<!-- Default -->
@@ -3588,10 +3500,6 @@ body {
 
 <script src="assets/js/app.js"></script>
 <!-- CUSTOM SCRIPT -->
-
-<!-------Model Trag and Trap ---------->
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-<!-----------End --------------->
 
 <script>
 $(document).ready(function() {
@@ -4299,10 +4207,7 @@ $(document).on('click','.multi_preview',function(){
 	 if(file_type == 'pdf') {
 	 	// var src = $('#pdf_input'+row_id).val();
         var src = $(this).closest('div').find('#pdf_input'+row_id).val();
-
-       	var src_url = 'https://docs.google.com/viewer?url=https://corporate.rasiseeds.com/corporate/final_request/'+src+'&embedded=true';
-
-    	$('.preview_file_pdf_'+row_id).attr('src', src_url+'#toolbar=0');
+    	$('.preview_file_pdf_'+row_id).attr('src', src+'#toolbar=0');
     	$('.preview_file_img_'+row_id).hide();
     	$('.preview_file_pdf_'+row_id).show();
      } else {
@@ -4310,7 +4215,6 @@ $(document).on('click','.multi_preview',function(){
     	$('.preview_file_pdf_'+row_id).hide();
     	$('.preview_file_img_'+row_id).show();
      } 
-    $('#attachment_download_'+row_id).attr('href',src);
 	$('#file_preview_modal_'+row_id).modal('show');
 
 	});
@@ -4366,34 +4270,6 @@ $(document).on('click','#send_back_remark_submit',function(){
         }
     });
 });
-
-
-
-
-                  $(document).on("click", "#submitreference", function () {
-                if (this.checked) {
-
-                    $(".answer").hide();
-                    $(".remark").hide();
-                    $(".root").show();
-                    $(".answer").find('.Recommender_Selection').attr('disabled',true).attr("required", false);
-
-                    $('.Approverselectvaluefirst').val("1").change();       
-                    
-                } else {
-                    $(".answer").show();
-                    $(".remark").show();
-                    $(".root").hide();
-                    $(".answer").find('.Recommender_Selection').attr('disabled',false).attr("required", true);
-                    // $("input:not(:checked)").closest('.target-table').find(".woo").remove();
-                    $('.Approverselectvaluefirst').val(" ").change();  
-                }
-            }).change();
-
-
-            $(".modal").draggable({
-                handle: ".modal-content"
-            });
 
 </script>
 

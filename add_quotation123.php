@@ -1402,14 +1402,10 @@ input[type=number]::-webkit-outer-spin-button {
                                                 </div>
 
                                                 <br>
-                                                <div class="row justification_div justify-content-center"> 
-                                                    <div class="col-2">
-                                                        <label for="justification" class="float-end">Justification For Single Vendor<span class="text-danger"> *</span></label>
-                                                    </div>   
-                                                    <div class="col-6">
-	                                                    <textarea class="form-control required_for_valid" name="justification" id="justification" required error-msg="Justification field is required"></textarea>
-	                                                    <span class="error_msg text-danger" style="display: none;"></span>
-	                                                </div>
+                                                <div class="col-6 m-auto justification_div">
+                                                    <label for="justification">Justification<span class="text-danger"> *</span></label>
+                                                    <textarea class="form-control required_for_valid" name="justification" id="justification" required error-msg="Justification field is required"></textarea>
+                                                    <span class="error_msg text-danger" style="display: none;"></span>
                                                 </div>
                                                 <div class="d-flex gap-2 col-2 mx-auto" style="padding: 35px 0px 0px 0px;">
                                                     <input type="hidden" name="save">

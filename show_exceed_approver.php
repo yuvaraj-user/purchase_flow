@@ -110,12 +110,12 @@ $Employee_Id = $_SESSION['EmpID'];
                                                         <span class="d-none d-sm-block">Pending</span>    
                                                     </a>
                                                 </li>
-                                                <li class="nav-item">
+                                               <!--  <li class="nav-item">
                                                     <a class="nav-link" data-bs-toggle="tab" href="#profile" role="tab">
                                                         <span class="d-block d-sm-none"><i class="far fa-user"></i></span>
                                                         <span class="d-none d-sm-block">Send Back</span>    
                                                     </a>
-                                                </li>
+                                                </li> -->
                                                 <li class="nav-item">
                                                     <a class="nav-link" data-bs-toggle="tab" href="#settings" role="tab">
                                                         <span class="d-block d-sm-none"><i class="fas fa-cog"></i></span>
@@ -125,7 +125,7 @@ $Employee_Id = $_SESSION['EmpID'];
                                                 <li class="nav-item">
                                                     <a class="nav-link" data-bs-toggle="tab" href="#messages" role="tab">
                                                         <span class="d-block d-sm-none"><i class="far fa-envelope"></i></span>
-                                                        <span class="d-none d-sm-block">Verification</span>    
+                                                        <span class="d-none d-sm-block">Approved</span>    
                                                     </a>
                                                 </li>
                                             </ul>
@@ -233,7 +233,7 @@ $Employee_Id = $_SESSION['EmpID'];
                                                                 <?php
                                                                     $i = 1;
                                                                     $sql = "SELECT * FROM Tb_Request Inner Join Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category
-                                                                    WHERE Tb_Master_Emp.Approver='$Employee_Id' and Tb_Request.status='Approver2 Send Back' ORDER BY Tb_Request.Request_ID DESC";
+                                                                    WHERE Tb_Master_Emp.Approver_2='$Employee_Id' and Tb_Request.status='Approver2 Send Back' ORDER BY Tb_Request.Request_ID DESC";
                                                                     $params = array();
                                                                     $options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
                                                                     $stmt = sqlsrv_prepare($conn, $sql, $params, $options);
@@ -296,8 +296,8 @@ $Employee_Id = $_SESSION['EmpID'];
                                                             <tbody>
                                                                 <?php
                                                                 $i = 1;
-                                                                $sql = "SELECT * FROM Tb_Request Inner Join Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category 
-                                                                WHERE Tb_Master_Emp.Approver='$Employee_Id' and Tb_Request.status='Approver2_Reject' ORDER BY Tb_Request.Request_ID DESC";
+                                                                $sql = "SELECT Tb_Request.Id,Tb_Request.Request_ID,Tb_Request.Request_Type,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Department,Tb_Request.status FROM Tb_Request Inner Join Tb_Master_Emp On Tb_Master_Emp.Purchase_Type = Tb_Request.Request_Category 
+                                                                WHERE Tb_Master_Emp.Approver='$Employee_Id' and Tb_Request.status='Approver2_Reject' GROUP BY Tb_Request.Id,Tb_Request.Request_ID,Tb_Request.Request_Type,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Department,Tb_Request.status ORDER BY Tb_Request.Request_ID DESC";
                                                                 $params = array();
                                                                 $options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
                                                                 $stmt = sqlsrv_prepare($conn, $sql, $params, $options);
@@ -359,19 +359,21 @@ $Employee_Id = $_SESSION['EmpID'];
                                                             <tbody>
                                                                 <?php
                                                                     $i = 1;
-                                                                    $sql = "SELECT Request_ID, Time_Log, Request_Category, Request_Type, Department, status, Plant,is_sendbacked FROM (SELECT Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status
+                                                                    $sql = "SELECT Request_ID, Time_Log, Request_Category, Request_Type, Department, status, Plant,is_sendbacked FROM (SELECT Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status, Tb_Request.Plant,Tb_Request.is_sendbacked
                                                                     FROM Tb_Approver Inner Join Tb_Master_Emp On Tb_Master_Emp.Approver=Tb_Approver.EMP_ID 
                                                                     INNER JOIN Tb_Request ON Tb_Request.Request_ID = Tb_Approver.Request_id
-                                                                    WHERE Tb_Master_Emp.Approver2='$Employee_Id' GROUP BY Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status 
+                                                                    WHERE Tb_Approver.Requested_to='$Employee_Id' GROUP BY Tb_Request.Request_ID,Tb_Request.Time_Log,Tb_Request.Request_Category,Tb_Request.Request_Type,Tb_Request.Department,Tb_Request.status, Tb_Request.Plant,Tb_Request.is_sendbacked 
 
 
                                                                      UNION
     
+                                                                    
                                                                     SELECT Tb_Request.Request_ID, Tb_Request.Time_Log, Tb_Request.Request_Category, Tb_Request.Request_Type, Tb_Request.Department, Tb_Request.status, Tb_Request.Plant,Tb_Request.is_sendbacked 
                                                                     FROM Tb_Request 
-                                                                    WHERE Approver = '$Employee_Id' 
-                                                                    AND is_sendbacked = '1' 
-                                                                    AND Approver_back_remark IS NOT NULL
+                                                                    inner join Tb_Approver on Tb_Approver.Request_id = Tb_Request.Request_ID
+                                                                    WHERE Tb_Approver.Requested_to = '$Employee_Id' 
+                                                                    AND Tb_Request.is_sendbacked = '1' 
+                                                                    AND Tb_Request.Approver2_back_remark IS NOT NULL
                                                                     ) AS result ORDER BY Request_ID DESC";
 
                                                                     $params = array();
@@ -404,32 +406,35 @@ $Employee_Id = $_SESSION['EmpID'];
                                                                             if($row['status'] == 'Review'){ 
                                                                                 echo'  <span class="badge badge-soft-secondary">Waiting Review</span>';    
                                                                             }else{
-                                                                                if ($row['status'] == 'Requested') {
+                                                                                if ($row['status'] == 'Requested' && $row['is_sendbacked'] != '1') {
                                                                                     echo'  <span class="badge badge-soft-primary">Requested</span>';
-                                                                                } elseif($row['status']=='Added')
+                                                                                } elseif($row['status']=='Added' && $row['is_sendbacked'] != '1')
                                                                                 {
                                                                                     echo'<span class="badge badge-soft-info">Quotation Added</span>';
-                                                                                } elseif($row['status']=='Recommended')
+                                                                                } elseif($row['status']=='Recommended' && $row['is_sendbacked'] != '1')
                                                                                 {
                                                                                     echo'<span class="badge badge-soft-info">Recommended</span>';
-                                                                                } elseif($row['status']=='Approved')
+                                                                                } elseif($row['status']=='Approved' && $row['is_sendbacked'] != '1')
                                                                                 {
                                                                                     echo'<span class="badge badge-soft-success">Approved</span>';
-                                                                                } elseif($row['status']=='Reference')
+                                                                                } elseif($row['status']=='Reference' && $row['is_sendbacked'] != '1')
                                                                                 {
                                                                                     echo'<span class="badge badge-soft-info">Reference</span>';
+                                                                                } elseif($row['is_sendbacked'] == '1')
+                                                                                {
+                                                                                    echo'<span class="badge badge-soft-warning">Sendback</span>';
                                                                                 }
                                                                             }
                                                                         ?>
                                                                     </td>
                                                                     <td>
                                                                         <div class="action-btns">
-                                                                            <a href="view_purchase_apr_request.php?id=<?php echo $row['Request_ID'] ?>" class="action-btn btn-view bs-tooltip me-2" data-toggle="tooltip" data-placement="top" title="View">
+                                                                            <a href="view_purchase_apr_request.php?id=<?php echo $row['Request_ID'] ?>&from=limit_exceed" class="action-btn btn-view bs-tooltip me-2" data-toggle="tooltip" data-placement="top" title="View">
                                                                             <i class="mdi mdi-eye"></i>
                                                                         </a>
                                                                             <?php
                                                                             if($row['status'] == 'Approved'){ 
-                                                                                echo'<a href="Update_purchase_apr_request.php?id='.$row['Request_ID'] .'" class="action-btn btn-edit bs-tooltip me-2" data-toggle="tooltip" data-placement="top" title="Edit">
+                                                                                echo'<a href="Update_purchase_apr_request.php?id='.$row['Request_ID'] .'&from=limit_exceed" class="action-btn btn-edit bs-tooltip me-2" data-toggle="tooltip" data-placement="top" title="Edit">
                                                                                 <i class="mdi mdi-pencil"></i>
                                                                                 </a>';    
                                                                             }elseif($row['status'] == 'Reference'){
